@@ -5,50 +5,50 @@
 @tailwind utilities;
 
 :root {
-  /* Brand Colors */
+  /* Brand Colors - Using exact hex colors provided */
   --soft-terracotta: 23 53% 57%;      /* #D27D52 */
   --deep-olive: 82 40% 30%;           /* #556B2F */
   --warm-cream: 40 33% 93%;           /* #F5EFE6 */
   --rich-chestnut: 14 14% 20%;        /* #3B2E2A */
   --charcoal-black: 0 0% 18%;         /* #2D2D2D */
   
-  /* System Colors */
-  --background: var(--charcoal-black);
-  --foreground: 0 0% 98%;             /* Almost white text on dark backgrounds */
-  --muted: 0 0% 25%;                  /* Slightly lighter than background for subtle elements */
-  --muted-foreground: 0 0% 65%;       /* Muted text color */
+  /* Light Theme System Colors */
+  --background: var(--warm-cream);           /* Using warm cream as background */
+  --foreground: var(--charcoal-black);       /* Charcoal black for text */
+  --muted: 40 15% 85%;                       /* Lighter version of warm cream */
+  --muted-foreground: 14 10% 30%;            /* Muted text color based on rich chestnut */
   
   /* Component Colors */
-  --card: 0 0% 22%;                   /* Slightly lighter than background for cards */
-  --card-foreground: 0 0% 98%;        /* Card text color */
-  --popover: 0 0% 22%;                /* Popover background */
-  --popover-foreground: 0 0% 98%;     /* Popover text */
+  --card: 0 0% 100%;                         /* White card background for contrast */
+  --card-foreground: var(--charcoal-black);  /* Card text color */
+  --popover: 0 0% 100%;                      /* Popover background */
+  --popover-foreground: var(--charcoal-black); /* Popover text */
   
   /* UI Elements */
-  --border: 0 0% 30%;                 /* Subtle borders */
-  --input: 0 0% 25%;                  /* Input background */
-  --input-foreground: 0 0% 98%;       /* Input text */
-  --primary: var(--soft-terracotta);  /* Primary accent color */
-  --primary-foreground: 0 0% 98%;     /* Text on primary color */
-  --secondary: var(--deep-olive);     /* Secondary accent */
-  --secondary-foreground: 0 0% 98%;   /* Text on secondary */
-  --accent: var(--warm-cream);        /* Accent highlights */
-  --accent-foreground: var(--charcoal-black); /* Text on accent */
-  --destructive: 0 70% 50%;           /* Error states */
-  --destructive-foreground: 0 0% 98%;
-  --ring: var(--soft-terracotta);     /* Focus rings */
+  --border: 40 15% 85%;                      /* Subtle borders based on warm cream */
+  --input: 0 0% 100%;                        /* White input background */
+  --input-foreground: var(--charcoal-black); /* Input text */
+  --primary: var(--soft-terracotta);         /* Primary accent color */
+  --primary-foreground: 0 0% 100%;           /* Text on primary color */
+  --secondary: var(--deep-olive);            /* Secondary accent */
+  --secondary-foreground: 0 0% 100%;         /* Text on secondary */
+  --accent: 14 14% 95%;                      /* Light version for accents */
+  --accent-foreground: var(--rich-chestnut); /* Text on accent */
+  --destructive: 0 70% 50%;                  /* Error states */
+  --destructive-foreground: 0 0% 100%;
+  --ring: var(--soft-terracotta);            /* Focus rings */
   
   /* UI Properties */
-  --radius: 1rem;                     /* Rounded corners for UI elements */
+  --radius: 1rem;                            /* Rounded corners for UI elements */
   
   /* Chat Bubble Colors */
   --user-bubble: var(--soft-terracotta);
-  --user-bubble-foreground: 0 0% 98%;
-  --bot-bubble: 0 0% 25%;
-  --bot-bubble-foreground: 0 0% 98%;
+  --user-bubble-foreground: 0 0% 100%;
+  --bot-bubble: var(--deep-olive);
+  --bot-bubble-foreground: 0 0% 100%;
   
   /* Sidebar Theming */
-  --sidebar-background: var(--background);
+  --sidebar-background: 40 33% 97%;          /* Slightly lighter than main background */
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -60,7 +60,7 @@
   /* Chart colors */
   --chart-1: var(--soft-terracotta);
   --chart-2: var(--deep-olive);
-  --chart-3: var(--warm-cream);
+  --chart-3: 40 33% 80%;                     /* Darker version of warm cream for visibility */
   --chart-4: var(--rich-chestnut);
   --chart-5: var(--charcoal-black);
 }
@@ -92,29 +92,29 @@
   
   /* Button styling */
   .btn-primary {
-    @apply bg-primary text-primary-foreground rounded-full px-4 py-2 hover:opacity-90 transition-all;
+    @apply bg-primary text-primary-foreground rounded-full px-4 py-2 hover:opacity-90 transition-all shadow-sm;
   }
   
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground rounded-full px-4 py-2 hover:opacity-90 transition-all;
+    @apply bg-secondary text-secondary-foreground rounded-full px-4 py-2 hover:opacity-90 transition-all shadow-sm;
   }
   
   .btn-ghost {
     @apply bg-transparent text-foreground hover:bg-muted rounded-full px-4 py-2 transition-all;
   }
   
-  /* Chat bubbles */
+  /* Chat bubbles - more vivid colors on light background */
   .chat-bubble-user {
-    @apply bg-[hsl(var(--user-bubble))] text-[hsl(var(--user-bubble-foreground))] rounded-2xl rounded-br-none p-3 max-w-[85%];
+    @apply bg-[hsl(var(--user-bubble))] text-[hsl(var(--user-bubble-foreground))] rounded-2xl rounded-br-none p-3 max-w-[85%] shadow-sm;
   }
   
   .chat-bubble-bot {
-    @apply bg-[hsl(var(--bot-bubble))] text-[hsl(var(--bot-bubble-foreground))] rounded-2xl rounded-bl-none p-3 max-w-[85%];
+    @apply bg-[hsl(var(--bot-bubble))] text-[hsl(var(--bot-bubble-foreground))] rounded-2xl rounded-bl-none p-3 max-w-[85%] shadow-sm;
   }
   
-  /* Navigation */
+  /* Bottom Navigation */
   .nav-icon {
-    @apply flex flex-col items-center justify-center text-xs;
+    @apply flex flex-col items-center justify-center text-xs cursor-pointer;
   }
   
   .nav-icon i {
@@ -123,7 +123,29 @@
   
   /* Input fields */
   .search-input {
-    @apply w-full bg-input text-foreground rounded-full px-4 py-3 border border-border focus:ring-2 focus:ring-primary focus:outline-none;
+    @apply w-full bg-input text-foreground rounded-full px-4 py-3 border border-border focus:ring-2 focus:ring-primary focus:outline-none shadow-sm;
+  }
+  
+  /* Helper components */
+  .section-title {
+    @apply text-lg font-serif font-medium text-foreground mb-3;
+  }
+  
+  .tag {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary;
+  }
+  
+  .tag-secondary {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary;
+  }
+  
+  /* Icon backgrounds */
+  .icon-bg-primary {
+    @apply bg-primary/10 text-primary;
+  }
+  
+  .icon-bg-secondary {
+    @apply bg-secondary/10 text-secondary;
   }
 }
 
