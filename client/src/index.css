@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+
+:root {
+  --background: 14 14% 20%;    /* #3B2E2A - Rich Chestnut */
+  --foreground: 0 0% 18%;      /* #2D2D2D - Charcoal Black */
+  --muted: 25 14% 90%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 18%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 18%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 23 53% 57%;       /* #D27D52 - Soft Terracotta */
+  --primary-foreground: 40 33% 93%;   /* #F5EFE6 - Warm Cream */
+  --secondary: 82 40% 30%;     /* #556B2F - Deep Olive */
+  --secondary-foreground: 40 33% 93%;
+  --accent: 40 33% 93%;        /* #F5EFE6 - Warm Cream */
+  --accent-foreground: 0 0% 18%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 23 53% 57%;
+  --radius: 0.5rem;
+  
+  --sidebar-background: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  /* Chart colors */
+  --chart-1: 23 53% 57%;
+  --chart-2: 82 40% 30%;
+  --chart-3: 40 33% 93%;
+  --chart-4: 14 14% 20%;
+  --chart-5: 0 0% 18%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .font-sans {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .font-serif {
+    font-family: 'Playfair Display', serif;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(210, 125, 82, 0.6);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgba(210, 125, 82, 0.1);
+}
