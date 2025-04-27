@@ -6,7 +6,6 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useDrops } from "@/hooks/useDrops";
 import { useAppContext } from "@/context/AppContext";
 import { formatDate } from "@/lib/utils";
@@ -48,86 +47,93 @@ function DailyDrop() {
   }
 
   return (
-    <section className="px-4 py-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-2 text-foreground">Today's Drop</h2>
-        <p className="text-sm text-foreground opacity-70">Take a moment to reflect on today's question</p>
+    <section className="flex flex-col min-h-[calc(100vh-120px)] pb-4">
+      {/* Floating icon with terracotta color */}
+      <div className="flex justify-center mt-4 mb-7">
+        <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary bg-opacity-10">
+          <i className="ri-water-drop-fill text-primary text-xl"></i>
+        </div>
       </div>
       
-      {/* Question Card */}
-      <Card className="mb-6">
-        <CardContent className="p-5">
-          <p className="text-lg font-medium text-foreground mb-6">
-            {dailyQuestion?.text || "Loading today's question..."}
-          </p>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="answer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Write your thoughts here..." 
-                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary bg-accent bg-opacity-50 text-foreground"
-                        rows={5}
-                        {...field}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <div className="flex justify-end">
-                <Button type="submit" className="px-5 py-2 bg-primary text-primary-foreground rounded-lg shadow-sm flex items-center">
-                  <span>Submit</span>
-                  <i className="ri-arrow-right-line ml-2"></i>
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      {/* Question */}
+      <div className="px-5 mb-8 text-center">
+        <h2 className="text-xl font-medium text-foreground mb-1">
+          {dailyQuestion?.question || "Loading today's question..."}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Take a moment to reflect on today's question
+        </p>
+      </div>
+      
+      {/* Answer Form */}
+      <div className="px-5 flex-grow">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+            <FormField
+              control={form.control}
+              name="answer"
+              render={({ field }) => (
+                <FormItem className="flex-grow">
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Write your thoughts here..." 
+                      className="min-h-[200px] w-full p-4 rounded-2xl bg-muted border-none text-foreground resize-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-center mt-6">
+              <Button 
+                type="submit" 
+                className="rounded-full bg-primary text-primary-foreground font-medium px-8 py-3 hover:opacity-90"
+              >
+                Submit
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
       
       {/* Previous Drops */}
-      <div className="mt-10">
-        <h3 className="text-lg font-semibold mb-4 text-foreground flex items-center">
-          <i className="ri-history-line mr-2"></i>
-          <span>Previous Drops</span>
-        </h3>
-        
-        <div className="space-y-4">
-          {previousDrops?.map((drop) => (
-            <div 
-              key={drop.id}
-              className="bg-white rounded-lg shadow-sm p-4 mb-4 cursor-pointer hover:shadow-md transition-all"
-              onClick={() => handleViewPreviousDrop(drop.id)}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h4 className="font-medium text-foreground">{drop.question}</h4>
-                <span className="text-xs text-foreground opacity-50">
-                  {formatDate(drop.createdAt)}
-                </span>
+      {previousDrops?.length > 0 && (
+        <div className="mt-8 px-5">
+          <h3 className="text-sm font-medium text-foreground mb-3">
+            Previous Drops
+          </h3>
+          
+          <div className="space-y-3">
+            {previousDrops?.map((drop) => (
+              <div 
+                key={drop.id}
+                className="card p-4 cursor-pointer"
+                onClick={() => handleViewPreviousDrop(drop.id)}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium text-foreground text-sm">{drop.question}</h4>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {formatDate(drop.createdAt)}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {drop.answer}
+                </p>
               </div>
-              <p className="text-sm text-foreground opacity-70 line-clamp-2">
-                {drop.answer}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
+          
+          <div className="text-center mt-4">
+            <Button 
+              variant="link" 
+              className="text-sm text-primary"
+              onClick={() => navigate("/feed")}
+            >
+              View all drops
+            </Button>
+          </div>
         </div>
-        
-        <div className="text-center mt-6">
-          <Button 
-            variant="link" 
-            className="text-sm text-primary font-medium flex items-center mx-auto"
-            onClick={() => navigate("/feed")}
-          >
-            <span>View all your drops</span>
-            <i className="ri-arrow-right-s-line ml-1"></i>
-          </Button>
-        </div>
-      </div>
+      )}
     </section>
   );
 }
