@@ -11,53 +11,69 @@ export function BottomNavigation() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10">
-      <div className="max-w-lg mx-auto flex justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-20 pb-safe">
+      <div className="max-w-lg mx-auto flex justify-around items-center py-3">
         <Link href="/">
-          <a className={cn(
-            "flex flex-col items-center py-2 px-4", 
-            isActive("/") 
-              ? "text-primary" 
-              : "text-foreground opacity-60"
-          )}>
-            <i className="ri-drop-line text-xl"></i>
-            <span className="text-xs mt-1">Today</span>
+          <a className="nav-icon">
+            <div className="relative">
+              <i className={cn(
+                "ri-water-drop-line text-2xl",
+                isActive("/") ? "text-primary" : "text-muted-foreground"
+              )}></i>
+              {isActive("/") && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
+            </div>
+            <span className={cn(
+              "text-xs mt-1",
+              isActive("/") ? "text-foreground" : "text-muted-foreground"
+            )}>Today</span>
           </a>
         </Link>
         
         <Link href="/feed">
-          <a className={cn(
-            "flex flex-col items-center py-2 px-4", 
-            isActive("/feed") 
-              ? "text-primary" 
-              : "text-foreground opacity-60"
-          )}>
-            <i className="ri-chat-history-line text-xl"></i>
-            <span className="text-xs mt-1">Feed</span>
+          <a className="nav-icon">
+            <div className="relative">
+              <i className={cn(
+                "ri-history-line text-2xl",
+                isActive("/feed") ? "text-primary" : "text-muted-foreground"
+              )}></i>
+              {isActive("/feed") && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
+            </div>
+            <span className={cn(
+              "text-xs mt-1",
+              isActive("/feed") ? "text-foreground" : "text-muted-foreground"
+            )}>Feed</span>
           </a>
         </Link>
         
         <Link href="/analysis">
-          <a className={cn(
-            "flex flex-col items-center py-2 px-4", 
-            isActive("/analysis") 
-              ? "text-primary" 
-              : "text-foreground opacity-60"
-          )}>
-            <i className="ri-bar-chart-2-line text-xl"></i>
-            <span className="text-xs mt-1">Insights</span>
+          <a className="nav-icon">
+            <div className="relative">
+              <i className={cn(
+                "ri-bar-chart-2-line text-2xl",
+                isActive("/analysis") ? "text-primary" : "text-muted-foreground"
+              )}></i>
+              {isActive("/analysis") && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
+            </div>
+            <span className={cn(
+              "text-xs mt-1",
+              isActive("/analysis") ? "text-foreground" : "text-muted-foreground"
+            )}>Insights</span>
           </a>
         </Link>
         
         <Link href="/settings">
-          <a className={cn(
-            "flex flex-col items-center py-2 px-4", 
-            isActive("/settings") 
-              ? "text-primary" 
-              : "text-foreground opacity-60"
-          )}>
-            <i className="ri-settings-4-line text-xl"></i>
-            <span className="text-xs mt-1">Settings</span>
+          <a className="nav-icon">
+            <div className="relative">
+              <i className={cn(
+                "ri-user-line text-2xl",
+                isActive("/settings") ? "text-primary" : "text-muted-foreground"
+              )}></i>
+              {isActive("/settings") && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
+            </div>
+            <span className={cn(
+              "text-xs mt-1",
+              isActive("/settings") ? "text-foreground" : "text-muted-foreground"
+            )}>Profile</span>
           </a>
         </Link>
       </div>

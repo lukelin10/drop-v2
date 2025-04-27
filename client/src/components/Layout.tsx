@@ -13,13 +13,13 @@ export function Layout({ children }: LayoutProps) {
   const isChat = location.includes("/chat");
 
   return (
-    <div className="max-w-lg mx-auto bg-accent min-h-screen relative pb-16 overflow-x-hidden">
+    <div className="max-w-lg mx-auto bg-background min-h-screen relative overflow-hidden">
       <LoadingScreen />
       
       {/* Only show header when not in chat */}
       {!isChat && <Header />}
       
-      <main className="pb-20">
+      <main className="pb-24 flex flex-col min-h-screen">
         {children}
       </main>
       

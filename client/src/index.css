@@ -1,31 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
-
 :root {
-  --background: 14 14% 20%;    /* #3B2E2A - Rich Chestnut */
-  --foreground: 0 0% 18%;      /* #2D2D2D - Charcoal Black */
-  --muted: 25 14% 90%;
-  --muted-foreground: 25 5.3% 44.7%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 18%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 18%;
-  --border: 20 5.9% 90%;
-  --input: 20 5.9% 90%;
-  --primary: 23 53% 57%;       /* #D27D52 - Soft Terracotta */
-  --primary-foreground: 40 33% 93%;   /* #F5EFE6 - Warm Cream */
-  --secondary: 82 40% 30%;     /* #556B2F - Deep Olive */
-  --secondary-foreground: 40 33% 93%;
-  --accent: 40 33% 93%;        /* #F5EFE6 - Warm Cream */
-  --accent-foreground: 0 0% 18%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 60 9.1% 97.8%;
-  --ring: 23 53% 57%;
-  --radius: 0.5rem;
+  /* Brand Colors */
+  --soft-terracotta: 23 53% 57%;      /* #D27D52 */
+  --deep-olive: 82 40% 30%;           /* #556B2F */
+  --warm-cream: 40 33% 93%;           /* #F5EFE6 */
+  --rich-chestnut: 14 14% 20%;        /* #3B2E2A */
+  --charcoal-black: 0 0% 18%;         /* #2D2D2D */
   
+  /* System Colors */
+  --background: var(--charcoal-black);
+  --foreground: 0 0% 98%;             /* Almost white text on dark backgrounds */
+  --muted: 0 0% 25%;                  /* Slightly lighter than background for subtle elements */
+  --muted-foreground: 0 0% 65%;       /* Muted text color */
+  
+  /* Component Colors */
+  --card: 0 0% 22%;                   /* Slightly lighter than background for cards */
+  --card-foreground: 0 0% 98%;        /* Card text color */
+  --popover: 0 0% 22%;                /* Popover background */
+  --popover-foreground: 0 0% 98%;     /* Popover text */
+  
+  /* UI Elements */
+  --border: 0 0% 30%;                 /* Subtle borders */
+  --input: 0 0% 25%;                  /* Input background */
+  --input-foreground: 0 0% 98%;       /* Input text */
+  --primary: var(--soft-terracotta);  /* Primary accent color */
+  --primary-foreground: 0 0% 98%;     /* Text on primary color */
+  --secondary: var(--deep-olive);     /* Secondary accent */
+  --secondary-foreground: 0 0% 98%;   /* Text on secondary */
+  --accent: var(--warm-cream);        /* Accent highlights */
+  --accent-foreground: var(--charcoal-black); /* Text on accent */
+  --destructive: 0 70% 50%;           /* Error states */
+  --destructive-foreground: 0 0% 98%;
+  --ring: var(--soft-terracotta);     /* Focus rings */
+  
+  /* UI Properties */
+  --radius: 1rem;                     /* Rounded corners for UI elements */
+  
+  /* Chat Bubble Colors */
+  --user-bubble: var(--soft-terracotta);
+  --user-bubble-foreground: 0 0% 98%;
+  --bot-bubble: 0 0% 25%;
+  --bot-bubble-foreground: 0 0% 98%;
+  
+  /* Sidebar Theming */
   --sidebar-background: var(--background);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -36,11 +58,11 @@
   --sidebar-ring: var(--ring);
 
   /* Chart colors */
-  --chart-1: 23 53% 57%;
-  --chart-2: 82 40% 30%;
-  --chart-3: 40 33% 93%;
-  --chart-4: 14 14% 20%;
-  --chart-5: 0 0% 18%;
+  --chart-1: var(--soft-terracotta);
+  --chart-2: var(--deep-olive);
+  --chart-3: var(--warm-cream);
+  --chart-4: var(--rich-chestnut);
+  --chart-5: var(--charcoal-black);
 }
 
 @layer base {
@@ -54,6 +76,54 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
+  }
+  
+  /* Improved form elements */
+  input, textarea, select {
+    @apply bg-input text-foreground rounded-[var(--radius)] border-border;
+  }
+}
+
+@layer components {
+  /* Card styling */
+  .card {
+    @apply bg-card text-card-foreground rounded-2xl shadow-sm overflow-hidden border border-border;
+  }
+  
+  /* Button styling */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground rounded-full px-4 py-2 hover:opacity-90 transition-all;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground rounded-full px-4 py-2 hover:opacity-90 transition-all;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent text-foreground hover:bg-muted rounded-full px-4 py-2 transition-all;
+  }
+  
+  /* Chat bubbles */
+  .chat-bubble-user {
+    @apply bg-[hsl(var(--user-bubble))] text-[hsl(var(--user-bubble-foreground))] rounded-2xl rounded-br-none p-3 max-w-[85%];
+  }
+  
+  .chat-bubble-bot {
+    @apply bg-[hsl(var(--bot-bubble))] text-[hsl(var(--bot-bubble-foreground))] rounded-2xl rounded-bl-none p-3 max-w-[85%];
+  }
+  
+  /* Navigation */
+  .nav-icon {
+    @apply flex flex-col items-center justify-center text-xs;
+  }
+  
+  .nav-icon i {
+    @apply text-xl mb-1;
+  }
+  
+  /* Input fields */
+  .search-input {
+    @apply w-full bg-input text-foreground rounded-full px-4 py-3 border border-border focus:ring-2 focus:ring-primary focus:outline-none;
   }
 }
 
@@ -74,18 +144,33 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  /* Gradient backgrounds */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--soft-terracotta)) 0%, hsl(var(--deep-olive)) 100%);
+  }
+  
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(210, 125, 82, 0.6);
-  border-radius: 3px;
+  background-color: hsl(var(--soft-terracotta));
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background-color: rgba(210, 125, 82, 0.1);
+  background-color: transparent;
 }
