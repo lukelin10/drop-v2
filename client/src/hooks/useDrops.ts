@@ -62,7 +62,7 @@ export function useDrops() {
   return {
     drops,
     previousDrops,
-    dailyQuestion: dailyQuestionData,
+    dailyQuestion: dailyQuestionData?.question || "What's on your mind today?",
     answerDailyQuestion,
     toggleFavorite,
     getDrop

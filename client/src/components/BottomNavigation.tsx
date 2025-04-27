@@ -10,72 +10,53 @@ export function BottomNavigation() {
     return false;
   };
 
+  const NavItem = ({ href, icon, label, active }: { href: string; icon: string; label: string; active: boolean }) => (
+    <div className="nav-icon" onClick={() => window.location.href = href}>
+      <div className="relative">
+        <i className={cn(
+          icon,
+          "text-2xl",
+          active ? "text-primary" : "text-muted-foreground"
+        )}></i>
+        {active && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
+      </div>
+      <span className={cn(
+        "text-xs mt-1",
+        active ? "text-foreground" : "text-muted-foreground"
+      )}>{label}</span>
+    </div>
+  );
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-20 pb-safe">
       <div className="max-w-lg mx-auto flex justify-around items-center py-3">
-        <Link href="/">
-          <a className="nav-icon">
-            <div className="relative">
-              <i className={cn(
-                "ri-water-drop-line text-2xl",
-                isActive("/") ? "text-primary" : "text-muted-foreground"
-              )}></i>
-              {isActive("/") && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
-            </div>
-            <span className={cn(
-              "text-xs mt-1",
-              isActive("/") ? "text-foreground" : "text-muted-foreground"
-            )}>Today</span>
-          </a>
-        </Link>
+        <NavItem 
+          href="/" 
+          icon="ri-water-drop-line" 
+          label="Today" 
+          active={isActive("/")} 
+        />
         
-        <Link href="/feed">
-          <a className="nav-icon">
-            <div className="relative">
-              <i className={cn(
-                "ri-history-line text-2xl",
-                isActive("/feed") ? "text-primary" : "text-muted-foreground"
-              )}></i>
-              {isActive("/feed") && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
-            </div>
-            <span className={cn(
-              "text-xs mt-1",
-              isActive("/feed") ? "text-foreground" : "text-muted-foreground"
-            )}>Feed</span>
-          </a>
-        </Link>
+        <NavItem 
+          href="/feed" 
+          icon="ri-history-line" 
+          label="Feed" 
+          active={isActive("/feed")} 
+        />
         
-        <Link href="/analysis">
-          <a className="nav-icon">
-            <div className="relative">
-              <i className={cn(
-                "ri-bar-chart-2-line text-2xl",
-                isActive("/analysis") ? "text-primary" : "text-muted-foreground"
-              )}></i>
-              {isActive("/analysis") && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
-            </div>
-            <span className={cn(
-              "text-xs mt-1",
-              isActive("/analysis") ? "text-foreground" : "text-muted-foreground"
-            )}>Insights</span>
-          </a>
-        </Link>
+        <NavItem 
+          href="/analysis" 
+          icon="ri-bar-chart-2-line" 
+          label="Insights" 
+          active={isActive("/analysis")} 
+        />
         
-        <Link href="/settings">
-          <a className="nav-icon">
-            <div className="relative">
-              <i className={cn(
-                "ri-user-line text-2xl",
-                isActive("/settings") ? "text-primary" : "text-muted-foreground"
-              )}></i>
-              {isActive("/settings") && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
-            </div>
-            <span className={cn(
-              "text-xs mt-1",
-              isActive("/settings") ? "text-foreground" : "text-muted-foreground"
-            )}>Profile</span>
-          </a>
-        </Link>
+        <NavItem 
+          href="/settings" 
+          icon="ri-user-line" 
+          label="Profile" 
+          active={isActive("/settings")} 
+        />
       </div>
     </nav>
   );

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/context/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { useDrops } from "@/hooks/useDrops";
+import { cn } from "@/lib/utils";
 
 interface Analysis {
   id: number;
@@ -52,28 +52,28 @@ function Analysis() {
       id: 1,
       name: "Relationships",
       icon: "ri-heart-line",
-      color: "bg-primary",
+      color: "primary",
       percentage: 68
     },
     {
       id: 2,
       name: "Learning",
       icon: "ri-book-open-line",
-      color: "bg-secondary",
+      color: "secondary",
       percentage: 52
     },
     {
       id: 3,
       name: "Wellbeing",
       icon: "ri-mental-health-line",
-      color: "bg-primary",
+      color: "primary",
       percentage: 45
     },
     {
       id: 4,
       name: "Goals",
       icon: "ri-focus-3-line",
-      color: "bg-secondary",
+      color: "secondary",
       percentage: 40
     }
   ];
@@ -103,20 +103,15 @@ function Analysis() {
   }
 
   return (
-    <section className="px-4 py-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-2 text-foreground">Your Insights</h2>
-        <p className="text-sm text-foreground opacity-70">Discover patterns in your reflections</p>
-      </div>
-      
-      {/* Analysis Overview */}
-      <Card className="mb-6">
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">Overview</h3>
+    <section className="flex flex-col min-h-[calc(100vh-120px)] py-4">
+      {/* Overview */}
+      <div className="px-4 mb-6">
+        <div className="card p-5">
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="text-base font-medium text-foreground">Overview</h3>
             <Button 
               variant="link" 
-              className="text-sm text-primary flex items-center"
+              className="text-sm text-primary flex items-center p-0"
               onClick={handleCreateNewAnalysis}
             >
               <i className="ri-add-line mr-1"></i>
@@ -124,70 +119,74 @@ function Analysis() {
             </Button>
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-primary bg-opacity-20 flex items-center justify-center">
-                <i className="ri-chat-smile-3-line text-primary"></i>
+              <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+                <i className="ri-water-drop-fill text-primary"></i>
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-foreground">{drops.length} total drops</p>
-                <p className="text-xs text-foreground opacity-60">Since joining Sep 2023</p>
+                <p className="text-xs text-muted-foreground">Since joining Sep 2023</p>
               </div>
             </div>
             
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-secondary bg-opacity-20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-secondary bg-opacity-10 flex items-center justify-center">
                 <i className="ri-calendar-check-line text-secondary"></i>
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-foreground">28 day streak</p>
-                <p className="text-xs text-foreground opacity-60">You're on a roll!</p>
+                <p className="text-xs text-muted-foreground">You're on a roll!</p>
               </div>
             </div>
             
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-primary bg-opacity-20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
                 <i className="ri-emotion-happy-line text-primary"></i>
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-foreground">Mood trend: Positive</p>
-                <p className="text-xs text-foreground opacity-60">75% positive entries this month</p>
+                <p className="text-xs text-muted-foreground">75% positive entries this month</p>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
       
       {/* Recent Analyses */}
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Recent Analyses</h3>
+      <div className="px-4 mb-8">
+        <h3 className="text-base font-medium text-foreground mb-3">Recent Analyses</h3>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
           {analyses.map(analysis => (
             <div 
               key={analysis.id}
-              className="bg-white rounded-lg shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all"
+              className="card cursor-pointer"
               onClick={() => handleViewAnalysisDetails(analysis.id)}
             >
               <div className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <h4 className="font-medium text-foreground">{analysis.title}</h4>
-                  <span className={`text-xs ${
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium text-foreground text-sm">{analysis.title}</h4>
+                  <span className={cn(
+                    "text-xs px-2 py-1 rounded-full ml-2",
                     analysis.status === "completed" 
                       ? "bg-secondary bg-opacity-10 text-secondary" 
                       : "bg-primary bg-opacity-10 text-primary"
-                  } px-2 py-0.5 rounded-full`}>
+                  )}>
                     {analysis.status === "completed" ? "Completed" : "In Progress"}
                   </span>
                 </div>
-                <p className="text-sm text-foreground opacity-70 mb-3">{analysis.description}</p>
-                <div className="flex items-center text-xs text-foreground opacity-50">
+                <p className="text-sm text-muted-foreground mb-3">{analysis.description}</p>
+                <div className="flex items-center text-xs text-muted-foreground">
                   <i className="ri-time-line mr-1"></i>
                   <span>Created {new Date(analysis.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
               </div>
-              <div className="h-1 w-full bg-gray-100">
-                <div className={`h-1 ${analysis.status === "completed" ? "bg-primary" : "bg-primary"}`} style={{ width: `${analysis.progress}%` }}></div>
+              <div className="h-1 w-full bg-muted">
+                <div className={cn(
+                  "h-1", 
+                  analysis.status === "completed" ? "bg-secondary" : "bg-primary"
+                )} style={{ width: `${analysis.progress}%` }}></div>
               </div>
             </div>
           ))}
@@ -195,22 +194,31 @@ function Analysis() {
       </div>
       
       {/* Topics & Themes */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Common Themes</h3>
+      <div className="px-4">
+        <h3 className="text-base font-medium text-foreground mb-3">Common Themes</h3>
         
         <div className="grid grid-cols-2 gap-3">
           {themes.map(theme => (
-            <div key={theme.id} className="bg-white rounded-lg p-3 shadow-sm">
+            <div key={theme.id} className="card p-3">
               <div className="flex items-center mb-2">
-                <div className={`w-8 h-8 rounded-full ${theme.color === "bg-primary" ? "bg-primary" : "bg-secondary"} bg-opacity-20 flex items-center justify-center`}>
-                  <i className={`${theme.icon} ${theme.color === "bg-primary" ? "text-primary" : "text-secondary"}`}></i>
+                <div className={cn(
+                  "w-8 h-8 rounded-full bg-opacity-10 flex items-center justify-center",
+                  theme.color === "primary" ? "bg-primary" : "bg-secondary"
+                )}>
+                  <i className={cn(
+                    theme.icon,
+                    theme.color === "primary" ? "text-primary" : "text-secondary"
+                  )}></i>
                 </div>
                 <h4 className="ml-2 font-medium text-foreground text-sm">{theme.name}</h4>
               </div>
-              <div className="h-1.5 w-full bg-gray-100 rounded-full">
-                <div className={`h-1.5 ${theme.color} rounded-full`} style={{ width: `${theme.percentage}%` }}></div>
+              <div className="h-1.5 w-full bg-muted rounded-full">
+                <div className={cn(
+                  "h-1.5 rounded-full",
+                  theme.color === "primary" ? "bg-primary" : "bg-secondary"
+                )} style={{ width: `${theme.percentage}%` }}></div>
               </div>
-              <p className="text-xs text-right mt-1 text-foreground opacity-70">{theme.percentage}%</p>
+              <p className="text-xs text-right mt-1 text-muted-foreground">{theme.percentage}%</p>
             </div>
           ))}
         </div>
