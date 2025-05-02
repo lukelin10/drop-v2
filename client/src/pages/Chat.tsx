@@ -76,7 +76,7 @@ function Chat() {
           <div className="flex items-start">
             <i className="ri-question-line text-primary mt-1 mr-2"></i>
             <div>
-              <h3 className="text-foreground text-sm font-medium">{drop.question}</h3>
+              <h3 className="text-foreground text-sm font-medium">Your Reflection</h3>
               <p className="text-xs text-muted-foreground mt-1">{formatDateLong(new Date(drop.createdAt).toISOString())}</p>
             </div>
           </div>
@@ -89,7 +89,7 @@ function Chat() {
           {/* Initial user response */}
           <div className="flex justify-end mb-4">
             <div className="chat-bubble-user">
-              <p>{drop.answer}</p>
+              <p>{drop.text}</p>
             </div>
           </div>
           

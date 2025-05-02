@@ -34,8 +34,9 @@ function DailyDrop() {
   async function onSubmit(values: AnswerValues) {
     setIsSubmitting(true);
     
-    setTimeout(() => {
-      answerDailyQuestion(values.answer);
+    try {
+      // Wait for the response from the API to get the drop ID
+      const drop = await answerDailyQuestion(values.answer);
       
       setIsSubmitting(false);
       toast({
@@ -44,11 +45,20 @@ function DailyDrop() {
       });
       
       setLoading(true);
+      // Navigate to the specific drop ID instead of 'latest'
       setTimeout(() => {
-        navigate('/chat/latest');
+        navigate(`/chat/${drop.id}`);
         setLoading(false);
       }, 300);
-    }, 1000);
+    } catch (error) {
+      console.error("Error saving reflection:", error);
+      setIsSubmitting(false);
+      toast({
+        title: "Error",
+        description: "There was a problem saving your reflection. Please try again.",
+        variant: "destructive"
+      });
+    }
   }
 
   return (
