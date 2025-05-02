@@ -3,6 +3,14 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertDropSchema, insertMessageSchema } from "@shared/schema";
 import { z } from "zod";
+import { generateResponse } from "./services/anthropic";
+// Import necessary modules
+
+// Check for API key
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.log("Missing ANTHROPIC_API_KEY environment variable.");
+  console.log("Please provide an Anthropic API key to use the Claude AI integration.");
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -96,18 +104,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const message = await storage.createMessage(parseResult.data);
       
-      // Simulate AI thinking time before responding
+      // Create an AI response using Claude
       setTimeout(async () => {
         try {
-          // Generate a bot response
-          const botResponse = generateBotResponse(parseResult.data.text);
-          await storage.createMessage({
-            dropId: parseResult.data.dropId,
-            text: botResponse,
-            fromUser: false
-          });
+          if (!process.env.ANTHROPIC_API_KEY) {
+            // Fallback to a simple response if no API key is available
+            const botResponse = "I'm sorry, I can't generate a thoughtful response right now. Please try again later.";
+            await storage.createMessage({
+              dropId: parseResult.data.dropId,
+              text: botResponse,
+              fromUser: false
+            });
+          } else {
+            // Use Claude to generate a response
+            const botResponse = await generateResponse(
+              parseResult.data.text,
+              parseResult.data.dropId
+            );
+            
+            await storage.createMessage({
+              dropId: parseResult.data.dropId,
+              text: botResponse,
+              fromUser: false
+            });
+          }
         } catch (error) {
           console.error("Error generating bot response:", error);
+          // Create a fallback response in case of error
+          await storage.createMessage({
+            dropId: parseResult.data.dropId,
+            text: "I apologize, but I'm having trouble processing your message right now. Could you try again?",
+            fromUser: false
+          });
         }
       }, 1500);
       

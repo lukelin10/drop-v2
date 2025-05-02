@@ -1,15 +1,53 @@
 import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
+
+// User schema
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Questions table
+export const questionTable = pgTable("question", {
+  id: serial("id").primaryKey(),
+  text: text("text").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  usageCount: integer("usage_count").default(0).notNull(),
+  category: text("category").default("general"),
+});
+
+export const insertQuestionSchema = createInsertSchema(questionTable).omit({
+  id: true,
+  createdAt: true,
+  lastUsedAt: true,
+  usageCount: true,
+});
 
 // Drops (journal entries)
 export const drops = pgTable("drops", {
   id: serial("id").primaryKey(),
-  question: text("question").notNull(),
+  questionId: integer("question_id")
+    .notNull()
+    .references(() => questionTable.id),
   answer: text("answer").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   favorite: boolean("favorite").default(false).notNull(),
   messageCount: integer("message_count").default(0).notNull(),
+  userId: integer("user_id")
+    .references(() => users.id),
 });
 
 export const insertDropSchema = createInsertSchema(drops).omit({
@@ -34,22 +72,38 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   createdAt: true,
 });
 
-// User schema for future use
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull(),
-  name: text("name").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+// Define relationships
+export const questionRelations = relations(questionTable, ({ many }) => ({
+  drops: many(drops),
+}));
 
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-});
+export const dropsRelations = relations(drops, ({ one, many }) => ({
+  question: one(questionTable, {
+    fields: [drops.questionId],
+    references: [questionTable.id],
+  }),
+  messages: many(messages),
+  user: one(users, {
+    fields: [drops.userId],
+    references: [users.id],
+  }),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  drop: one(drops, {
+    fields: [messages.dropId],
+    references: [drops.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  drops: many(drops),
+}));
 
 // Type exports
+export type Question = typeof questionTable.$inferSelect;
+export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
+
 export type Drop = typeof drops.$inferSelect;
 export type InsertDrop = z.infer<typeof insertDropSchema>;
 
@@ -59,8 +113,8 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-// Daily questions
-export const questions = [
+// Collection of question texts to be seeded into the database
+export const questionsList = [
   "What brought you joy today, even if just for a moment?",
   "What small step did you take toward your goals yesterday?",
   "What made you feel grateful today?",
