@@ -24,11 +24,7 @@ function Feed() {
   }
 
   return (
-    <section className="flex flex-col min-h-[calc(100vh-120px)] py-6">
-      {/* Page Title */}
-      <div className="px-6 mb-8">
-        <h1 className="text-2xl font-serif font-medium text-foreground">Your Drops</h1>
-      </div>
+    <section className="flex flex-col min-h-[calc(100vh-120px)] py-6 pt-10">
       
       {/* Drops List */}
       <div className="px-6 flex-grow">
@@ -71,9 +67,8 @@ function Feed() {
                         {drop.messageCount} messages
                       </div>
                     </div>
-                    <div className="flex items-center text-primary font-medium text-sm group-hover:translate-x-0.5 transition-transform">
-                      Continue
-                      <i className="ri-arrow-right-line ml-1 text-xs"></i>
+                    <div className="w-8 h-8 rounded-full bg-[hsl(var(--light-terracotta))] flex items-center justify-center group-hover:bg-[hsl(var(--soft-terracotta))] transition-colors">
+                      <i className="ri-arrow-right-line text-[hsl(var(--deep-terracotta))] text-sm group-hover:text-white"></i>
                     </div>
                   </div>
                 </div>
