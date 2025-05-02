@@ -21,7 +21,7 @@ function DailyDrop() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { setLoading } = useAppContext();
-  const { dailyQuestion, answerDailyQuestion, previousDrops } = useDrops();
+  const { dailyQuestion, answerDailyQuestion } = useDrops();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<AnswerValues>({
@@ -49,15 +49,6 @@ function DailyDrop() {
         setLoading(false);
       }, 300);
     }, 1000);
-  }
-
-  function handleViewPreviousDrop(id: number) {
-    setLoading(true);
-    
-    setTimeout(() => {
-      navigate(`/chat/${id}`);
-      setLoading(false);
-    }, 300);
   }
 
   return (
@@ -122,44 +113,6 @@ function DailyDrop() {
           </form>
         </Form>
       </div>
-      
-      {/* Previous Drops */}
-      {previousDrops.length > 0 && (
-        <div className="px-4 mb-8">
-          <h3 className="text-sm font-medium text-foreground mb-3">Previous Drops</h3>
-          
-          <div className="space-y-3 max-h-[200px] overflow-y-auto pb-2">
-            {previousDrops.slice(0, 3).map(drop => (
-              <div 
-                key={drop.id}
-                className="card cursor-pointer bg-background border border-border"
-                onClick={() => handleViewPreviousDrop(drop.id)}
-              >
-                <div className="p-4">
-                  <p className="text-sm text-foreground mb-1">{drop.question}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{drop.answer}</p>
-                  <div className="flex items-center mt-2">
-                    <i className="ri-time-line text-xs text-muted-foreground mr-1"></i>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(drop.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {previousDrops.length > 3 && (
-              <Button 
-                variant="link" 
-                className="w-full text-sm text-primary"
-                onClick={() => navigate("/feed")}
-              >
-                View more in feed
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
     </section>
   );
 }

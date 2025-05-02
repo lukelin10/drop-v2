@@ -48,15 +48,16 @@ function Chat() {
   return (
     <section className="flex flex-col h-screen pt-0">
       {/* Chat Header */}
-      <div className="bg-background border-b border-border py-4 px-4">
-        <div className="flex items-center">
+      <div className="bg-background border-b border-border py-3 px-4">
+        <div className="max-w-md mx-auto w-full flex items-center justify-between">
           <button 
-            className="flex items-center justify-center w-8 h-8 text-primary mr-2"
+            className="flex items-center justify-center w-8 h-8 text-foreground hover:text-primary transition-colors"
             onClick={handleBack}
           >
             <i className="ri-arrow-left-line text-xl"></i>
           </button>
-          <div className="ml-1">
+          
+          <div className="flex flex-col items-center">
             <div className="flex items-center">
               <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary bg-opacity-10 mr-2">
                 <i className="ri-water-drop-fill text-primary text-sm"></i>
@@ -64,22 +65,29 @@ function Chat() {
               <h2 className="font-medium text-foreground">Dropbot</h2>
             </div>
           </div>
+          
+          <div className="w-8 h-8"></div> {/* Empty div for centering */}
         </div>
       </div>
       
-      {/* Question Display */}
-      <div className="py-6 px-4 border-b border-border">
-        <div className="mx-auto max-w-md flex flex-col items-center">
-          <h3 className="text-foreground text-base font-medium mb-1 text-center">{drop.question}</h3>
-          <p className="text-xs text-muted-foreground">{formatDateLong(drop.createdAt)}</p>
+      {/* Question Banner */}
+      <div className="py-4 px-4 bg-accent/20 border-b border-border">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-start">
+            <i className="ri-question-line text-primary mt-1 mr-2"></i>
+            <div>
+              <h3 className="text-foreground text-sm font-medium">{drop.question}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{formatDateLong(drop.createdAt)}</p>
+            </div>
+          </div>
         </div>
       </div>
       
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto py-4 px-4 bg-background" id="chat-messages">
-        <div className="space-y-4 max-w-md mx-auto">
+        <div className="space-y-3 max-w-md mx-auto">
           {/* Initial user response */}
-          <div className="flex justify-end mb-6">
+          <div className="flex justify-end mb-4">
             <div className="chat-bubble-user">
               <p>{drop.answer}</p>
             </div>
@@ -92,13 +100,13 @@ function Chat() {
               className={cn(
                 "flex", 
                 message.fromUser ? "justify-end" : "justify-start",
-                "mb-4"
+                "mb-3"
               )}
             >
               {!message.fromUser && (
                 <div className="flex items-end">
-                  <div className="w-7 h-7 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-2 mb-2">
-                    <i className="ri-water-drop-fill text-primary text-sm"></i>
+                  <div className="w-6 h-6 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-2 mb-1">
+                    <i className="ri-water-drop-fill text-primary text-xs"></i>
                   </div>
                   <div className="chat-bubble-bot">
                     <p>{message.text}</p>
@@ -116,16 +124,16 @@ function Chat() {
           
           {/* Typing indicator */}
           {isTyping && (
-            <div className="flex justify-start mb-4">
+            <div className="flex justify-start mb-3">
               <div className="flex items-end">
-                <div className="w-7 h-7 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-2 mb-2">
-                  <i className="ri-water-drop-fill text-primary text-sm"></i>
+                <div className="w-6 h-6 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-2 mb-1">
+                  <i className="ri-water-drop-fill text-primary text-xs"></i>
                 </div>
-                <div className="chat-bubble-bot py-3 px-4">
+                <div className="chat-bubble-bot py-2 px-3">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                   </div>
                 </div>
               </div>
@@ -141,7 +149,7 @@ function Chat() {
         <div className="max-w-md mx-auto">
           <form className="flex items-center" onSubmit={handleSendMessage}>
             <Textarea 
-              className="flex-1 bg-muted border-none rounded-full p-3 text-foreground resize-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 min-h-0 h-10 py-2"
+              className="flex-1 bg-background border border-border rounded-full p-3 text-foreground resize-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 min-h-0 h-10 py-2"
               placeholder="Message Dropbot..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
@@ -156,7 +164,7 @@ function Chat() {
             />
             <Button 
               type="submit" 
-              className="ml-2 w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center p-0 hover:opacity-90"
+              className="ml-2 w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center p-0 hover:opacity-90 shadow-sm"
               disabled={!newMessage.trim()}
             >
               <i className="ri-send-plane-fill"></i>
