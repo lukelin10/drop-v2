@@ -56,7 +56,7 @@ function Feed() {
                 
                 {/* Card Body with white background */}
                 <div className="p-6 bg-white">
-                  <h3 className="font-serif text-lg text-foreground mb-3 leading-relaxed group-hover:text-[hsl(var(--primary))] transition-colors">{drop.question}</h3>
+                  <h3 className="font-serif text-lg text-foreground mb-3 leading-relaxed tracking-tight group-hover:text-[hsl(var(--primary))] transition-colors">{drop.question}</h3>
                   
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-5">{drop.answer}</p>
                   
@@ -80,7 +80,7 @@ function Feed() {
             <div className="w-20 h-20 rounded-full bg-white/70 flex items-center justify-center mb-6 shadow-md">
               <i className="ri-water-drop-fill text-[hsl(var(--deep-terracotta))] text-3xl"></i>
             </div>
-            <h3 className="font-serif text-xl text-[hsl(var(--rich-chestnut))] mb-2">Your journey begins</h3>
+            <h3 className="font-serif text-xl text-[hsl(var(--rich-chestnut))] mb-2 tracking-tight">Your journey begins</h3>
             <p className="text-[hsl(var(--rich-chestnut))] text-sm text-center max-w-xs opacity-90">Complete your first reflection to see your previous drops here</p>
             <button 
               onClick={() => navigate('/')} 
