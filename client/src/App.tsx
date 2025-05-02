@@ -12,6 +12,7 @@ import { AppProvider } from "@/context/AppContext";
 // Lazy load pages
 const DailyDrop = lazy(() => import("@/pages/DailyDrop"));
 const Chat = lazy(() => import("@/pages/Chat"));
+const LatestChat = lazy(() => import("@/pages/LatestChat"));
 const Feed = lazy(() => import("@/pages/Feed"));
 const Analysis = lazy(() => import("@/pages/Analysis"));
 const Settings = lazy(() => import("@/pages/Settings"));
@@ -22,6 +23,7 @@ function Router() {
       <Suspense fallback={<LoadingScreen />}>
         <Switch>
           <Route path="/" component={DailyDrop} />
+          <Route path="/chat/latest" component={LatestChat} />
           <Route path="/chat/:id" component={Chat} />
           <Route path="/feed" component={Feed} />
           <Route path="/analysis" component={Analysis} />

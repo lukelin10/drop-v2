@@ -20,6 +20,12 @@ function Chat() {
   const { messages, isTyping, sendMessage } = useMessages(dropId);
   
   const drop = getDrop(dropId);
+  // Load the messages when the drop is loaded
+  useEffect(() => {
+    if (drop) {
+      setLoading(false); // Ensure loading state is cleared when drop is found
+    }
+  }, [drop, setLoading]);
 
   useEffect(() => {
     scrollToBottom();

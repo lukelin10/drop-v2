@@ -70,12 +70,22 @@ export function useDrops() {
   // Get recent previous drops (excluding today's entry)
   const previousDrops = drops.slice(0, 3);
 
+  // Get the latest drop ID (most recently created drop)
+  const getLatestDropId = (): number | undefined => {
+    if (drops.length === 0) return undefined;
+    // Sort by created date (descending) and get the first one
+    return [...drops].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )[0].id;
+  };
+
   return {
     drops,
     previousDrops,
     dailyQuestion: dailyQuestionData?.question || "What's on your mind today?",
     answerDailyQuestion,
     toggleFavorite,
-    getDrop
+    getDrop,
+    getLatestDropId
   };
 }
