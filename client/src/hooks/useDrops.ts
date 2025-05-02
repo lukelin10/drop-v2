@@ -16,9 +16,20 @@ export function useDrops() {
   // Answer daily question - creates a new drop
   const answerMutation = useMutation({
     mutationFn: async (answer: string) => {
+      // Fetch all questions to find the matching one
+      const questionsRes = await apiRequest("GET", "/api/questions");
+      const questions = await questionsRes.json();
+      
+      // Find the question ID that matches our daily question text
+      const matchingQuestion = questions.find(
+        (q: any) => q.text === dailyQuestionData?.question
+      );
+      
+      const questionId = matchingQuestion?.id || 1; // Default to first question if not found
+      
       const res = await apiRequest("POST", "/api/drops", {
-        question: dailyQuestionData?.question || "What's on your mind today?",
-        answer,
+        questionId: questionId,
+        text: answer,
         favorite: false
       });
       return await res.json() as Drop;

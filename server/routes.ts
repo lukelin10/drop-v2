@@ -22,6 +22,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch daily question" });
     }
   });
+  
+  app.get("/api/questions", async (req, res) => {
+    try {
+      const questions = await storage.getQuestions();
+      res.json(questions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch questions" });
+    }
+  });
 
   app.get("/api/drops", async (req, res) => {
     try {
