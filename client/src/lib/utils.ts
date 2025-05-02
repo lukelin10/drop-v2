@@ -10,9 +10,9 @@ export function formatDate(dateString: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function formatDateLong(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", { 
+export function formatDateLong(date: string | Date): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString("en-US", { 
     month: "long", 
     day: "numeric", 
     year: "numeric" 

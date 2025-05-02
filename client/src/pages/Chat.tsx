@@ -77,7 +77,7 @@ function Chat() {
             <i className="ri-question-line text-primary mt-1 mr-2"></i>
             <div>
               <h3 className="text-foreground text-sm font-medium">{drop.question}</h3>
-              <p className="text-xs text-muted-foreground mt-1">{formatDateLong(drop.createdAt)}</p>
+              <p className="text-xs text-muted-foreground mt-1">{formatDateLong(new Date(drop.createdAt).toISOString())}</p>
             </div>
           </div>
         </div>
@@ -145,30 +145,32 @@ function Chat() {
       </div>
       
       {/* Chat Input */}
-      <div className="p-3 border-t border-border bg-background">
+      <div className="p-4 border-t border-border bg-background">
         <div className="max-w-md mx-auto">
-          <form className="flex items-center" onSubmit={handleSendMessage}>
-            <Textarea 
-              className="flex-1 bg-background border border-border rounded-full p-3 text-foreground resize-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 min-h-0 h-10 py-2"
-              placeholder="Message Dropbot..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (newMessage.trim()) {
-                    handleSendMessage(e);
+          <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
+            <div className="relative flex-1">
+              <Textarea 
+                className="w-full bg-card border border-border rounded-full p-3 text-foreground resize-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 min-h-0 h-10 py-2 pr-12 shadow-sm"
+                placeholder="Message Dropbot..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (newMessage.trim()) {
+                      handleSendMessage(e);
+                    }
                   }
-                }
-              }}
-            />
-            <Button 
-              type="submit" 
-              className="ml-2 w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center p-0 hover:opacity-90 shadow-sm"
-              disabled={!newMessage.trim()}
-            >
-              <i className="ri-send-plane-fill"></i>
-            </Button>
+                }}
+              />
+              <Button 
+                type="submit" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center p-0 hover:bg-primary/90 shadow-sm transition-colors"
+                disabled={!newMessage.trim()}
+              >
+                <i className="ri-send-plane-fill"></i>
+              </Button>
+            </div>
           </form>
         </div>
       </div>
