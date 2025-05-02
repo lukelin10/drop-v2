@@ -1,47 +1,14 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useDrops } from "@/hooks/useDrops";
 import { useAppContext } from "@/context/AppContext";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
-type FilterType = "all" | "week" | "month" | "favorites";
-
 function Feed() {
   const [, navigate] = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filter, setFilter] = useState<FilterType>("all");
   const { setLoading } = useAppContext();
   const { drops, toggleFavorite } = useDrops();
-
-  const filteredDrops = drops.filter(drop => {
-    const matchesSearch = drop.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          drop.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (!matchesSearch) return false;
-    
-    if (filter === "all") return true;
-    if (filter === "favorites" && drop.favorite) return true;
-    
-    const now = new Date();
-    const dropDate = new Date(drop.createdAt);
-    
-    if (filter === "week") {
-      const weekAgo = new Date(now);
-      weekAgo.setDate(now.getDate() - 7);
-      return dropDate >= weekAgo;
-    }
-    
-    if (filter === "month") {
-      const monthAgo = new Date(now);
-      monthAgo.setMonth(now.getMonth() - 1);
-      return dropDate >= monthAgo;
-    }
-    
-    return true;
-  });
 
   function handleFavoriteClick(e: React.MouseEvent, id: number) {
     e.stopPropagation();
@@ -58,79 +25,16 @@ function Feed() {
 
   return (
     <section className="flex flex-col min-h-[calc(100vh-120px)] py-4">
-      {/* Search */}
+      {/* Page Title */}
       <div className="px-4 mb-6">
-        <div className="relative">
-          <Input 
-            type="text" 
-            className="search-input pl-10"
-            placeholder="Search your drops..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <i className="ri-search-line absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
-        </div>
-      </div>
-      
-      {/* Filters */}
-      <div className="mb-6 px-4">
-        <div className="flex overflow-x-auto py-1 space-x-2 no-scrollbar">
-          <Button 
-            variant="ghost"
-            className={cn(
-              "px-4 py-2 text-sm rounded-full whitespace-nowrap border",
-              filter === "all" 
-                ? "bg-primary text-primary-foreground border-primary" 
-                : "bg-background text-muted-foreground border-border"
-            )}
-            onClick={() => setFilter("all")}
-          >
-            All Drops
-          </Button>
-          <Button
-            variant="ghost"
-            className={cn(
-              "px-4 py-2 text-sm rounded-full whitespace-nowrap border",
-              filter === "week" 
-                ? "bg-primary text-primary-foreground border-primary" 
-                : "bg-background text-muted-foreground border-border"
-            )}
-            onClick={() => setFilter("week")}
-          >
-            This Week
-          </Button>
-          <Button
-            variant="ghost"
-            className={cn(
-              "px-4 py-2 text-sm rounded-full whitespace-nowrap border",
-              filter === "month" 
-                ? "bg-primary text-primary-foreground border-primary" 
-                : "bg-background text-muted-foreground border-border"
-            )}
-            onClick={() => setFilter("month")}
-          >
-            This Month
-          </Button>
-          <Button
-            variant="ghost"
-            className={cn(
-              "px-4 py-2 text-sm rounded-full whitespace-nowrap border",
-              filter === "favorites" 
-                ? "bg-primary text-primary-foreground border-primary" 
-                : "bg-background text-muted-foreground border-border"
-            )}
-            onClick={() => setFilter("favorites")}
-          >
-            Favorites
-          </Button>
-        </div>
+        <h1 className="text-xl font-serif font-medium text-foreground">Your Drops</h1>
       </div>
       
       {/* Drops List */}
       <div className="px-4 flex-grow">
-        {filteredDrops.length > 0 ? (
+        {drops.length > 0 ? (
           <div className="space-y-4">
-            {filteredDrops.map(drop => (
+            {drops.map((drop) => (
               <div 
                 key={drop.id}
                 className="card"
@@ -171,18 +75,9 @@ function Feed() {
         ) : (
           <div className="flex flex-col items-center justify-center h-64">
             <div className="mb-4 text-muted-foreground">
-              <i className="ri-search-line text-4xl"></i>
+              <i className="ri-water-drop-line text-4xl"></i>
             </div>
-            <p className="text-muted-foreground">No drops found</p>
-            {searchQuery && (
-              <Button 
-                variant="link" 
-                className="text-primary mt-2"
-                onClick={() => setSearchQuery("")}
-              >
-                Clear search
-              </Button>
-            )}
+            <p className="text-muted-foreground">No drops yet</p>
           </div>
         )}
       </div>
