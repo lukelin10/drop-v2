@@ -32,8 +32,9 @@
   --primary-foreground: 0 0% 100%;           /* Text on primary color */
   --secondary: var(--deep-olive);            /* Secondary accent */
   --secondary-foreground: 0 0% 100%;         /* Text on secondary */
-  --accent: 14 14% 95%;                      /* Light version for accents */
-  --accent-foreground: var(--rich-chestnut); /* Text on accent */
+  --accent: var(--soft-terracotta);          /* Using soft terracotta for accents */
+  --accent-foreground: 0 0% 100%;            /* White text on accent */
+  --light-terracotta: 23 53% 95%;            /* Light version of soft terracotta */
   --destructive: 0 70% 50%;                  /* Error states */
   --destructive-foreground: 0 0% 100%;
   --ring: var(--soft-terracotta);            /* Focus rings */

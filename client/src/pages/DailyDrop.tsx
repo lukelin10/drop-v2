@@ -62,7 +62,7 @@ function DailyDrop() {
       
       {/* Daily Question */}
       <div className="px-4 mb-8 pt-6">
-        <div className="bg-accent/10 rounded-2xl shadow-sm border border-accent/20">
+        <div className="bg-[hsl(var(--light-terracotta))] rounded-2xl shadow-sm border border-[hsl(var(--soft-terracotta)_/_15%)]">
           <div className="px-8 py-8">
             <p className="text-foreground text-2xl font-serif font-medium leading-relaxed">
               {dailyQuestion}
