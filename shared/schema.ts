@@ -8,8 +8,6 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  email: text("email").notNull(),
-  name: text("name").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -39,15 +37,13 @@ export const insertQuestionSchema = createInsertSchema(questionTable).omit({
 // Drops (journal entries)
 export const drops = pgTable("drops", {
   id: serial("id").primaryKey(),
-  questionId: integer("question_id")
-    .notNull()
-    .references(() => questionTable.id),
-  answer: text("answer").notNull(),
+  questionId: integer("question_id").notNull().references(() => questionTable.id),
+  // Field is named 'answer' in database, but in our code it's referred to as 'text'
+  text: text("answer").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   favorite: boolean("favorite").default(false).notNull(),
   messageCount: integer("message_count").default(0).notNull(),
-  userId: integer("user_id")
-    .references(() => users.id),
+  userId: integer("user_id").references(() => users.id),
 });
 
 export const insertDropSchema = createInsertSchema(drops).omit({
