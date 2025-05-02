@@ -62,17 +62,11 @@ function DailyDrop() {
       
       {/* Daily Question */}
       <div className="px-4 mb-8 pt-6">
-        <div className="card shadow-sm">
-          <div className="p-6">
-            <p className="text-foreground text-xl font-serif font-medium leading-relaxed mb-1">
+        <div className="bg-accent/10 rounded-2xl shadow-sm border border-accent/20">
+          <div className="px-8 py-8">
+            <p className="text-foreground text-2xl font-serif font-medium leading-relaxed">
               {dailyQuestion}
             </p>
-            <div className="flex items-center mt-4">
-              <div className="w-6 h-6 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
-                <i className="ri-water-drop-fill text-primary text-xs"></i>
-              </div>
-              <p className="ml-2 text-sm text-muted-foreground">Your reflection for today</p>
-            </div>
           </div>
         </div>
       </div>
@@ -89,7 +83,7 @@ function DailyDrop() {
                   <FormControl>
                     <Textarea
                       placeholder="Share your thoughts here..."
-                      className="min-h-[180px] resize-none p-4 border-border rounded-xl shadow-sm bg-card focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+                      className="min-h-[200px] resize-none p-5 border-border rounded-2xl shadow-sm bg-background focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary text-base"
                       {...field}
                     />
                   </FormControl>
