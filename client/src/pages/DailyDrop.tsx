@@ -54,17 +54,18 @@ function DailyDrop() {
   return (
     <section className="flex flex-col min-h-[calc(100vh-120px)]">
       {/* Current Date */}
-      <div className="px-4 pt-3">
-        <p className="text-sm text-muted-foreground mb-1">
+      <div className="px-4 pt-4 flex justify-center">
+        <div className="inline-flex items-center px-4 py-1.5 bg-[hsl(var(--deep-olive))] text-white rounded-full text-sm shadow-sm">
+          <i className="ri-calendar-line mr-1.5"></i>
           {formatDateLong(new Date().toISOString())}
-        </p>
+        </div>
       </div>
       
       {/* Daily Question */}
       <div className="px-4 mb-8 pt-6">
-        <div className="bg-[hsl(var(--light-terracotta))] rounded-2xl shadow-sm border border-[hsl(var(--soft-terracotta)_/_15%)]">
+        <div className="bg-gradient-to-br from-[hsl(var(--medium-terracotta))] to-[hsl(var(--light-terracotta))] rounded-2xl shadow-sm border border-[hsl(var(--soft-terracotta)_/_20%)]">
           <div className="px-8 py-8">
-            <p className="text-foreground text-2xl font-serif font-medium leading-relaxed">
+            <p className="text-[hsl(var(--rich-chestnut))] text-2xl font-serif font-medium leading-relaxed">
               {dailyQuestion}
             </p>
           </div>
@@ -81,11 +82,16 @@ function DailyDrop() {
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <Textarea
-                      placeholder="Share your thoughts here..."
-                      className="min-h-[200px] resize-none p-5 border-border rounded-2xl shadow-sm bg-background focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary text-base"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <div className="absolute -top-3 left-4 bg-background px-2 text-xs font-medium text-[hsl(var(--soft-terracotta))]">
+                        Your reflection
+                      </div>
+                      <Textarea
+                        placeholder="Share your thoughts here..."
+                        className="min-h-[200px] resize-none p-5 border-[hsl(var(--border))] rounded-2xl shadow-sm bg-white focus-visible:border-[hsl(var(--primary))] focus-visible:ring-1 focus-visible:ring-[hsl(var(--primary))] text-base pt-6"
+                        {...field}
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -95,7 +101,7 @@ function DailyDrop() {
             <div className="flex justify-center">
               <Button 
                 type="submit" 
-                className="px-8 py-3 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-colors"
+                className="px-8 py-3 rounded-full bg-[hsl(var(--soft-terracotta))] text-white hover:bg-[hsl(var(--deep-terracotta))] shadow-md transition-colors"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

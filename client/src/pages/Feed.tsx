@@ -37,37 +37,41 @@ function Feed() {
             {drops.map((drop) => (
               <div 
                 key={drop.id}
-                className="rounded-2xl overflow-hidden bg-background border border-border shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                className="rounded-2xl overflow-hidden border border-[hsl(var(--border))] shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
                 onClick={() => handleOpenChat(drop.id)}
               >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="text-xs text-muted-foreground font-medium">
-                      {formatDate(drop.createdAt)}
-                    </span>
-                    <button 
-                      className={cn(
-                        "p-1.5 rounded-full hover:bg-accent/10 transition-colors",
-                        drop.favorite ? "text-primary" : "text-muted-foreground"
-                      )}
-                      onClick={(e) => handleFavoriteClick(e, drop.id)}
-                    >
-                      <i className={drop.favorite ? 'ri-star-fill' : 'ri-star-line'}></i>
-                    </button>
-                  </div>
-                  
-                  <h3 className="font-serif text-lg text-foreground mb-3 leading-relaxed">{drop.question}</h3>
+                {/* Card Header with soft gradient background */}
+                <div className="bg-gradient-to-r from-[hsl(var(--medium-terracotta))] to-[hsl(var(--light-terracotta))] px-6 py-3 flex justify-between items-center">
+                  <span className="text-xs text-[hsl(var(--rich-chestnut))] font-medium">
+                    {formatDate(drop.createdAt)}
+                  </span>
+                  <button 
+                    className={cn(
+                      "p-1.5 rounded-full transition-colors",
+                      drop.favorite 
+                        ? "text-[hsl(var(--deep-terracotta))] bg-white/30" 
+                        : "text-[hsl(var(--rich-chestnut))] hover:bg-white/20"
+                    )}
+                    onClick={(e) => handleFavoriteClick(e, drop.id)}
+                  >
+                    <i className={drop.favorite ? 'ri-star-fill' : 'ri-star-line'}></i>
+                  </button>
+                </div>
+                
+                {/* Card Body with white background */}
+                <div className="p-6 bg-white">
+                  <h3 className="font-serif text-lg text-foreground mb-3 leading-relaxed group-hover:text-[hsl(var(--primary))] transition-colors">{drop.question}</h3>
                   
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-5">{drop.answer}</p>
                   
                   <div className="flex items-center justify-between mt-auto">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center text-xs text-muted-foreground">
+                      <div className="flex items-center text-xs bg-[hsl(var(--light-terracotta))] text-[hsl(var(--deep-terracotta))] px-2 py-1 rounded-full">
                         <i className="ri-chat-1-line mr-1.5"></i>
                         {drop.messageCount} messages
                       </div>
                     </div>
-                    <div className="flex items-center text-primary font-medium text-sm">
+                    <div className="flex items-center text-primary font-medium text-sm group-hover:translate-x-0.5 transition-transform">
                       Continue
                       <i className="ri-arrow-right-line ml-1 text-xs"></i>
                     </div>
@@ -77,12 +81,19 @@ function Feed() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-64 py-8">
-            <div className="w-16 h-16 rounded-full bg-[hsl(var(--light-terracotta))] flex items-center justify-center mb-4">
-              <i className="ri-water-drop-line text-primary text-2xl"></i>
+          <div className="flex flex-col items-center justify-center h-80 py-12 px-6 rounded-2xl bg-gradient-to-b from-[hsl(var(--medium-terracotta))] to-[hsl(var(--light-terracotta))]">
+            <div className="w-20 h-20 rounded-full bg-white/70 flex items-center justify-center mb-6 shadow-md">
+              <i className="ri-water-drop-fill text-[hsl(var(--deep-terracotta))] text-3xl"></i>
             </div>
-            <h3 className="font-serif text-lg text-foreground mb-1">Your journey begins</h3>
-            <p className="text-muted-foreground text-sm text-center">Complete your first reflection to see it here</p>
+            <h3 className="font-serif text-xl text-[hsl(var(--rich-chestnut))] mb-2">Your journey begins</h3>
+            <p className="text-[hsl(var(--rich-chestnut))] text-sm text-center max-w-xs opacity-90">Complete your first reflection to see your previous drops here</p>
+            <button 
+              onClick={() => navigate('/')} 
+              className="mt-6 px-5 py-2.5 bg-white text-[hsl(var(--primary))] rounded-full shadow-sm hover:shadow-md transition-shadow font-medium text-sm flex items-center"
+            >
+              <i className="ri-add-line mr-1.5"></i>
+              Start today's reflection
+            </button>
           </div>
         )}
       </div>

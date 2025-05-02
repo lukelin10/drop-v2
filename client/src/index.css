@@ -16,7 +16,7 @@
   --background: var(--warm-cream);           /* Using warm cream as background */
   --foreground: var(--charcoal-black);       /* Charcoal black for text */
   --muted: 40 15% 85%;                       /* Lighter version of warm cream */
-  --muted-foreground: 14 10% 30%;            /* Muted text color based on rich chestnut */
+  --muted-foreground: 14 14% 30%;            /* Using rich chestnut for better contrast */
   
   /* Component Colors */
   --card: 0 0% 100%;                         /* White card background for contrast */
@@ -25,7 +25,7 @@
   --popover-foreground: var(--charcoal-black); /* Popover text */
   
   /* UI Elements */
-  --border: 40 15% 85%;                      /* Subtle borders based on warm cream */
+  --border: 23 30% 85%;                      /* Subtle borders based on terracotta */
   --input: 0 0% 100%;                        /* White input background */
   --input-foreground: var(--charcoal-black); /* Input text */
   --primary: var(--soft-terracotta);         /* Primary accent color */
@@ -35,6 +35,11 @@
   --accent: var(--soft-terracotta);          /* Using soft terracotta for accents */
   --accent-foreground: 0 0% 100%;            /* White text on accent */
   --light-terracotta: 23 53% 95%;            /* Light version of soft terracotta */
+  --medium-terracotta: 23 53% 90%;           /* Medium version of soft terracotta */
+  --deep-terracotta: 23 53% 40%;             /* Deeper version of soft terracotta */
+  --light-olive: 82 40% 95%;                 /* Light version of deep olive */
+  --medium-olive: 82 40% 90%;                /* Medium version of deep olive */
+  --light-chestnut: 14 14% 95%;              /* Light version of rich chestnut */
   --destructive: 0 70% 50%;                  /* Error states */
   --destructive-foreground: 0 0% 100%;
   --ring: var(--soft-terracotta);            /* Focus rings */
