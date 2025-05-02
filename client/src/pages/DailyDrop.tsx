@@ -65,7 +65,7 @@ function DailyDrop() {
       <div className="px-4 mb-8 pt-6">
         <div className="bg-gradient-to-br from-[hsl(var(--medium-terracotta))] to-[hsl(var(--light-terracotta))] rounded-2xl shadow-sm border border-[hsl(var(--soft-terracotta)_/_20%)]">
           <div className="px-8 py-8">
-            <p className="text-[hsl(var(--rich-chestnut))] text-2xl font-medium leading-relaxed tracking-tight">
+            <p className="text-[hsl(var(--rich-chestnut))] text-2xl font-serif font-medium leading-relaxed">
               {dailyQuestion}
             </p>
           </div>

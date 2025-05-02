@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -81,7 +81,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-sans font-medium tracking-tight;
+    @apply font-serif;
   }
   
   /* Improved form elements */
@@ -134,7 +134,7 @@
   
   /* Helper components */
   .section-title {
-    @apply text-lg font-sans font-medium text-foreground mb-3;
+    @apply text-lg font-serif font-medium text-foreground mb-3;
   }
   
   .tag {
@@ -160,10 +160,8 @@
     font-family: 'Inter', sans-serif;
   }
   
-  /* Use sans-serif fonts for all text */
   .font-serif {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
+    font-family: 'Playfair Display', serif;
   }
 
   .no-scrollbar::-webkit-scrollbar {
