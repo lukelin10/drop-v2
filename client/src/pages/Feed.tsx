@@ -44,10 +44,10 @@ function Feed() {
           <div className="space-y-6 pt-4">
             {drops.map((drop) => (
               <div key={drop.id} className="cursor-pointer group" onClick={() => handleOpenChat(drop.id)}>
-                {/* Redesigned card with better color contrast */}
-                <div className="rounded-2xl bg-white hover:bg-[#FEFBF8] transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                  {/* Header with date in olive green and background color */}
-                  <div className="px-5 py-3 flex justify-between items-center bg-[#EAF0E6] rounded-t-2xl">
+                {/* Inspired by the minimalist card design in the reference image */}
+                <div className="rounded-2xl bg-[#FFF6EC] hover:bg-[#FFF2E6] transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                  <div className="px-5 py-4 flex justify-between items-center">
+                    {/* Date in olive green */}
                     <span className="text-xs font-medium text-[hsl(var(--deep-olive))]">
                       {formatDate(drop.createdAt)}
                     </span>
@@ -66,17 +66,17 @@ function Feed() {
                     </button>
                   </div>
                   
-                  {/* Question section with soft peach background */}
-                  <div className="px-5 py-4 bg-[#FFF6EC]">
+                  {/* Question section */}
+                  <div className="px-5 pb-4">
                     <h3 className="text-[#3B2E2A] font-medium text-base">
                       {drop.questionText}
                     </h3>
                   </div>
                   
-                  {/* Response section with white background */}
-                  <div className="px-5 py-4 border-t border-[#F0E0D0]">
+                  {/* Response section */}
+                  <div className="px-5 pb-4 pt-2 border-t border-[#F0E0D0]">
                     <p className="text-sm text-[#5C534F] line-clamp-2">{drop.text}</p>
-                    <div className="flex justify-end mt-3">
+                    <div className="flex justify-end mt-2">
                       <span className="text-xs text-[hsl(var(--deep-terracotta))] flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                         Continue reading <i className="ri-arrow-right-s-line ml-1"></i>
                       </span>
@@ -87,8 +87,8 @@ function Feed() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-96 py-12 px-6 rounded-2xl bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-            <div className="w-16 h-16 flex items-center justify-center mb-6 rounded-full bg-[#EAF0E6]">
+          <div className="flex flex-col items-center justify-center h-96 py-12 px-6 rounded-2xl bg-[#FFF6EC] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+            <div className="w-16 h-16 flex items-center justify-center mb-6">
               <i className="ri-seedling-fill text-[hsl(var(--deep-olive))] text-3xl"></i>
             </div>
             <h3 className="text-[#3B2E2A] text-xl mb-3 font-medium">Your journey begins</h3>
