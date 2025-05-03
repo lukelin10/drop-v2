@@ -50,8 +50,8 @@
   /* Chat Bubble Colors */
   --user-bubble: var(--soft-terracotta);
   --user-bubble-foreground: 0 0% 100%;
-  --bot-bubble: var(--deep-olive);
-  --bot-bubble-foreground: 0 0% 100%;
+  --bot-bubble: 0 0% 95%;
+  --bot-bubble-foreground: var(--charcoal-black);
 
   /* Sidebar Theming */
   --sidebar-background: 40 33% 97%;          /* Slightly lighter than main background */

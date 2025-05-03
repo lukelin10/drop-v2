@@ -63,71 +63,64 @@ function Chat() {
   }
 
   return (
-    <section className="flex flex-col h-screen pt-0">
-      {/* Chat Header */}
-      <div className="bg-background border-b border-border py-3 px-4">
+    <section className="flex flex-col h-screen pt-0 bg-[#F7F7F7]">
+      {/* Chat Header - Simplified header inspired by the reference image */}
+      <div className="bg-white py-3 px-4 shadow-sm">
         <div className="max-w-md mx-auto w-full flex items-center justify-between">
           <button 
-            className="flex items-center justify-center w-8 h-8 text-foreground hover:text-primary transition-colors"
+            className="flex items-center text-foreground hover:text-primary transition-colors"
             onClick={handleBack}
           >
-            <i className="ri-arrow-left-line text-xl"></i>
+            <i className="ri-arrow-left-s-line text-xl mr-1"></i>
+            <span className="text-base font-medium">Chats</span>
           </button>
           
-          <div className="flex flex-col items-center">
-            <div className="flex items-center">
-              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary bg-opacity-10 mr-2">
-                <i className="ri-water-drop-fill text-primary text-sm"></i>
-              </span>
-              <h2 className="font-medium text-foreground">Dropbot</h2>
-            </div>
+          <div className="flex items-center">
+            <h2 className="font-medium text-foreground">Drop</h2>
+            <i className="ri-arrow-down-s-line ml-1 text-muted-foreground"></i>
           </div>
           
-          <div className="w-8 h-8"></div> {/* Empty div for centering */}
+          <button
+            className="w-8 h-8 rounded-full bg-[#F5DBD1] flex items-center justify-center text-[hsl(var(--deep-terracotta))]"
+            onClick={handleEndChat}
+          >
+            <i className="ri-add-line text-lg"></i>
+          </button>
         </div>
       </div>
       
-      {/* Question Banner */}
-      <div className="py-4 px-4 bg-accent/20 border-b border-border">
+      {/* User/Question Info - More subtle than before */}
+      <div className="pt-3 pb-2 px-4 bg-white border-b border-border/30">
         <div className="max-w-md mx-auto">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start">
-              <i className="ri-question-line text-primary mt-1 mr-2"></i>
-              <div>
-                <h3 className="text-foreground text-sm font-medium">Your Reflection</h3>
-                <p className="text-xs text-muted-foreground mt-1">{formatDateLong(new Date(drop.createdAt).toISOString())}</p>
-              </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-[#3B2E2A]">{drop.questionText.length > 30 ? drop.questionText.substring(0, 30) + '...' : drop.questionText}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatDateLong(new Date(drop.createdAt).toISOString())}</p>
             </div>
             
-            {/* End Chat Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleEndChat}
-              className="text-xs border-primary text-primary hover:bg-primary/10"
-            >
-              <i className="ri-logout-box-r-line mr-1"></i>
-              End Chat
-            </Button>
-          </div>
-          
-          {/* Message counter */}
-          <div className="flex items-center justify-center mt-2">
+            {/* Message counter - More subtle */}
             <div className={cn(
-              "text-xs px-2 py-1 rounded-full",
-              isLimitReached ? "bg-destructive/20 text-destructive" : "bg-muted text-muted-foreground"
+              "text-xs px-2 py-1 rounded-full text-[hsl(var(--deep-olive))]",
+              isLimitReached ? "bg-destructive/10" : "bg-[#EDF2E9]"
             )}>
-              {messageCount} of {MESSAGE_LIMIT} exchanges {isLimitReached && "- Limit reached"}
+              {messageCount}/{MESSAGE_LIMIT}
             </div>
           </div>
         </div>
       </div>
       
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto py-4 px-4 bg-background" id="chat-messages">
-        <div className="space-y-3 max-w-md mx-auto">
+      {/* Chat Messages - Cleaner styling inspired by reference image */}
+      <div className="flex-1 overflow-y-auto py-4 px-4 bg-[#F7F7F7]" id="chat-messages">
+        <div className="space-y-4 max-w-md mx-auto">
+          {/* Initial user question label */}
+          <div className="text-center mb-4">
+            <span className="text-xs text-muted-foreground bg-white px-3 py-1 rounded-full shadow-sm">
+              Your question
+            </span>
+          </div>
+          
           {/* Initial user response */}
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end mb-6">
             <div className="chat-bubble-user">
               <p>{drop.text}</p>
             </div>
@@ -140,14 +133,12 @@ function Chat() {
               className={cn(
                 "flex", 
                 message.fromUser ? "justify-end" : "justify-start",
-                "mb-3"
+                "mb-4"
               )}
             >
               {!message.fromUser && (
-                <div className="flex items-end">
-                  <div className="w-6 h-6 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-2 mb-1">
-                    <i className="ri-water-drop-fill text-primary text-xs"></i>
-                  </div>
+                <div className="max-w-[85%]">
+                  <div className="text-xs text-muted-foreground mb-1 ml-1">Drop</div>
                   <div className="chat-bubble-bot">
                     <p>{message.text}</p>
                   </div>
@@ -164,16 +155,14 @@ function Chat() {
           
           {/* Typing indicator */}
           {isTyping && (
-            <div className="flex justify-start mb-3">
-              <div className="flex items-end">
-                <div className="w-6 h-6 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-2 mb-1">
-                  <i className="ri-water-drop-fill text-primary text-xs"></i>
-                </div>
+            <div className="flex justify-start mb-4">
+              <div className="max-w-[85%]">
+                <div className="text-xs text-muted-foreground mb-1 ml-1">Drop</div>
                 <div className="chat-bubble-bot py-2 px-3">
                   <div className="flex space-x-1">
-                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce"></div>
-                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-[#AAAAAA] rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-[#AAAAAA] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-[#AAAAAA] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                   </div>
                 </div>
               </div>
@@ -184,30 +173,39 @@ function Chat() {
         </div>
       </div>
       
-      {/* Chat Input */}
-      <div className="p-4 border-t border-border bg-background">
-        <div className="max-w-md mx-auto">
+      {/* Chat Input - Cleaner design with scroll button */}
+      <div className="bg-white border-t border-border/10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="flex justify-center -mt-6 mb-2">
+          <button 
+            className="bg-white w-10 h-10 rounded-full shadow-md flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
+          >
+            <i className="ri-arrow-down-s-line text-xl"></i>
+          </button>
+        </div>
+      
+        <div className="px-4 pb-4 pt-1 max-w-md mx-auto">
           {isLimitReached ? (
             <div className="flex flex-col items-center space-y-2">
-              <div className="bg-destructive/10 text-destructive rounded-md px-4 py-3 text-sm text-center">
-                <p>You've reached the maximum number of exchanges in this conversation.</p>
-                <p className="mt-1">Please end this chat and start a new reflection.</p>
+              <div className="bg-destructive/10 text-destructive rounded-xl px-4 py-3 text-sm text-center">
+                <p>You've reached the maximum number of exchanges.</p>
+                <p className="mt-1">Please start a new reflection.</p>
               </div>
               <Button 
                 variant="default" 
-                className="mt-2"
+                className="mt-2 bg-[hsl(var(--deep-terracotta))] hover:bg-[hsl(var(--deep-terracotta))/90]"
                 onClick={handleEndChat}
               >
-                <i className="ri-logout-box-r-line mr-1"></i>
-                End Chat & Go to Feed
+                <i className="ri-add-line mr-1"></i>
+                Start New Chat
               </Button>
             </div>
           ) : (
             <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
               <div className="relative flex-1">
                 <Textarea 
-                  className="w-full bg-card border border-border rounded-full p-3 text-foreground resize-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 min-h-0 h-10 py-2 pr-12 shadow-sm"
-                  placeholder="Message Dropbot..."
+                  className="w-full bg-[#F7F7F7] border-0 rounded-xl p-3 text-foreground resize-none focus-visible:ring-1 focus-visible:ring-border focus-visible:ring-offset-0 min-h-0 h-11 py-3 pr-12"
+                  placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => {
@@ -219,13 +217,15 @@ function Chat() {
                     }
                   }}
                 />
-                <Button 
-                  type="submit" 
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center p-0 hover:bg-primary/90 shadow-sm transition-colors"
-                  disabled={!newMessage.trim() || isTyping}
-                >
-                  <i className="ri-send-plane-fill"></i>
-                </Button>
+                <div className="absolute right-3 bottom-2 flex items-center gap-2">
+                  <Button 
+                    type="submit" 
+                    className="w-7 h-7 bg-[hsl(var(--soft-terracotta))] text-white rounded-full flex items-center justify-center p-0 hover:bg-[hsl(var(--deep-terracotta))] transition-colors"
+                    disabled={!newMessage.trim() || isTyping}
+                  >
+                    <i className="ri-send-plane-fill text-sm"></i>
+                  </Button>
+                </div>
               </div>
             </form>
           )}
