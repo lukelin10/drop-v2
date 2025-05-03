@@ -63,7 +63,7 @@ function Chat() {
   }
 
   return (
-    <section className="flex flex-col h-screen pt-0 bg-[hsl(var(--app-background))]">
+    <section className="flex flex-col h-screen pt-0 bg-[hsl(var(--warm-cream))]">
       {/* Chat Header - Outside the card with tan background */}
       <div className="px-4 py-3 bg-[hsl(var(--warm-cream))]">
         <div className="max-w-md mx-auto w-full flex items-center justify-between">
@@ -86,7 +86,7 @@ function Chat() {
       </div>
       
       {/* Chat card starts here */}
-      <div className="flex-1 flex flex-col mx-4 rounded-2xl overflow-hidden bg-[hsl(var(--warm-cream))] border border-border/10 shadow-sm mb-4">
+      <div className="flex-1 flex flex-col mx-4 rounded-2xl overflow-hidden bg-white border border-border/10 shadow-sm mb-4">
         {/* Full Question Display */}
         <div className="py-3 px-4 border-b border-border/10">
           <div className="flex items-start justify-between">
@@ -178,10 +178,10 @@ function Chat() {
         </div>
         
         {/* Chat Input - Softer styling that matches app visual language */}
-        <div className="bg-[hsl(var(--warm-cream))] border-t border-border/10 shadow-[0_-2px_8px_-2px_rgba(0,0,0,0.05)]">
+        <div className="bg-white border-t border-border/10 shadow-[0_-2px_8px_-2px_rgba(0,0,0,0.05)]">
           <div className="flex justify-center -mt-5 mb-1">
             <button 
-              className="bg-[hsl(var(--warm-cream))] w-8 h-8 rounded-full shadow-sm flex items-center justify-center text-muted-foreground hover:text-primary border border-border/10 transition-colors"
+              className="bg-white w-8 h-8 rounded-full shadow-sm flex items-center justify-center text-muted-foreground hover:text-primary border border-border/10 transition-colors"
               onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
             >
               <i className="ri-arrow-down-s-line text-lg"></i>
