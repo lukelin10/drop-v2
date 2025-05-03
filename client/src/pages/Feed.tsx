@@ -41,53 +41,45 @@ function Feed() {
       {/* Drops List */}
       <div className="px-6 flex-grow">
         {drops.length > 0 ? (
-          <div className="space-y-14 pt-8">
+          <div className="space-y-6 pt-4">
             {drops.map((drop) => (
-              <div key={drop.id} className="relative mt-4 cursor-pointer group" onClick={() => handleOpenChat(drop.id)}>
-                {/* Date positioned completely outside the card (above) */}
-                <div className="absolute -top-7 left-3 z-10">
-                  <span className="text-xs text-[hsl(var(--deep-olive))] font-medium bg-white px-3 py-1.5 rounded-full shadow border border-[hsl(var(--border))]">
-                    {formatDate(drop.createdAt)}
-                  </span>
-                </div>
-                
-                {/* Main card */}
-                <div className="rounded-2xl overflow-hidden border border-[hsl(var(--border))] shadow-sm hover:shadow-md transition-all duration-200">
-                  {/* Question section with metallic orange gradient background just for the text area */}
-                  <div className="p-5 bg-white">
-                    <div className="p-3 rounded-lg relative overflow-hidden" 
-                         style={{
-                           backgroundImage: "linear-gradient(135deg, #D27D52, #E8A87C, #D27D52)",
-                           backgroundSize: "200% 200%",
-                           boxShadow: "inset 0 1px 3px rgba(255,255,255,0.4), inset 0 -1px 2px rgba(0,0,0,0.2)"
-                         }}>
-                         <div 
-                           className="absolute inset-0 opacity-20" 
-                           style={{
-                             background: "linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, transparent 50%, transparent 100%)"
-                           }}
-                         ></div>
-                      <p className="text-sm text-white font-medium relative z-10" style={{ textShadow: "0px 1px 1px rgba(0,0,0,0.15)" }}>{drop.questionText}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Response section with white background */}
-                  <div className="p-6 bg-white">
-                    <p className="text-sm text-foreground line-clamp-3">{drop.text}</p>
+              <div key={drop.id} className="cursor-pointer group" onClick={() => handleOpenChat(drop.id)}>
+                {/* Inspired by the minimalist card design in the reference image */}
+                <div className="rounded-2xl bg-[#FFF6EC] hover:bg-[#FFF2E6] transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                  <div className="px-5 py-4 flex justify-between items-center">
+                    {/* Date in olive green */}
+                    <span className="text-xs font-medium text-[hsl(var(--deep-olive))]">
+                      {formatDate(drop.createdAt)}
+                    </span>
                     
                     {/* Favorite button */}
-                    <div className="flex justify-end mt-4">
-                      <button 
-                        className={cn(
-                          "p-1.5 rounded-full transition-colors",
-                          drop.favorite 
-                            ? "text-[hsl(var(--deep-terracotta))] bg-[hsl(var(--light-terracotta))]" 
-                            : "text-[hsl(var(--rich-chestnut))] hover:bg-[hsl(var(--light-terracotta))]"
-                        )}
-                        onClick={(e) => handleFavoriteClick(e, drop.id)}
-                      >
-                        <i className={drop.favorite ? 'ri-star-fill' : 'ri-star-line'}></i>
-                      </button>
+                    <button 
+                      className={cn(
+                        "p-1 rounded-full transition-colors",
+                        drop.favorite 
+                          ? "text-[hsl(var(--deep-terracotta))]" 
+                          : "text-[hsl(var(--muted-foreground))]"
+                      )}
+                      onClick={(e) => handleFavoriteClick(e, drop.id)}
+                    >
+                      <i className={drop.favorite ? 'ri-star-fill' : 'ri-star-line'}></i>
+                    </button>
+                  </div>
+                  
+                  {/* Question section */}
+                  <div className="px-5 pb-4">
+                    <h3 className="text-[#3B2E2A] font-medium text-base">
+                      {drop.questionText}
+                    </h3>
+                  </div>
+                  
+                  {/* Response section */}
+                  <div className="px-5 pb-4 pt-2 border-t border-[#F0E0D0]">
+                    <p className="text-sm text-[#5C534F] line-clamp-2">{drop.text}</p>
+                    <div className="flex justify-end mt-2">
+                      <span className="text-xs text-[hsl(var(--deep-terracotta))] flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        Continue reading <i className="ri-arrow-right-s-line ml-1"></i>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -95,28 +87,20 @@ function Feed() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-96 py-12 px-6 rounded-2xl border-2 border-dashed border-[hsl(var(--border))] bg-card">
-            <div className="w-24 h-24 rounded-full bg-[hsl(var(--medium-olive))/20] flex items-center justify-center mb-6">
-              <i className="ri-seedling-fill text-[hsl(var(--deep-olive))] text-4xl"></i>
+          <div className="flex flex-col items-center justify-center h-96 py-12 px-6 rounded-2xl bg-[#FFF6EC] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+            <div className="w-16 h-16 flex items-center justify-center mb-6">
+              <i className="ri-seedling-fill text-[hsl(var(--deep-olive))] text-3xl"></i>
             </div>
-            <h3 className="font-serif text-xl text-foreground mb-2 tracking-tight">Your journey begins</h3>
-            <p className="text-muted-foreground text-sm text-center max-w-xs">Complete your first reflection to start building your personal growth timeline</p>
+            <h3 className="text-[#3B2E2A] text-xl mb-3 font-medium">Your journey begins</h3>
+            <p className="text-[#5C534F] text-sm text-center max-w-xs mb-6">Complete your first reflection to start building your personal growth timeline</p>
             
-            <div className="mt-8 flex flex-col items-center">
-              <div className="relative w-48 h-20 mb-6">
-                <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[hsl(var(--medium-olive))] rounded-lg"></div>
-                <div className="absolute top-2 left-2 w-full h-full opacity-10 bg-[hsl(var(--medium-olive))] rounded-lg"></div>
-                <div className="absolute top-4 left-4 w-full h-full bg-[hsl(var(--medium-olive))/30] rounded-lg"></div>
-              </div>
-              
-              <Button 
-                onClick={() => navigate('/')} 
-                className="px-6 py-2.5 bg-[hsl(var(--deep-olive))] text-white hover:bg-[hsl(var(--deep-olive))/80] rounded-full shadow-sm hover:shadow-md transition-all font-medium text-sm flex items-center"
-              >
-                <i className="ri-add-line mr-1.5"></i>
-                Start today's reflection
-              </Button>
-            </div>
+            <Button 
+              onClick={() => navigate('/')} 
+              className="px-6 py-2.5 bg-[hsl(var(--deep-terracotta))] text-white hover:bg-[hsl(var(--deep-terracotta))/90] rounded-full shadow-sm hover:shadow-md transition-all font-medium text-sm flex items-center"
+            >
+              <i className="ri-add-line mr-1.5"></i>
+              Start today's reflection
+            </Button>
           </div>
         )}
       </div>
