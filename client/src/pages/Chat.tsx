@@ -17,7 +17,14 @@ function Chat() {
   const { setLoading } = useAppContext();
   
   const { getDrop } = useDrops();
-  const { messages, isTyping, sendMessage } = useMessages(dropId);
+  const { 
+    messages, 
+    isTyping, 
+    sendMessage, 
+    messageCount, 
+    isLimitReached, 
+    MESSAGE_LIMIT 
+  } = useMessages(dropId);
   
   const drop = getDrop(dropId);
   // Load the messages when the drop is loaded
@@ -45,6 +52,10 @@ function Chat() {
 
   function handleBack() {
     navigate("/");
+  }
+  
+  function handleEndChat() {
+    navigate("/feed");
   }
 
   if (!drop) {
@@ -79,11 +90,34 @@ function Chat() {
       {/* Question Banner */}
       <div className="py-4 px-4 bg-accent/20 border-b border-border">
         <div className="max-w-md mx-auto">
-          <div className="flex items-start">
-            <i className="ri-question-line text-primary mt-1 mr-2"></i>
-            <div>
-              <h3 className="text-foreground text-sm font-medium">Your Reflection</h3>
-              <p className="text-xs text-muted-foreground mt-1">{formatDateLong(new Date(drop.createdAt).toISOString())}</p>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start">
+              <i className="ri-question-line text-primary mt-1 mr-2"></i>
+              <div>
+                <h3 className="text-foreground text-sm font-medium">Your Reflection</h3>
+                <p className="text-xs text-muted-foreground mt-1">{formatDateLong(new Date(drop.createdAt).toISOString())}</p>
+              </div>
+            </div>
+            
+            {/* End Chat Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEndChat}
+              className="text-xs border-primary text-primary hover:bg-primary/10"
+            >
+              <i className="ri-logout-box-r-line mr-1"></i>
+              End Chat
+            </Button>
+          </div>
+          
+          {/* Message counter */}
+          <div className="flex items-center justify-center mt-2">
+            <div className={cn(
+              "text-xs px-2 py-1 rounded-full",
+              isLimitReached ? "bg-destructive/20 text-destructive" : "bg-muted text-muted-foreground"
+            )}>
+              {messageCount} of {MESSAGE_LIMIT} exchanges {isLimitReached && "- Limit reached"}
             </div>
           </div>
         </div>
@@ -153,31 +187,48 @@ function Chat() {
       {/* Chat Input */}
       <div className="p-4 border-t border-border bg-background">
         <div className="max-w-md mx-auto">
-          <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
-            <div className="relative flex-1">
-              <Textarea 
-                className="w-full bg-card border border-border rounded-full p-3 text-foreground resize-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 min-h-0 h-10 py-2 pr-12 shadow-sm"
-                placeholder="Message Dropbot..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (newMessage.trim()) {
-                      handleSendMessage(e);
-                    }
-                  }
-                }}
-              />
+          {isLimitReached ? (
+            <div className="flex flex-col items-center space-y-2">
+              <div className="bg-destructive/10 text-destructive rounded-md px-4 py-3 text-sm text-center">
+                <p>You've reached the maximum number of exchanges in this conversation.</p>
+                <p className="mt-1">Please end this chat and start a new reflection.</p>
+              </div>
               <Button 
-                type="submit" 
-                className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center p-0 hover:bg-primary/90 shadow-sm transition-colors"
-                disabled={!newMessage.trim()}
+                variant="default" 
+                className="mt-2"
+                onClick={handleEndChat}
               >
-                <i className="ri-send-plane-fill"></i>
+                <i className="ri-logout-box-r-line mr-1"></i>
+                End Chat & Go to Feed
               </Button>
             </div>
-          </form>
+          ) : (
+            <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
+              <div className="relative flex-1">
+                <Textarea 
+                  className="w-full bg-card border border-border rounded-full p-3 text-foreground resize-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 min-h-0 h-10 py-2 pr-12 shadow-sm"
+                  placeholder="Message Dropbot..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (newMessage.trim()) {
+                        handleSendMessage(e);
+                      }
+                    }
+                  }}
+                />
+                <Button 
+                  type="submit" 
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center p-0 hover:bg-primary/90 shadow-sm transition-colors"
+                  disabled={!newMessage.trim() || isTyping}
+                >
+                  <i className="ri-send-plane-fill"></i>
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </section>

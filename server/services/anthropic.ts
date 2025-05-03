@@ -37,7 +37,7 @@ export async function generateResponse(userMessage: string, dropId: number): Pro
 
 Your skills include identifying themes, pointing out inconsistencies, asking powerful and insightful questions, and sharing your feedback, based on your wealth of information about relationships and how to build a healthy and productive life. Pull in details or examples from our past conversations when calling out themes, inconsistencies, or patterns.
 
-Keep a tally of our conversation. After a total of 10 back-and-forth messages, prompt me that you need to close our session. Ask if there's anything else I'd like to share before closing the session and providing a summary, pulling key insights from the session, and thanking me for the conversation and encouraging me to come back to chat again.`;
+Keep a tally of our conversation. After a total of 12 back-and-forth messages, prompt me that you need to close our session. Ask if there's anything else I'd like to share before closing the session and providing a summary, pulling key insights from the session, and thanking me for the conversation and encouraging me to come back to chat again.`;
     
     // Call the Anthropic API
     const response = await anthropic.messages.create({

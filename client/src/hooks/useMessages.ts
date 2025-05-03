@@ -5,12 +5,37 @@ import { Message } from "@shared/schema";
 
 export function useMessages(dropId: number) {
   const [isTyping, setIsTyping] = useState(false);
+  const [messageCount, setMessageCount] = useState(0);
+  const [isLimitReached, setIsLimitReached] = useState(false);
+  const MESSAGE_LIMIT = 12; // Maximum number of back and forth messages
 
   // Fetch messages for a specific drop
   const { data: messages = [] } = useQuery<Message[]>({
     queryKey: [`/api/drops/${dropId}/messages`],
-    enabled: !!dropId,
+    enabled: !!dropId
   });
+  
+  // Calculate message count and check if limit reached
+  useEffect(() => {
+    if (messages.length > 0) {
+      // Group messages by user/assistant to count "back and forth" exchanges
+      let backAndForthCount = 0;
+      let lastRole = '';
+      
+      messages.forEach((message: Message) => {
+        const currentRole = message.fromUser ? 'user' : 'assistant';
+        if (currentRole !== lastRole) {
+          backAndForthCount++;
+          lastRole = currentRole;
+        }
+      });
+      
+      // Divide by 2 to get complete exchanges (a user message + an assistant response)
+      const exchangeCount = Math.floor(backAndForthCount / 2);
+      setMessageCount(exchangeCount);
+      setIsLimitReached(exchangeCount >= MESSAGE_LIMIT);
+    }
+  }, [messages, MESSAGE_LIMIT]);
 
   // Send a new message
   const sendMessageMutation = useMutation({
@@ -35,6 +60,11 @@ export function useMessages(dropId: number) {
   });
 
   const sendMessage = async (text: string): Promise<void> => {
+    // Don't send message if limit is reached
+    if (isLimitReached) {
+      console.log('Message limit reached, cannot send more messages');
+      return;
+    }
     await sendMessageMutation.mutateAsync(text);
   };
 
@@ -52,6 +82,9 @@ export function useMessages(dropId: number) {
   return {
     messages,
     isTyping,
-    sendMessage
+    sendMessage,
+    messageCount,
+    isLimitReached,
+    MESSAGE_LIMIT
   };
 }
