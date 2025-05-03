@@ -191,16 +191,14 @@ function Chat() {
             {isLimitReached ? (
               <div className="flex flex-col items-center space-y-3">
                 <div className="bg-destructive/10 text-destructive rounded-2xl px-5 py-3 text-sm text-center">
-                  <p>You've reached the maximum number of exchanges.</p>
-                  <p className="mt-1">Please start a new reflection.</p>
+                  <p>You've reached the end of your chat with DropBot</p>
                 </div>
                 <Button 
                   variant="default" 
                   className="mt-2 bg-[hsl(var(--soft-terracotta))] hover:bg-[hsl(var(--deep-terracotta))] rounded-full px-5"
-                  onClick={handleEndChat}
+                  onClick={() => navigate("/feed")}
                 >
-                  <i className="ri-add-line mr-1"></i>
-                  Start New Chat
+                  Go to Feed
                 </Button>
               </div>
             ) : (
