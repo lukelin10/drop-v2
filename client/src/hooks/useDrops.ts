@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Drop } from "@shared/schema";
+import { DropWithQuestion } from "../../server/storage";
 
 export function useDrops() {
   // Fetch all drops

@@ -5,6 +5,11 @@ import {
   User, InsertUser
 } from "@shared/schema";
 
+// Enhanced drop type that includes the question text
+export interface DropWithQuestion extends Drop {
+  questionText: string;
+}
+
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -12,8 +17,8 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   // Drop methods
-  getDrops(): Promise<Drop[]>;
-  getDrop(id: number): Promise<Drop | undefined>;
+  getDrops(): Promise<DropWithQuestion[]>;
+  getDrop(id: number): Promise<DropWithQuestion | undefined>;
   createDrop(drop: InsertDrop): Promise<Drop>;
   updateDrop(id: number, updates: Partial<Drop>): Promise<Drop | undefined>;
   

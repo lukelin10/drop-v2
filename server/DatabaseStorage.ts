@@ -16,7 +16,7 @@ import {
   questionsList
 } from "@shared/schema";
 import { getRandomInt } from "../client/src/lib/utils";
-import { IStorage } from './storage';
+import { IStorage, DropWithQuestion } from './storage';
 
 export class DatabaseStorage implements IStorage {
   constructor() {
@@ -60,32 +60,47 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Drop methods
-  async getDrops(): Promise<any[]> {
+  async getDrops(): Promise<DropWithQuestion[]> {
     // Join with questions to get the question text
+    // select all columns from drops table individually
     const dropsWithQuestions = await db
       .select({
-        ...drops,
+        id: drops.id,
+        questionId: drops.questionId,
+        text: drops.text,
+        favorite: drops.favorite,
+        createdAt: drops.createdAt,
+        messageCount: drops.messageCount,
+        userId: drops.userId,
+        // select the question text from question table
         questionText: questionTable.text
       })
       .from(drops)
       .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
       .orderBy(desc(drops.createdAt));
     
-    return dropsWithQuestions;
+    return dropsWithQuestions as DropWithQuestion[];
   }
   
-  async getDrop(id: number): Promise<any | undefined> {
+  async getDrop(id: number): Promise<DropWithQuestion | undefined> {
     // Join with questions to get the question text
     const [dropWithQuestion] = await db
       .select({
-        ...drops,
+        id: drops.id,
+        questionId: drops.questionId,
+        text: drops.text,
+        favorite: drops.favorite,
+        createdAt: drops.createdAt,
+        messageCount: drops.messageCount,
+        userId: drops.userId,
+        // select the question text from question table
         questionText: questionTable.text
       })
       .from(drops)
       .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
       .where(eq(drops.id, id));
     
-    return dropWithQuestion || undefined;
+    return dropWithQuestion as DropWithQuestion || undefined;
   }
   
   async createDrop(insertDrop: InsertDrop): Promise<Drop> {
