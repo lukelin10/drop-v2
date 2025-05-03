@@ -46,34 +46,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/drops", isAuthenticated, async (req, res) => {
-    try {
-      const drops = await storage.getDrops();
-      res.json(drops);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch drops" });
-    }
-  });
-  
-  // Get the authenticated user's drops
-  app.get("/api/user/drops", isAuthenticated, async (req: any, res) => {
+  app.get("/api/drops", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const drops = await storage.getUserDrops(userId);
       res.json(drops);
     } catch (error) {
       console.error("Error fetching user drops:", error);
-      res.status(500).json({ message: "Failed to fetch user drops" });
+      res.status(500).json({ message: "Failed to fetch drops" });
     }
   });
 
-  app.get("/api/drops/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/drops/:id", isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id, 10);
+      const userId = req.user.claims.sub;
       const drop = await storage.getDrop(id);
       
       if (!drop) {
         return res.status(404).json({ message: "Drop not found" });
+      }
+      
+      // Ensure the drop belongs to the authenticated user
+      if (drop.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
       }
       
       res.json(drop);
@@ -102,12 +98,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/drops/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/drops/:id", isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id, 10);
+      const userId = req.user.claims.sub;
       const updateSchema = z.object({
         favorite: z.boolean().optional()
       });
+      
+      // First check if the drop exists and belongs to the user
+      const existingDrop = await storage.getDrop(id);
+      if (!existingDrop) {
+        return res.status(404).json({ message: "Drop not found" });
+      }
+      
+      // Ensure the drop belongs to the authenticated user
+      if (existingDrop.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
       
       const parseResult = updateSchema.safeParse(req.body);
       if (!parseResult.success) {
@@ -116,31 +124,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedDrop = await storage.updateDrop(id, parseResult.data);
       
-      if (!updatedDrop) {
-        return res.status(404).json({ message: "Drop not found" });
-      }
-      
       res.json(updatedDrop);
     } catch (error) {
+      console.error("Error updating drop:", error);
       res.status(500).json({ message: "Failed to update drop" });
     }
   });
 
-  app.get("/api/drops/:id/messages", isAuthenticated, async (req, res) => {
+  app.get("/api/drops/:id/messages", isAuthenticated, async (req: any, res) => {
     try {
       const dropId = parseInt(req.params.id, 10);
+      const userId = req.user.claims.sub;
+      
+      // First check if the drop exists and belongs to the user
+      const drop = await storage.getDrop(dropId);
+      if (!drop) {
+        return res.status(404).json({ message: "Drop not found" });
+      }
+      
+      // Ensure the drop belongs to the authenticated user
+      if (drop.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
       const messages = await storage.getMessages(dropId);
       res.json(messages);
     } catch (error) {
+      console.error("Error fetching messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
 
-  app.post("/api/messages", isAuthenticated, async (req, res) => {
+  app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
       const parseResult = insertMessageSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ message: "Invalid message data", errors: parseResult.error.format() });
+      }
+      
+      const userId = req.user.claims.sub;
+      const dropId = parseResult.data.dropId;
+      
+      // First check if the drop exists and belongs to the user
+      const drop = await storage.getDrop(dropId);
+      if (!drop) {
+        return res.status(404).json({ message: "Drop not found" });
+      }
+      
+      // Ensure the drop belongs to the authenticated user
+      if (drop.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
       }
       
       const message = await storage.createMessage(parseResult.data);
@@ -182,6 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(message);
     } catch (error) {
+      console.error("Error creating message:", error);
       res.status(500).json({ message: "Failed to create message" });
     }
   });
