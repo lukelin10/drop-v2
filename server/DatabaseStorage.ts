@@ -45,7 +45,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
@@ -55,9 +55,46 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+  async upsertUser(userData: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
+  }
+  
+  async getUserDrops(userId: string): Promise<DropWithQuestion[]> {
+    try {
+      // Join with questions to get the question text, filtered by userId
+      const dropsWithQuestions = await db
+        .select({
+          id: drops.id,
+          questionId: drops.questionId,
+          text: drops.text,
+          favorite: drops.favorite,
+          createdAt: drops.createdAt,
+          messageCount: drops.messageCount,
+          userId: drops.userId,
+          // select the question text from question table
+          questionText: questionTable.text
+        })
+        .from(drops)
+        .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
+        .where(eq(drops.userId, userId))
+        .orderBy(desc(drops.createdAt));
+      
+      return dropsWithQuestions as DropWithQuestion[];
+    } catch (error) {
+      console.error('Error fetching user drops:', error);
+      return [];
+    }
   }
   
   // Drop methods

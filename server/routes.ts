@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { insertDropSchema, insertMessageSchema } from "@shared/schema";
 import { z } from "zod";
 import { generateResponse } from "./services/anthropic";
-// Import necessary modules
+import { setupAuth, isAuthenticated } from "./replitAuth";
 
 // Check for API key
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -13,6 +13,20 @@ if (!process.env.ANTHROPIC_API_KEY) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up Replit Auth
+  await setupAuth(app);
+  
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
   // API routes
   app.get("/api/daily-question", async (req, res) => {
     try {
@@ -40,6 +54,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch drops" });
     }
   });
+  
+  // Get the authenticated user's drops
+  app.get("/api/user/drops", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const drops = await storage.getUserDrops(userId);
+      res.json(drops);
+    } catch (error) {
+      console.error("Error fetching user drops:", error);
+      res.status(500).json({ message: "Failed to fetch user drops" });
+    }
+  });
 
   app.get("/api/drops/:id", async (req, res) => {
     try {
@@ -56,14 +82,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/drops", async (req, res) => {
+  app.post("/api/drops", isAuthenticated, async (req: any, res) => {
     try {
       const parseResult = insertDropSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ message: "Invalid drop data", errors: parseResult.error.format() });
       }
       
-      const drop = await storage.createDrop(parseResult.data);
+      // Add user ID to the drop data
+      const dropData = {
+        ...parseResult.data,
+        userId: req.user.claims.sub
+      };
+      
+      const drop = await storage.createDrop(dropData);
       res.status(201).json(drop);
     } catch (error) {
       res.status(500).json({ message: "Failed to create drop" });

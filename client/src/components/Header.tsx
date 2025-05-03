@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import dropLogo from "../assets/drop-logo-final.svg";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 export function Header() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [location] = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   // Always use "Drop" as the app name
   const title = "Drop";
@@ -43,6 +46,39 @@ export function Header() {
     return null;
   }
 
+  function renderAuthButton() {
+    if (isLoading) {
+      return <Button size="sm" variant="ghost" disabled>Loading...</Button>;
+    }
+
+    if (isAuthenticated) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-sm hidden md:inline-block">
+            {user?.username}
+          </span>
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={() => window.location.href = "/api/logout"}
+          >
+            Log out
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <Button 
+        size="sm" 
+        variant="default"
+        onClick={() => window.location.href = "/api/login"}
+      >
+        Log in
+      </Button>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border pt-4">
       <div className="flex justify-between items-center px-4 py-3">
@@ -51,7 +87,8 @@ export function Header() {
           <h1 className="text-lg font-medium text-foreground">{title}</h1>
         </div>
         
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          {renderAuthButton()}
           {getHeaderActions()}
         </div>
       </div>
