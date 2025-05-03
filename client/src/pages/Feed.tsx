@@ -45,7 +45,7 @@ function Feed() {
             {drops.map((drop) => (
               <div key={drop.id} className="cursor-pointer group" onClick={() => handleOpenChat(drop.id)}>
                 {/* Inspired by the minimalist card design in the reference image */}
-                <div className="rounded-2xl bg-[#FFF6EC] hover:bg-[#FFF2E6] transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                <div className="rounded-2xl bg-[#EDF2E9] hover:bg-[#E5EDE0] transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
                   <div className="px-5 py-4 flex justify-between items-center">
                     {/* Date in olive green */}
                     <span className="text-xs font-medium text-[hsl(var(--deep-olive))]">
@@ -74,7 +74,7 @@ function Feed() {
                   </div>
                   
                   {/* Response section */}
-                  <div className="px-5 pb-4 pt-2 border-t border-[#F0E0D0]">
+                  <div className="px-5 pb-4 pt-2 border-t border-[#D5E0C9]">
                     <p className="text-sm text-[#5C534F] line-clamp-2">{drop.text}</p>
                     <div className="flex justify-end mt-2">
                       <span className="text-xs text-[hsl(var(--deep-terracotta))] flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -87,7 +87,7 @@ function Feed() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-96 py-12 px-6 rounded-2xl bg-[#FFF6EC] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <div className="flex flex-col items-center justify-center h-96 py-12 px-6 rounded-2xl bg-[#EDF2E9] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
             <div className="w-16 h-16 flex items-center justify-center mb-6">
               <i className="ri-seedling-fill text-[hsl(var(--deep-olive))] text-3xl"></i>
             </div>
