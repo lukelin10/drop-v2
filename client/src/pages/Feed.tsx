@@ -41,29 +41,34 @@ function Feed() {
       {/* Drops List */}
       <div className="px-6 flex-grow">
         {drops.length > 0 ? (
-          <div className="space-y-10 pt-4">
+          <div className="space-y-14 pt-8">
             {drops.map((drop) => (
-              <div key={drop.id} className="relative mb-2 cursor-pointer group" onClick={() => handleOpenChat(drop.id)}>
-                {/* Date positioned outside the card (above) */}
-                <div className="absolute -top-3 left-4 z-10">
-                  <span className="text-xs text-[hsl(var(--deep-olive))] font-medium bg-white px-2 py-1 rounded-full shadow-sm">
+              <div key={drop.id} className="relative mt-4 cursor-pointer group" onClick={() => handleOpenChat(drop.id)}>
+                {/* Date positioned completely outside the card (above) */}
+                <div className="absolute -top-7 left-3 z-10">
+                  <span className="text-xs text-[hsl(var(--deep-olive))] font-medium bg-white px-3 py-1.5 rounded-full shadow border border-[hsl(var(--border))]">
                     {formatDate(drop.createdAt)}
                   </span>
                 </div>
                 
-                {/* Message count outside the card (top right) */}
-                <div className="absolute -top-3 right-4 z-10">
-                  <div className="flex items-center text-xs bg-white text-[hsl(var(--deep-olive))] px-2 py-1 rounded-full shadow-sm">
-                    <i className="ri-chat-1-line mr-1.5"></i>
-                    {drop.messageCount || 0}
-                  </div>
-                </div>
-                
                 {/* Main card */}
                 <div className="rounded-2xl overflow-hidden border border-[hsl(var(--border))] shadow-sm hover:shadow-md transition-all duration-200">
-                  {/* Question section with orange gradient background */}
-                  <div className="p-5 bg-gradient-to-r from-[hsl(var(--soft-terracotta))] to-[hsl(var(--light-terracotta))]">
-                    <p className="text-sm text-white font-medium">{drop.questionText}</p>
+                  {/* Question section with metallic orange gradient background just for the text area */}
+                  <div className="p-5 bg-white">
+                    <div className="p-3 rounded-lg relative overflow-hidden" 
+                         style={{
+                           backgroundImage: "linear-gradient(135deg, #D27D52, #E8A87C, #D27D52)",
+                           backgroundSize: "200% 200%",
+                           boxShadow: "inset 0 1px 3px rgba(255,255,255,0.4), inset 0 -1px 2px rgba(0,0,0,0.2)"
+                         }}>
+                         <div 
+                           className="absolute inset-0 opacity-20" 
+                           style={{
+                             background: "linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, transparent 50%, transparent 100%)"
+                           }}
+                         ></div>
+                      <p className="text-sm text-white font-medium relative z-10" style={{ textShadow: "0px 1px 1px rgba(0,0,0,0.15)" }}>{drop.questionText}</p>
+                    </div>
                   </div>
                   
                   {/* Response section with white background */}
