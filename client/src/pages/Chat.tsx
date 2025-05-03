@@ -223,10 +223,10 @@ function Chat() {
                   <div className="absolute right-2.5 bottom-2 flex items-center gap-2">
                     <Button 
                       type="submit" 
-                      className="w-6 h-6 bg-[hsl(var(--soft-terracotta))] text-white rounded-md flex items-center justify-center p-0 hover:bg-[hsl(var(--deep-terracotta))] transition-colors shadow-sm"
+                      className="w-8 h-8 bg-[#D27D52] text-white rounded-lg flex items-center justify-center p-0 hover:bg-[#c06a40] transition-colors shadow-sm"
                       disabled={!newMessage.trim() || isTyping}
                     >
-                      <i className="ri-arrow-up-line text-xs"></i>
+                      <i className="ri-arrow-up-line text-sm"></i>
                     </Button>
                   </div>
                 </div>
