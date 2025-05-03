@@ -7,12 +7,13 @@ import {
 
 export interface IStorage {
   // User methods
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: InsertUser): Promise<User>;
   
   // Drop methods
   getDrops(): Promise<DropWithQuestion[]>;
+  getUserDrops(userId: string): Promise<DropWithQuestion[]>;
   getDrop(id: number): Promise<DropWithQuestion | undefined>;
   createDrop(drop: InsertDrop): Promise<Drop>;
   updateDrop(id: number, updates: Partial<Drop>): Promise<Drop | undefined>;
