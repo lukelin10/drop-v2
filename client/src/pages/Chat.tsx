@@ -64,43 +64,45 @@ function Chat() {
 
   return (
     <section className="flex flex-col h-screen pt-0 bg-[#F7F7F7]">
-      {/* Chat Header - Simplified header inspired by the reference image */}
+      {/* Chat Header - Updated with Dropbot Chat label */}
       <div className="bg-white py-3 px-4 shadow-sm">
         <div className="max-w-md mx-auto w-full flex items-center justify-between">
-          <button 
-            className="flex items-center text-foreground hover:text-primary transition-colors"
-            onClick={handleBack}
-          >
-            <i className="ri-arrow-left-s-line text-xl mr-1"></i>
-            <span className="text-base font-medium">Chats</span>
-          </button>
-          
           <div className="flex items-center">
-            <h2 className="font-medium text-foreground">Drop</h2>
-            <i className="ri-arrow-down-s-line ml-1 text-muted-foreground"></i>
+            <button 
+              className="flex items-center text-foreground hover:text-primary transition-colors mr-3"
+              onClick={handleBack}
+            >
+              <i className="ri-arrow-left-s-line text-xl"></i>
+            </button>
+            
+            <div className="flex items-center">
+              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary bg-opacity-10 mr-2">
+                <i className="ri-water-drop-fill text-primary text-sm"></i>
+              </span>
+              <h2 className="font-medium text-foreground">Dropbot Chat</h2>
+            </div>
           </div>
           
-          <button
-            className="w-8 h-8 rounded-full bg-[#F5DBD1] flex items-center justify-center text-[hsl(var(--deep-terracotta))]"
-            onClick={handleEndChat}
-          >
-            <i className="ri-add-line text-lg"></i>
-          </button>
+          <div className="text-xs text-muted-foreground">
+            {formatDateLong(new Date(drop.createdAt).toISOString())}
+          </div>
         </div>
       </div>
       
-      {/* User/Question Info - More subtle than before */}
-      <div className="pt-3 pb-2 px-4 bg-white border-b border-border/30">
+      {/* Full Question Display */}
+      <div className="py-3 px-4 bg-white border-b border-border/30">
         <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-[#3B2E2A]">{drop.questionText.length > 30 ? drop.questionText.substring(0, 30) + '...' : drop.questionText}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{formatDateLong(new Date(drop.createdAt).toISOString())}</p>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start">
+              <i className="ri-question-line text-primary mt-0.5 mr-2 flex-shrink-0"></i>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-[#3B2E2A] leading-5">{drop.questionText}</h3>
+              </div>
             </div>
             
             {/* Message counter - More subtle */}
             <div className={cn(
-              "text-xs px-2 py-1 rounded-full text-[hsl(var(--deep-olive))]",
+              "text-xs ml-3 px-2 py-1 rounded-full text-[hsl(var(--deep-olive))] flex-shrink-0",
               isLimitReached ? "bg-destructive/10" : "bg-[#EDF2E9]"
             )}>
               {messageCount}/{MESSAGE_LIMIT}
@@ -138,7 +140,6 @@ function Chat() {
             >
               {!message.fromUser && (
                 <div className="max-w-[85%]">
-                  <div className="text-xs text-muted-foreground mb-1 ml-1">Drop</div>
                   <div className="chat-bubble-bot">
                     <p>{message.text}</p>
                   </div>
@@ -157,7 +158,6 @@ function Chat() {
           {isTyping && (
             <div className="flex justify-start mb-4">
               <div className="max-w-[85%]">
-                <div className="text-xs text-muted-foreground mb-1 ml-1">Drop</div>
                 <div className="chat-bubble-bot py-2 px-3">
                   <div className="flex space-x-1">
                     <div className="w-1.5 h-1.5 bg-[#AAAAAA] rounded-full animate-bounce"></div>
