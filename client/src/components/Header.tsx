@@ -87,7 +87,7 @@ export function Header() {
           <h1 className="text-lg font-medium text-foreground">{title}</h1>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           {renderAuthButton()}
           {getHeaderActions()}
         </div>
