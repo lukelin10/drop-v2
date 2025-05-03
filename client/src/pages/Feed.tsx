@@ -66,9 +66,9 @@ function Feed() {
                     </button>
                   </div>
                   
-                  {/* Question section - larger text like the Today screen */}
+                  {/* Question section - larger text like the Today screen, now in olive green */}
                   <div className="px-8 py-5">
-                    <h3 className="text-[hsl(var(--rich-chestnut))] text-xl font-serif font-normal leading-relaxed">
+                    <h3 className="text-[hsl(var(--deep-olive))] text-xl font-serif font-normal leading-relaxed">
                       {drop.questionText}
                     </h3>
                   </div>
@@ -91,7 +91,7 @@ function Feed() {
             <div className="w-16 h-16 flex items-center justify-center mb-6 bg-white/40 rounded-full">
               <i className="ri-seedling-fill text-[hsl(var(--deep-terracotta))] text-3xl"></i>
             </div>
-            <h3 className="text-[hsl(var(--rich-chestnut))] text-2xl mb-3 font-serif font-normal">Your journey begins</h3>
+            <h3 className="text-[hsl(var(--deep-olive))] text-2xl mb-3 font-serif font-normal">Your journey begins</h3>
             <p className="text-[hsl(var(--rich-chestnut))] text-sm text-center max-w-xs mb-8">Complete your first reflection to start building your personal growth timeline</p>
             
             <Button 
