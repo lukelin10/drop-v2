@@ -1,6 +1,11 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Drop, DropWithQuestion } from "@shared/schema";
+import { Drop } from "@shared/schema";
+
+// Define the enhanced drop type that includes question text
+export interface DropWithQuestion extends Drop {
+  questionText: string;
+}
 
 export function useDrops() {
   // Fetch all drops with question text
