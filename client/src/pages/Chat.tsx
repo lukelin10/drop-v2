@@ -7,6 +7,7 @@ import { useMessages } from "@/hooks/useMessages";
 import { useAppContext } from "@/context/AppContext";
 import { formatDateLong } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import dropLogo from "../assets/drop-logo-final.svg";
 
 function Chat() {
   const params = useParams<{ id: string }>();
@@ -76,9 +77,7 @@ function Chat() {
             </button>
             
             <div className="flex items-center">
-              <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/15 mr-2">
-                <i className="ri-water-drop-fill text-primary text-xs"></i>
-              </span>
+              <img src={dropLogo} alt="Drop logo" className="w-6 h-6 mr-2" />
               <h2 className="font-serif text-sm font-medium text-foreground">Dropbot Chat</h2>
             </div>
           </div>
