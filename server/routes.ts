@@ -28,7 +28,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   // API routes
-  app.get("/api/daily-question", async (req, res) => {
+  app.get("/api/daily-question", isAuthenticated, async (req, res) => {
     try {
       const question = await storage.getDailyQuestion();
       res.json({ question });
@@ -37,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/questions", async (req, res) => {
+  app.get("/api/questions", isAuthenticated, async (req, res) => {
     try {
       const questions = await storage.getQuestions();
       res.json(questions);
@@ -46,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/drops", async (req, res) => {
+  app.get("/api/drops", isAuthenticated, async (req, res) => {
     try {
       const drops = await storage.getDrops();
       res.json(drops);
@@ -67,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/drops/:id", async (req, res) => {
+  app.get("/api/drops/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);
       const drop = await storage.getDrop(id);
@@ -102,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/drops/:id", async (req, res) => {
+  app.patch("/api/drops/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);
       const updateSchema = z.object({
@@ -126,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/drops/:id/messages", async (req, res) => {
+  app.get("/api/drops/:id/messages", isAuthenticated, async (req, res) => {
     try {
       const dropId = parseInt(req.params.id, 10);
       const messages = await storage.getMessages(dropId);
@@ -136,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/messages", async (req, res) => {
+  app.post("/api/messages", isAuthenticated, async (req, res) => {
     try {
       const parseResult = insertMessageSchema.safeParse(req.body);
       if (!parseResult.success) {

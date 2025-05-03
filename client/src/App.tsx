@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Layout } from "@/components/Layout";
 import { AppProvider } from "@/context/AppContext";
+import { AuthRequired } from "@/components/AuthRequired";
 
 // Lazy load pages
 const DailyDrop = lazy(() => import("@/pages/DailyDrop"));
@@ -16,8 +17,9 @@ const LatestChat = lazy(() => import("@/pages/LatestChat"));
 const Feed = lazy(() => import("@/pages/Feed"));
 const Analysis = lazy(() => import("@/pages/Analysis"));
 const Settings = lazy(() => import("@/pages/Settings"));
+const Login = lazy(() => import("@/pages/Login"));
 
-function Router() {
+function ProtectedRoutes() {
   return (
     <Layout>
       <Suspense fallback={<LoadingScreen />}>
@@ -32,6 +34,23 @@ function Router() {
         </Switch>
       </Suspense>
     </Layout>
+  );
+}
+
+function Router() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <Switch>
+        <Route path="/login">
+          <Login />
+        </Route>
+        <Route path="*">
+          <AuthRequired>
+            <ProtectedRoutes />
+          </AuthRequired>
+        </Route>
+      </Switch>
+    </Suspense>
   );
 }
 
