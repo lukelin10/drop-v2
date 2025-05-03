@@ -18,6 +18,12 @@ This directory contains integration tests for the Personal Coaching application.
 ### Integration Tests
 
 - **tests/integration/conversationFlow.test.ts**: End-to-end test for the complete conversation flow
+- **tests/integration/aiChat.test.ts**: Tests specifically for the AI-powered chat functionality
+
+### Utility Functions
+
+- **tests/utils/dbHelpers.ts**: Helper functions for database operations during tests
+- **tests/utils/requestMocks.ts**: Mocks for Express request/response objects
 
 ## Running Tests
 
