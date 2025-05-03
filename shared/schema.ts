@@ -109,6 +109,11 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
+// Define the extended Drop type including the question text
+export interface DropWithQuestion extends Drop {
+  questionText: string;
+}
+
 // Collection of question texts to be seeded into the database
 export const questionsList = [
   "What brought you joy today, even if just for a moment?",

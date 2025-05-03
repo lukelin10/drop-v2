@@ -1,14 +1,9 @@
 import { 
   Question, InsertQuestion,
-  Drop, InsertDrop, 
+  Drop, InsertDrop, DropWithQuestion,
   Message, InsertMessage, 
   User, InsertUser
 } from "@shared/schema";
-
-// Define the extended Drop type that includes question text
-export interface DropWithQuestion extends Drop {
-  questionText: string;
-}
 
 export interface IStorage {
   // User methods

@@ -1,9 +1,10 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useDrops, type DropWithQuestion } from "@/hooks/useDrops";
+import { useDrops } from "@/hooks/useDrops";
 import { useAppContext } from "@/context/AppContext";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { type DropWithQuestion } from "@shared/schema";
 
 function Feed() {
   const [, navigate] = useLocation();
