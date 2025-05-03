@@ -226,7 +226,7 @@ function Chat() {
                       className="w-6 h-6 bg-[hsl(var(--soft-terracotta))] text-white rounded-full flex items-center justify-center p-0 hover:bg-[hsl(var(--deep-terracotta))] transition-colors shadow-sm"
                       disabled={!newMessage.trim() || isTyping}
                     >
-                      <i className="ri-arrow-up-line text-xs"></i>
+                      <i className="ri-send-plane-fill text-xs"></i>
                     </Button>
                   </div>
                 </div>
