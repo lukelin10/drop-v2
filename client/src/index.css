@@ -11,6 +11,7 @@
   --warm-cream: 40 33% 93%;           /* #F5EFE6 */
   --rich-chestnut: 14 14% 20%;        /* #3B2E2A */
   --charcoal-black: 0 0% 18%;         /* #2D2D2D */
+  --app-background: 0 0% 97%;         /* #F7F7F7 */
 
   /* Light Theme System Colors */
   --background: var(--warm-cream);           /* Using warm cream as background */

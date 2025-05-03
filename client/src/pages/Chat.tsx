@@ -63,9 +63,9 @@ function Chat() {
   }
 
   return (
-    <section className="flex flex-col h-screen pt-0 bg-[#F7F7F7]">
-      {/* Chat Header - Outside the card with no background */}
-      <div className="px-4 py-3">
+    <section className="flex flex-col h-screen pt-0 bg-[hsl(var(--app-background))]">
+      {/* Chat Header - Outside the card with tan background */}
+      <div className="px-4 py-3 bg-[hsl(var(--warm-cream))]">
         <div className="max-w-md mx-auto w-full flex items-center justify-between">
           <div className="flex items-center">
             <button 
@@ -116,11 +116,11 @@ function Chat() {
         </div>
       
         {/* Chat Messages - Softer styling that matches app visual language */}
-        <div className="flex-1 overflow-y-auto py-4 px-4 bg-[#F7F7F7]" id="chat-messages">
+        <div className="flex-1 overflow-y-auto py-4 px-4 bg-[hsl(var(--app-background))]" id="chat-messages">
           <div className="space-y-4 max-w-md mx-auto">
             {/* Initial user question label */}
             <div className="text-center mb-3">
-              <span className="text-[11px] font-medium bg-[#F7F7F7] text-primary px-3 py-1 rounded-full border border-primary/10">
+              <span className="text-[11px] font-medium bg-[hsl(var(--app-background))] text-primary px-3 py-1 rounded-full border border-primary/10">
                 Your reflection
               </span>
             </div>
@@ -208,7 +208,7 @@ function Chat() {
               <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
                 <div className="relative flex-1">
                   <Textarea 
-                    className="w-full bg-[#F7F7F7] border border-border/10 rounded-full p-3 text-xs resize-none focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:ring-offset-0 min-h-0 h-10 py-2.5 pr-10 shadow-sm"
+                    className="w-full bg-[hsl(var(--app-background))] border border-border/10 rounded-full p-3 text-xs resize-none focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:ring-offset-0 min-h-0 h-10 py-2.5 pr-10 shadow-sm"
                     placeholder="Type a message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
