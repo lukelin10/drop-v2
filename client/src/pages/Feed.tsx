@@ -48,17 +48,17 @@ function Feed() {
                 className="rounded-2xl overflow-hidden border border-[hsl(var(--border))] shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
                 onClick={() => handleOpenChat(drop.id)}
               >
-                {/* Card Header with soft gradient background */}
-                <div className="bg-gradient-to-r from-[hsl(var(--medium-terracotta))] to-[hsl(var(--light-terracotta))] px-6 py-3 flex justify-between items-center">
-                  <span className="text-xs text-[hsl(var(--rich-chestnut))] font-medium">
+                {/* Card Header with date in olive green */}
+                <div className="bg-white px-6 py-4 flex justify-between items-center border-b border-[hsl(var(--border))]">
+                  <span className="text-xs text-[hsl(var(--deep-olive))] font-medium">
                     {formatDate(drop.createdAt)}
                   </span>
                   <button 
                     className={cn(
                       "p-1.5 rounded-full transition-colors",
                       drop.favorite 
-                        ? "text-[hsl(var(--deep-terracotta))] bg-white/30" 
-                        : "text-[hsl(var(--rich-chestnut))] hover:bg-white/20"
+                        ? "text-[hsl(var(--deep-terracotta))] bg-[hsl(var(--light-terracotta))]" 
+                        : "text-[hsl(var(--rich-chestnut))] hover:bg-[hsl(var(--light-terracotta))]"
                     )}
                     onClick={(e) => handleFavoriteClick(e, drop.id)}
                   >
@@ -66,27 +66,27 @@ function Feed() {
                   </button>
                 </div>
                 
-                {/* Card Body with white background */}
+                {/* Question section with background fill to distinguish it */}
+                <div className="p-4 bg-[hsl(var(--medium-olive))/10]">
+                  <p className="text-sm text-[hsl(var(--deep-olive))] font-medium">{drop.questionText}</p>
+                </div>
+                
+                {/* Response section with white background for contrast */}
                 <div className="p-6 bg-white">
-                  {/* Question with subtle separator */}
                   <div className="mb-4">
-                    <p className="text-sm text-muted-foreground italic mb-2">{drop.questionText}</p>
-                  </div>
-                  
-                  {/* Response with visual separator */}
-                  <div className="relative pl-3 before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[2px] before:bg-[hsl(var(--soft-terracotta))/20] before:rounded-full">
                     <p className="text-sm text-foreground line-clamp-3">{drop.text}</p>
                   </div>
                   
-                  <div className="flex items-center justify-between mt-auto">
+                  {/* Card footer with messaging info and arrow */}
+                  <div className="flex items-center justify-between pt-2 border-t border-[hsl(var(--border))]">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center text-xs bg-[hsl(var(--light-terracotta))] text-[hsl(var(--deep-terracotta))] px-2 py-1 rounded-full">
+                      <div className="flex items-center text-xs bg-[hsl(var(--light-olive))] text-[hsl(var(--deep-olive))] px-2.5 py-1 rounded-full">
                         <i className="ri-chat-1-line mr-1.5"></i>
                         {drop.messageCount || 0} messages
                       </div>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-[hsl(var(--light-terracotta))] flex items-center justify-center group-hover:bg-[hsl(var(--soft-terracotta))] transition-colors">
-                      <i className="ri-arrow-right-line text-[hsl(var(--deep-terracotta))] text-sm group-hover:text-white"></i>
+                    <div className="w-8 h-8 rounded-full bg-[hsl(var(--light-olive))] flex items-center justify-center group-hover:bg-[hsl(var(--deep-olive))] transition-colors">
+                      <i className="ri-arrow-right-line text-[hsl(var(--deep-olive))] text-sm group-hover:text-white"></i>
                     </div>
                   </div>
                 </div>
@@ -95,22 +95,22 @@ function Feed() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-96 py-12 px-6 rounded-2xl border-2 border-dashed border-[hsl(var(--border))] bg-card">
-            <div className="w-24 h-24 rounded-full bg-[hsl(var(--light-terracotta))/20] flex items-center justify-center mb-6">
-              <i className="ri-water-drop-fill text-[hsl(var(--deep-terracotta))] text-4xl"></i>
+            <div className="w-24 h-24 rounded-full bg-[hsl(var(--medium-olive))/20] flex items-center justify-center mb-6">
+              <i className="ri-seedling-fill text-[hsl(var(--deep-olive))] text-4xl"></i>
             </div>
             <h3 className="font-serif text-xl text-foreground mb-2 tracking-tight">Your journey begins</h3>
             <p className="text-muted-foreground text-sm text-center max-w-xs">Complete your first reflection to start building your personal growth timeline</p>
             
             <div className="mt-8 flex flex-col items-center">
               <div className="relative w-48 h-20 mb-6">
-                <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[hsl(var(--medium-terracotta))] rounded-lg"></div>
-                <div className="absolute top-2 left-2 w-full h-full opacity-10 bg-[hsl(var(--medium-terracotta))] rounded-lg"></div>
-                <div className="absolute top-4 left-4 w-full h-full bg-[hsl(var(--medium-terracotta))/30] rounded-lg"></div>
+                <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[hsl(var(--medium-olive))] rounded-lg"></div>
+                <div className="absolute top-2 left-2 w-full h-full opacity-10 bg-[hsl(var(--medium-olive))] rounded-lg"></div>
+                <div className="absolute top-4 left-4 w-full h-full bg-[hsl(var(--medium-olive))/30] rounded-lg"></div>
               </div>
               
               <Button 
                 onClick={() => navigate('/')} 
-                className="px-6 py-2.5 bg-[hsl(var(--soft-terracotta))] text-white hover:bg-[hsl(var(--deep-terracotta))] rounded-full shadow-sm hover:shadow-md transition-all font-medium text-sm flex items-center"
+                className="px-6 py-2.5 bg-[hsl(var(--deep-olive))] text-white hover:bg-[hsl(var(--deep-olive))/80] rounded-full shadow-sm hover:shadow-md transition-all font-medium text-sm flex items-center"
               >
                 <i className="ri-add-line mr-1.5"></i>
                 Start today's reflection
