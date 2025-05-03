@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer drop shape with gradient -->
+  <path d="M12 3C12.9319 4.35776 15.9403 8.5986 15.9403 13.1304C15.9403 17.6621 12.9319 20 12 20C11.0681 20 8.05971 17.6621 8.05971 13.1304C8.05971 8.5986 11.0681 4.35776 12 3Z" 
+        fill="url(#dropGradient)" stroke="#3B2E2A" stroke-width="1.2" stroke-linejoin="round"/>
+  
+  <!-- Inner ripple circle -->
+  <circle cx="12" cy="13" r="2.8" fill="#F5EFE6" fill-opacity="0.5"/>
+  
+  <!-- Highlight at top of drop -->
+  <path d="M12 6C11.5 7 10.5 8.5 10.5 9.5C10.5 10.5 11.2 11 12 11C12.8 11 13.5 10.5 13.5 9.5C13.5 8.5 12.5 7 12 6Z" 
+        fill="white" fill-opacity="0.6"/>
+  
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="dropGradient" x1="8" y1="3" x2="16" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D27D52"/> <!-- Soft Terracotta -->
+      <stop offset="1" stop-color="#556B2F"/> <!-- Deep Olive -->
+    </linearGradient>
+  </defs>
+</svg>

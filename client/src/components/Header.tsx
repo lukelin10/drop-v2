@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import dropLogo from "../assets/drop-logo.svg";
 
 export function Header() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -49,7 +50,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border pt-4">
       <div className="flex justify-between items-center px-4 py-3">
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          <img src={dropLogo} alt="Drop logo" className="w-6 h-6" />
           <h1 className="text-lg font-medium text-foreground">{title}</h1>
         </div>
         
