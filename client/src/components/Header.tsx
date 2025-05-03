@@ -4,12 +4,15 @@ import dropLogoV2 from "../assets/drop-logo-v2.svg";
 import dropLogoV3 from "../assets/drop-logo-v3.svg";
 import dropLogoV4 from "../assets/drop-logo-v4.svg";
 import dropLogoV5 from "../assets/drop-logo-v5.svg";
+import dropLogoV6 from "../assets/drop-logo-v6.svg";
+import dropLogoV7 from "../assets/drop-logo-v7.svg";
+import dropLogoV8 from "../assets/drop-logo-v8.svg";
 
 export function Header() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [location] = useLocation();
-  const [currentLogo, setCurrentLogo] = useState<string>(dropLogoV3);
+  const [currentLogo, setCurrentLogo] = useState<string>(dropLogoV8); // Default to the latest version
 
   // Define page titles
   let title = "Drop";
@@ -22,7 +25,7 @@ export function Header() {
   // Remove this in final implementation and just use your preferred logo
   useEffect(() => {
     // Comment out this effect when you decide which logo to use
-    const logoOptions = [dropLogoV2, dropLogoV3, dropLogoV4, dropLogoV5];
+    const logoOptions = [dropLogoV2, dropLogoV3, dropLogoV4, dropLogoV5, dropLogoV6, dropLogoV7, dropLogoV8];
     const params = new URLSearchParams(window.location.search);
     const logoParam = params.get('logo');
     

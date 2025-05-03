@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simple sunburst most similar to first reference image - clean and flat -->
+  
+  <!-- Center circle -->
+  <circle cx="12" cy="12" r="3" fill="#D27D52"/>
+  
+  <!-- Rays like the first reference image -->
+  <path d="M12 4.5L12 7" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M12 17L12 19.5" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M4.5 12L7 12" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M17 12L19.5 12" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  
+  <!-- Diagonal rays - thicker like reference -->
+  <path d="M6.5 6.5L8.5 8.5" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M15.5 15.5L17.5 17.5" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M6.5 17.5L8.5 15.5" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M15.5 8.5L17.5 6.5" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  
+  <!-- Additional shorter rays to match the reference more closely -->
+  <path d="M9 4.8L9.8 6.5" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M15 4.8L14.2 6.5" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M19.2 9L17.5 9.8" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M19.2 15L17.5 14.2" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M15 19.2L14.2 17.5" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M9 19.2L9.8 17.5" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M4.8 15L6.5 14.2" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M4.8 9L6.5 9.8" stroke="#D27D52" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

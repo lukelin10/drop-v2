@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Clean, minimal design combining elements from v4 and v5 -->
+  
+  <!-- Center flame (simplified from v5) -->
+  <path d="M12 7C12 7 14 9 14 11C14 12.1046 13.1046 13 12 13C10.8954 13 10 12.1046 10 11C10 9 12 7 12 7Z" fill="#D27D52"/>
+  
+  <!-- Main geometric rays (from v4) - clean and minimal -->
+  <path d="M12 4L12 6" stroke="#D27D52" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M12 14L12 16" stroke="#D27D52" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M6 10L8 10" stroke="#D27D52" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 10L18 10" stroke="#D27D52" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Diagonal rays - minimal and clean -->
+  <path d="M7.5 6.5L9 8" stroke="#D27D52" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M15 14L16.5 15.5" stroke="#D27D52" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M7.5 15.5L9 14" stroke="#D27D52" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M15 8L16.5 6.5" stroke="#D27D52" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
