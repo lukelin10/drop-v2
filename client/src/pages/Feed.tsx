@@ -41,52 +41,48 @@ function Feed() {
       {/* Drops List */}
       <div className="px-6 flex-grow">
         {drops.length > 0 ? (
-          <div className="space-y-6">
+          <div className="space-y-10 pt-4">
             {drops.map((drop) => (
-              <div 
-                key={drop.id}
-                className="rounded-2xl overflow-hidden border border-[hsl(var(--border))] shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
-                onClick={() => handleOpenChat(drop.id)}
-              >
-                {/* Card Header with date in olive green */}
-                <div className="bg-white px-6 py-4 flex justify-between items-center border-b border-[hsl(var(--border))]">
-                  <span className="text-xs text-[hsl(var(--deep-olive))] font-medium">
+              <div key={drop.id} className="relative mb-2 cursor-pointer group" onClick={() => handleOpenChat(drop.id)}>
+                {/* Date positioned outside the card (above) */}
+                <div className="absolute -top-3 left-4 z-10">
+                  <span className="text-xs text-[hsl(var(--deep-olive))] font-medium bg-white px-2 py-1 rounded-full shadow-sm">
                     {formatDate(drop.createdAt)}
                   </span>
-                  <button 
-                    className={cn(
-                      "p-1.5 rounded-full transition-colors",
-                      drop.favorite 
-                        ? "text-[hsl(var(--deep-terracotta))] bg-[hsl(var(--light-terracotta))]" 
-                        : "text-[hsl(var(--rich-chestnut))] hover:bg-[hsl(var(--light-terracotta))]"
-                    )}
-                    onClick={(e) => handleFavoriteClick(e, drop.id)}
-                  >
-                    <i className={drop.favorite ? 'ri-star-fill' : 'ri-star-line'}></i>
-                  </button>
                 </div>
                 
-                {/* Question section with background fill to distinguish it */}
-                <div className="p-4 bg-[hsl(var(--medium-olive))/10]">
-                  <p className="text-sm text-[hsl(var(--deep-olive))] font-medium">{drop.questionText}</p>
+                {/* Message count outside the card (top right) */}
+                <div className="absolute -top-3 right-4 z-10">
+                  <div className="flex items-center text-xs bg-white text-[hsl(var(--deep-olive))] px-2 py-1 rounded-full shadow-sm">
+                    <i className="ri-chat-1-line mr-1.5"></i>
+                    {drop.messageCount || 0}
+                  </div>
                 </div>
                 
-                {/* Response section with white background for contrast */}
-                <div className="p-6 bg-white">
-                  <div className="mb-4">
-                    <p className="text-sm text-foreground line-clamp-3">{drop.text}</p>
+                {/* Main card */}
+                <div className="rounded-2xl overflow-hidden border border-[hsl(var(--border))] shadow-sm hover:shadow-md transition-all duration-200">
+                  {/* Question section with orange gradient background */}
+                  <div className="p-5 bg-gradient-to-r from-[hsl(var(--soft-terracotta))] to-[hsl(var(--light-terracotta))]">
+                    <p className="text-sm text-white font-medium">{drop.questionText}</p>
                   </div>
                   
-                  {/* Card footer with messaging info and arrow */}
-                  <div className="flex items-center justify-between pt-2 border-t border-[hsl(var(--border))]">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center text-xs bg-[hsl(var(--light-olive))] text-[hsl(var(--deep-olive))] px-2.5 py-1 rounded-full">
-                        <i className="ri-chat-1-line mr-1.5"></i>
-                        {drop.messageCount || 0} messages
-                      </div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-[hsl(var(--light-olive))] flex items-center justify-center group-hover:bg-[hsl(var(--deep-olive))] transition-colors">
-                      <i className="ri-arrow-right-line text-[hsl(var(--deep-olive))] text-sm group-hover:text-white"></i>
+                  {/* Response section with white background */}
+                  <div className="p-6 bg-white">
+                    <p className="text-sm text-foreground line-clamp-3">{drop.text}</p>
+                    
+                    {/* Favorite button */}
+                    <div className="flex justify-end mt-4">
+                      <button 
+                        className={cn(
+                          "p-1.5 rounded-full transition-colors",
+                          drop.favorite 
+                            ? "text-[hsl(var(--deep-terracotta))] bg-[hsl(var(--light-terracotta))]" 
+                            : "text-[hsl(var(--rich-chestnut))] hover:bg-[hsl(var(--light-terracotta))]"
+                        )}
+                        onClick={(e) => handleFavoriteClick(e, drop.id)}
+                      >
+                        <i className={drop.favorite ? 'ri-star-fill' : 'ri-star-line'}></i>
+                      </button>
                     </div>
                   </div>
                 </div>
