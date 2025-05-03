@@ -7,12 +7,8 @@ export function Header() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [location] = useLocation();
 
-  // Define page titles
-  let title = "Drop";
-  if (location === "/") title = "Today's Drop";
-  if (location === "/feed") title = "Your Drops";
-  if (location === "/analysis") title = "Insights";
-  if (location === "/settings") title = "Profile";
+  // Always use "Drop" as the app name
+  const title = "Drop";
 
   // Get header actions based on path
   function getHeaderActions() {
