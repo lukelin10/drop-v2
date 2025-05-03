@@ -1,4 +1,4 @@
-name: Integration Tests
+name: Test Suite
 
 on:
   push:
@@ -37,9 +37,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Run integration tests
-        run: npm test
+      - name: Run database migrations
         env:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-          # Mock API keys for testing
+        run: node scripts/migrate-schema.js
+
+      - name: Run unit tests
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           ANTHROPIC_API_KEY: sk_test_mock_key
+        run: npm test -- tests/unit
+
+      - name: Run API tests
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          ANTHROPIC_API_KEY: sk_test_mock_key
+        run: npm test -- tests/api
+
+      - name: Run integration tests
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          ANTHROPIC_API_KEY: sk_test_mock_key
+        run: npm test -- tests/integration

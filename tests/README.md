@@ -7,6 +7,10 @@ This directory contains integration tests for the Personal Coaching application.
 - **tests/setup.ts**: Common setup for all tests, including database connection and utility functions
 - **tests/testServer.ts**: Server configuration for tests with authentication and API mocks
 
+### Unit Tests
+
+- **tests/unit/databaseStorage.test.ts**: Unit tests for the database storage layer
+
 ### API Tests
 
 - **tests/api/auth.test.ts**: Tests for authentication endpoints

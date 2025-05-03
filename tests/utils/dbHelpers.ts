@@ -12,15 +12,22 @@ export async function createTestDrop(options: {
 }) {
   const { userId = 'test-user-id', questionId, text = 'Test drop content' } = options;
   
-  const drop = await testDb.insert(schema.drops).values({
-    userId,
+  // First check if userId is a field in the drops table
+  const dropValues: any = {
     questionId,
     text,
     createdAt: new Date(),
     updatedAt: new Date(),
     favorite: false,
     messageCount: 0
-  }).returning();
+  };
+  
+  // Add userId if it's a valid field (checking schema)
+  if (schema.drops.userId) {
+    dropValues.userId = userId;
+  }
+  
+  const drop = await testDb.insert(schema.drops).values(dropValues).returning();
   
   return drop[0];
 }
