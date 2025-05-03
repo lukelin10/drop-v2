@@ -44,11 +44,11 @@ function Feed() {
           <div className="space-y-6 pt-4">
             {drops.map((drop) => (
               <div key={drop.id} className="cursor-pointer group" onClick={() => handleOpenChat(drop.id)}>
-                {/* Inspired by the minimalist card design in the reference image */}
-                <div className="rounded-2xl bg-[#EDF2E9] hover:bg-[#E5EDE0] transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                  <div className="px-5 py-4 flex justify-between items-center">
-                    {/* Date in olive green */}
-                    <span className="text-xs font-medium text-[hsl(var(--deep-olive))]">
+                {/* Matching the design of the question card from the Today screen */}
+                <div className="rounded-3xl bg-gradient-to-br from-[hsl(var(--light-terracotta))] to-[hsl(var(--warm-cream))] transition-all shadow-sm hover:shadow-md border border-[hsl(var(--soft-terracotta)_/_10%)]">
+                  <div className="flex justify-between items-center px-5 py-3">
+                    {/* Date in terracotta color */}
+                    <span className="text-xs font-medium text-[hsl(var(--rich-chestnut))]">
                       {formatDate(drop.createdAt)}
                     </span>
                     
@@ -58,7 +58,7 @@ function Feed() {
                         "p-1 rounded-full transition-colors",
                         drop.favorite 
                           ? "text-[hsl(var(--deep-terracotta))]" 
-                          : "text-[hsl(var(--muted-foreground))]"
+                          : "text-[hsl(var(--rich-chestnut))]"
                       )}
                       onClick={(e) => handleFavoriteClick(e, drop.id)}
                     >
@@ -66,19 +66,19 @@ function Feed() {
                     </button>
                   </div>
                   
-                  {/* Question section */}
-                  <div className="px-5 pb-4">
-                    <h3 className="text-[#3B2E2A] font-medium text-base">
+                  {/* Question section - larger text like the Today screen */}
+                  <div className="px-8 py-5">
+                    <h3 className="text-[hsl(var(--rich-chestnut))] text-xl font-serif font-normal leading-relaxed">
                       {drop.questionText}
                     </h3>
                   </div>
                   
-                  {/* Response section */}
-                  <div className="px-5 pb-4 pt-2 border-t border-[#D5E0C9]">
-                    <p className="text-sm text-[#5C534F] line-clamp-2">{drop.text}</p>
+                  {/* Response section - subtle background to separate */}
+                  <div className="px-8 py-4 bg-[rgba(255,255,255,0.4)] rounded-b-3xl">
+                    <p className="text-sm text-[hsl(var(--rich-chestnut))] line-clamp-2">{drop.text}</p>
                     <div className="flex justify-end mt-2">
-                      <span className="text-xs text-[hsl(var(--deep-terracotta))] flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        Continue reading <i className="ri-arrow-right-s-line ml-1"></i>
+                      <span className="text-xs font-medium text-[hsl(var(--deep-terracotta))] flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        Continue reflection <i className="ri-arrow-right-s-line ml-1"></i>
                       </span>
                     </div>
                   </div>
@@ -87,16 +87,16 @@ function Feed() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-96 py-12 px-6 rounded-2xl bg-[#EDF2E9] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-            <div className="w-16 h-16 flex items-center justify-center mb-6">
-              <i className="ri-seedling-fill text-[hsl(var(--deep-olive))] text-3xl"></i>
+          <div className="flex flex-col items-center justify-center h-96 py-12 px-8 rounded-3xl bg-gradient-to-br from-[hsl(var(--light-terracotta))] to-[hsl(var(--warm-cream))] shadow-sm border border-[hsl(var(--soft-terracotta)_/_10%)]">
+            <div className="w-16 h-16 flex items-center justify-center mb-6 bg-white/40 rounded-full">
+              <i className="ri-seedling-fill text-[hsl(var(--deep-terracotta))] text-3xl"></i>
             </div>
-            <h3 className="text-[#3B2E2A] text-xl mb-3 font-medium">Your journey begins</h3>
-            <p className="text-[#5C534F] text-sm text-center max-w-xs mb-6">Complete your first reflection to start building your personal growth timeline</p>
+            <h3 className="text-[hsl(var(--rich-chestnut))] text-2xl mb-3 font-serif font-normal">Your journey begins</h3>
+            <p className="text-[hsl(var(--rich-chestnut))] text-sm text-center max-w-xs mb-8">Complete your first reflection to start building your personal growth timeline</p>
             
             <Button 
               onClick={() => navigate('/')} 
-              className="px-6 py-2.5 bg-[hsl(var(--deep-terracotta))] text-white hover:bg-[hsl(var(--deep-terracotta))/90] rounded-full shadow-sm hover:shadow-md transition-all font-medium text-sm flex items-center"
+              className="px-6 py-2.5 bg-white/50 text-[hsl(var(--deep-terracotta))] hover:bg-white/70 border border-[hsl(var(--soft-terracotta)_/_30%)] rounded-full shadow-sm hover:shadow-md transition-all font-medium text-sm flex items-center"
             >
               <i className="ri-add-line mr-1.5"></i>
               Start today's reflection
