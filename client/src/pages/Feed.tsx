@@ -68,25 +68,13 @@ function Feed() {
                 
                 {/* Card Body with white background */}
                 <div className="p-6 bg-white">
-                  {/* Show question first */}
+                  {/* Question with subtle separator */}
                   <div className="mb-4">
-                    <div className="mb-2 flex items-center">
-                      <div className="w-5 h-5 rounded-full bg-[hsl(var(--light-terracotta))] flex items-center justify-center mr-2">
-                        <i className="ri-question-line text-[hsl(var(--deep-terracotta))] text-xs"></i>
-                      </div>
-                      <span className="text-xs font-medium text-muted-foreground">Your prompt</span>
-                    </div>
-                    <p className="text-sm font-medium text-foreground mb-3">{drop.questionText}</p>
+                    <p className="text-sm text-muted-foreground italic mb-2">{drop.questionText}</p>
                   </div>
                   
-                  {/* Show reflection text */}
-                  <div className="mb-5">
-                    <div className="mb-2 flex items-center">
-                      <div className="w-5 h-5 rounded-full bg-[hsl(var(--light-terracotta))] flex items-center justify-center mr-2">
-                        <i className="ri-quill-pen-line text-[hsl(var(--deep-terracotta))] text-xs"></i>
-                      </div>
-                      <span className="text-xs font-medium text-muted-foreground">Your reflection</span>
-                    </div>
+                  {/* Response with visual separator */}
+                  <div className="relative pl-3 before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[2px] before:bg-[hsl(var(--soft-terracotta))/20] before:rounded-full">
                     <p className="text-sm text-foreground line-clamp-3">{drop.text}</p>
                   </div>
                   
