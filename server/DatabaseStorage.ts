@@ -60,13 +60,32 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Drop methods
-  async getDrops(): Promise<Drop[]> {
-    return await db.select().from(drops).orderBy(desc(drops.createdAt));
+  async getDrops(): Promise<any[]> {
+    // Join with questions to get the question text
+    const dropsWithQuestions = await db
+      .select({
+        ...drops,
+        questionText: questionTable.text
+      })
+      .from(drops)
+      .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
+      .orderBy(desc(drops.createdAt));
+    
+    return dropsWithQuestions;
   }
   
-  async getDrop(id: number): Promise<Drop | undefined> {
-    const [drop] = await db.select().from(drops).where(eq(drops.id, id));
-    return drop || undefined;
+  async getDrop(id: number): Promise<any | undefined> {
+    // Join with questions to get the question text
+    const [dropWithQuestion] = await db
+      .select({
+        ...drops,
+        questionText: questionTable.text
+      })
+      .from(drops)
+      .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
+      .where(eq(drops.id, id));
+    
+    return dropWithQuestion || undefined;
   }
   
   async createDrop(insertDrop: InsertDrop): Promise<Drop> {
