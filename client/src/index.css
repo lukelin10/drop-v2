@@ -109,13 +109,13 @@
     @apply bg-transparent text-foreground hover:bg-muted rounded-full px-4 py-2 transition-all;
   }
 
-  /* Chat bubbles - more vivid colors on light background */
+  /* Chat bubbles - softer styling that matches app visual language */
   .chat-bubble-user {
-    @apply bg-[hsl(var(--user-bubble))] text-[hsl(var(--user-bubble-foreground))] rounded-2xl rounded-br-none p-3 max-w-[85%] shadow-sm;
+    @apply bg-[hsl(var(--user-bubble))] text-[hsl(var(--user-bubble-foreground))] rounded-3xl rounded-br-lg p-3 max-w-[85%] shadow-sm;
   }
 
   .chat-bubble-bot {
-    @apply bg-[hsl(var(--bot-bubble))] text-[hsl(var(--bot-bubble-foreground))] rounded-2xl rounded-bl-none p-3 max-w-[85%] shadow-sm;
+    @apply bg-[hsl(var(--bot-bubble))] text-[hsl(var(--bot-bubble-foreground))] rounded-3xl rounded-bl-lg p-3 max-w-[85%] shadow-sm border border-border/10;
   }
 
   /* Bottom Navigation */
