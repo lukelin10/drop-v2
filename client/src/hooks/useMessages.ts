@@ -7,7 +7,7 @@ export function useMessages(dropId: number) {
   const [isTyping, setIsTyping] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
   const [isLimitReached, setIsLimitReached] = useState(false);
-  const MESSAGE_LIMIT = 12; // Maximum number of back and forth messages
+  const MESSAGE_LIMIT = 5; // Maximum number of back and forth messages
 
   // Fetch messages for a specific drop
   const { data: messages = [] } = useQuery<Message[]>({
