@@ -11,19 +11,19 @@
   --warm-cream: 40 33% 93%;           /* #F5EFE6 */
   --rich-chestnut: 14 14% 20%;        /* #3B2E2A */
   --charcoal-black: 0 0% 18%;         /* #2D2D2D */
-  
+
   /* Light Theme System Colors */
   --background: var(--warm-cream);           /* Using warm cream as background */
   --foreground: var(--charcoal-black);       /* Charcoal black for text */
   --muted: 40 15% 85%;                       /* Lighter version of warm cream */
   --muted-foreground: 14 14% 30%;            /* Using rich chestnut for better contrast */
-  
+
   /* Component Colors */
   --card: 0 0% 100%;                         /* White card background for contrast */
   --card-foreground: var(--charcoal-black);  /* Card text color */
   --popover: 0 0% 100%;                      /* Popover background */
   --popover-foreground: var(--charcoal-black); /* Popover text */
-  
+
   /* UI Elements */
   --border: 23 30% 85%;                      /* Subtle borders based on terracotta */
   --input: 0 0% 100%;                        /* White input background */
@@ -43,16 +43,16 @@
   --destructive: 0 70% 50%;                  /* Error states */
   --destructive-foreground: 0 0% 100%;
   --ring: var(--soft-terracotta);            /* Focus rings */
-  
+
   /* UI Properties */
   --radius: 1rem;                            /* Rounded corners for UI elements */
-  
+
   /* Chat Bubble Colors */
   --user-bubble: var(--soft-terracotta);
   --user-bubble-foreground: 0 0% 100%;
   --bot-bubble: var(--deep-olive);
   --bot-bubble-foreground: 0 0% 100%;
-  
+
   /* Sidebar Theming */
   --sidebar-background: 40 33% 97%;          /* Slightly lighter than main background */
   --sidebar-foreground: var(--foreground);
@@ -83,7 +83,7 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
   }
-  
+
   /* Improved form elements */
   input, textarea, select {
     @apply bg-input text-foreground rounded-[var(--radius)] border-border;
@@ -95,61 +95,69 @@
   .card {
     @apply bg-card text-card-foreground rounded-2xl shadow-sm overflow-hidden border border-border;
   }
-  
+
   /* Button styling */
   .btn-primary {
     @apply bg-primary text-primary-foreground rounded-full px-4 py-2 hover:opacity-90 transition-all shadow-sm;
   }
-  
+
   .btn-secondary {
     @apply bg-secondary text-secondary-foreground rounded-full px-4 py-2 hover:opacity-90 transition-all shadow-sm;
   }
-  
+
   .btn-ghost {
     @apply bg-transparent text-foreground hover:bg-muted rounded-full px-4 py-2 transition-all;
   }
-  
+
   /* Chat bubbles - more vivid colors on light background */
   .chat-bubble-user {
     @apply bg-[hsl(var(--user-bubble))] text-[hsl(var(--user-bubble-foreground))] rounded-2xl rounded-br-none p-3 max-w-[85%] shadow-sm;
   }
-  
+
   .chat-bubble-bot {
     @apply bg-[hsl(var(--bot-bubble))] text-[hsl(var(--bot-bubble-foreground))] rounded-2xl rounded-bl-none p-3 max-w-[85%] shadow-sm;
   }
-  
+
   /* Bottom Navigation */
   .nav-icon {
-    @apply flex flex-col items-center justify-center text-xs cursor-pointer;
+    @apply flex flex-col items-center justify-center text-xs cursor-pointer transition-all duration-200 ease-in-out px-4 py-2 rounded-lg hover:bg-muted/50;
   }
-  
+
   .nav-icon i {
-    @apply text-xl mb-1;
+    @apply text-xl mb-1 transition-transform duration-200;
   }
-  
+
+  .nav-icon:active i {
+    @apply scale-90;
+  }
+
+  .nav-icon.active {
+    @apply bg-muted/50;
+  }
+
   /* Input fields */
   .search-input {
     @apply w-full bg-input text-foreground rounded-full px-4 py-3 border border-border focus:ring-2 focus:ring-primary focus:outline-none shadow-sm;
   }
-  
+
   /* Helper components */
   .section-title {
     @apply text-lg font-serif font-medium text-foreground mb-3;
   }
-  
+
   .tag {
     @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary;
   }
-  
+
   .tag-secondary {
     @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary;
   }
-  
+
   /* Icon backgrounds */
   .icon-bg-primary {
     @apply bg-primary/10 text-primary;
   }
-  
+
   .icon-bg-secondary {
     @apply bg-secondary/10 text-secondary;
   }
@@ -159,7 +167,7 @@
   .font-sans {
     font-family: 'Inter', sans-serif;
   }
-  
+
   .font-serif {
     font-family: 'Fraunces', serif;
   }
@@ -172,17 +180,17 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   /* Gradient backgrounds */
   .bg-gradient-primary {
     background: linear-gradient(135deg, hsl(var(--soft-terracotta)) 0%, hsl(var(--deep-olive)) 100%);
   }
-  
+
   /* Animations */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-in-out;
   }
-  
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }

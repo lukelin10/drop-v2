@@ -11,7 +11,7 @@ export function BottomNavigation() {
   };
 
   const NavItem = ({ href, icon, label, active }: { href: string; icon: string; label: string; active: boolean }) => (
-    <div className="nav-icon" onClick={() => window.location.href = href}>
+    <div className={`nav-icon ${active ? 'active' : ''}`} onClick={() => window.location.href = href}>
       <div className="relative">
         <i className={cn(
           icon,

@@ -6,17 +6,12 @@ export function LoadingScreen() {
   if (!isLoading) return null;
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col items-center justify-center">
-      <div className="flex flex-col items-center">
-        <div className="w-12 h-12 relative mb-4">
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center scale-110 animate-pulse">
-              <i className="ri-water-drop-fill text-primary text-2xl"></i>
-            </div>
-          </div>
-          <div className="absolute inset-0 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center transition-opacity duration-300">
+      <div className="flex flex-col items-center gap-4">
+        <div className="animate-spin">
+          <i className="ri-loader-4-line text-4xl text-primary"></i>
         </div>
-        <p className="text-foreground text-base font-medium animate-pulse">Loading...</p>
+        <div className="animate-pulse text-sm text-muted-foreground">Loading...</div>
       </div>
     </div>
   );

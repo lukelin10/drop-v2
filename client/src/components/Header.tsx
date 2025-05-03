@@ -47,7 +47,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-20 bg-background border-b border-border pt-4">
+    <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border pt-4">
       <div className="flex justify-between items-center px-4 py-3">
         <div className="flex items-center">
           <h1 className="text-lg font-medium text-foreground">{title}</h1>
