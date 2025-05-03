@@ -1,11 +1,10 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Drop } from "@shared/schema";
-import { DropWithQuestion } from "../../server/storage";
+import { Drop, DropWithQuestion } from "@shared/schema";
 
 export function useDrops() {
-  // Fetch all drops
-  const { data: drops = [] } = useQuery<Drop[]>({
+  // Fetch all drops with question text
+  const { data: drops = [] } = useQuery<DropWithQuestion[]>({
     queryKey: ["/api/drops"],
   });
 
@@ -64,7 +63,7 @@ export function useDrops() {
     await toggleFavoriteMutation.mutateAsync(id);
   };
 
-  const getDrop = (id: number): Drop | undefined => {
+  const getDrop = (id: number): DropWithQuestion | undefined => {
     return drops.find(drop => drop.id === id);
   };
 

@@ -4,6 +4,7 @@ import { useDrops } from "@/hooks/useDrops";
 import { useAppContext } from "@/context/AppContext";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { DropWithQuestion } from "@shared/schema";
 
 function Feed() {
   const [, navigate] = useLocation();
