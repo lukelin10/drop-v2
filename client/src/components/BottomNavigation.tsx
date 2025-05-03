@@ -1,3 +1,4 @@
+
 import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,6 @@ export function BottomNavigation() {
           "text-2xl",
           active ? "text-primary" : "text-muted-foreground"
         )}></i>
-        {active && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>}
       </div>
       <span className={cn(
         "text-xs mt-1",

@@ -132,7 +132,7 @@
   }
 
   .nav-icon.active {
-    @apply bg-muted/50;
+    @apply bg-primary/10;
   }
 
   /* Input fields */
