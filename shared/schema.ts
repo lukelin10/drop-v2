@@ -1,9 +1,29 @@
+/**
+ * Database Schema Definition
+ * 
+ * This file defines the database schema for the entire application using Drizzle ORM.
+ * It establishes the data models, relationships, and type definitions that are shared
+ * between the frontend and backend.
+ * 
+ * Key components:
+ * - Table definitions with columns and constraints
+ * - Schema validation with Zod
+ * - Type definitions for TypeScript
+ * - Relationship mappings between tables
+ */
+
 import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Session storage table for Replit Auth
+/**
+ * Sessions Table
+ * Stores user session data for authentication with Replit Auth
+ * - sid: Unique session identifier
+ * - sess: JSON data containing session information
+ * - expire: When the session expires
+ */
 export const sessions = pgTable(
   "sessions",
   {
@@ -14,9 +34,14 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User schema updated for Replit Auth
+/**
+ * Users Table
+ * Stores user profile information
+ * - Uses Replit Auth for authentication
+ * - Contains basic profile details
+ */
 export const users = pgTable("sessions_users", {
-  id: varchar("id").primaryKey().notNull(),
+  id: varchar("id").primaryKey().notNull(),       // Unique user ID from Replit Auth
   username: varchar("username").unique().notNull(),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
@@ -27,22 +52,35 @@ export const users = pgTable("sessions_users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+/**
+ * Schema for inserting new users
+ * Omits auto-generated fields that shouldn't be manually set
+ */
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
 });
 
-// Questions table
+/**
+ * Questions Table
+ * Stores introspective journal prompts that are presented to users
+ * - Tracks usage statistics
+ * - Categorizes questions
+ */
 export const questionTable = pgTable("question", {
   id: serial("id").primaryKey(),
-  text: text("text").notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
+  text: text("text").notNull(),                           // The question prompt
+  isActive: boolean("is_active").default(true).notNull(), // Whether this question is available for use
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  lastUsedAt: timestamp("last_used_at"),
-  usageCount: integer("usage_count").default(0).notNull(),
-  category: text("category").default("general"),
+  lastUsedAt: timestamp("last_used_at"),                  // When the question was last served to a user
+  usageCount: integer("usage_count").default(0).notNull(),// How many times this question has been used
+  category: text("category").default("general"),          // Optional categorization of questions
 });
 
+/**
+ * Schema for inserting new questions
+ * Omits auto-generated fields and statistics
+ */
 export const insertQuestionSchema = createInsertSchema(questionTable).omit({
   id: true,
   createdAt: true,
@@ -50,69 +88,109 @@ export const insertQuestionSchema = createInsertSchema(questionTable).omit({
   usageCount: true,
 });
 
-// Drops (journal entries)
+/**
+ * Drops Table (Journal Entries)
+ * Stores user responses to daily questions
+ * - Each drop is a journal entry responding to a question
+ * - Can be favorited by users
+ * - Connected to conversation messages
+ */
 export const drops = pgTable("drops", {
   id: serial("id").primaryKey(),
   questionId: integer("question_id").notNull().references(() => questionTable.id),
-  // Field is named 'answer' in database, but in our code it's referred to as 'text'
-  text: text("answer").notNull(),
+  // Important: Field is named 'answer' in database, but in our code it's referred to as 'text'
+  text: text("answer").notNull(),                         // User's response to the question
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  favorite: boolean("favorite").default(false).notNull(),
-  messageCount: integer("message_count").default(0).notNull(),
-  userId: varchar("user_id").references(() => users.id),
+  favorite: boolean("favorite").default(false).notNull(), // User can mark entries as favorites
+  messageCount: integer("message_count").default(0).notNull(), // Count of messages in the conversation
+  userId: varchar("user_id").references(() => users.id),  // User who created this entry
 });
 
+/**
+ * Schema for inserting new drops/journal entries
+ * Omits auto-generated fields
+ */
 export const insertDropSchema = createInsertSchema(drops).omit({
   id: true,
   createdAt: true,
   messageCount: true,
 });
 
-// Messages (chat messages in a drop)
+/**
+ * Messages Table
+ * Stores conversation messages between the user and AI coach
+ * - Each message belongs to a specific drop/journal entry
+ * - Tracks whether the message is from the user or AI
+ */
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   dropId: integer("drop_id")
     .notNull()
-    .references(() => drops.id),
-  text: text("text").notNull(),
-  fromUser: boolean("from_user").default(false).notNull(),
+    .references(() => drops.id),          // Which journal entry this message belongs to
+  text: text("text").notNull(),           // Message content
+  fromUser: boolean("from_user").default(false).notNull(), // Whether message is from user (true) or AI (false)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/**
+ * Schema for inserting new messages
+ * Omits auto-generated fields
+ */
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
 });
 
-// Define relationships
+/**
+ * Relationship Definitions
+ * 
+ * These establish the connections between tables for Drizzle ORM
+ * to use when performing queries with joins.
+ */
+
+// Question can have many drops/journal entries
 export const questionRelations = relations(questionTable, ({ many }) => ({
   drops: many(drops),
 }));
 
+// Drop/journal entry relationships
 export const dropsRelations = relations(drops, ({ one, many }) => ({
+  // Each drop has one question
   question: one(questionTable, {
     fields: [drops.questionId],
     references: [questionTable.id],
   }),
+  // Each drop can have many messages
   messages: many(messages),
+  // Each drop belongs to one user
   user: one(users, {
     fields: [drops.userId],
     references: [users.id],
   }),
 }));
 
+// Message relationships
 export const messagesRelations = relations(messages, ({ one }) => ({
+  // Each message belongs to one drop
   drop: one(drops, {
     fields: [messages.dropId],
     references: [drops.id],
   }),
 }));
 
+// User relationships
 export const usersRelations = relations(users, ({ many }) => ({
+  // Each user can have many drops
   drops: many(drops),
 }));
 
-// Type exports
+/**
+ * Type Definitions
+ * 
+ * These types are used throughout the application for type safety.
+ * - Select types are for reading from database
+ * - Insert types are for writing to database
+ */
 export type Question = typeof questionTable.$inferSelect;
 export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
 
@@ -125,12 +203,21 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-// Define the extended Drop type including the question text
+/**
+ * Extended Drop type 
+ * Includes the question text for convenience when fetching drops
+ * This is typically populated by a join query in the backend
+ */
 export interface DropWithQuestion extends Drop {
   questionText: string;
 }
 
-// Collection of question texts to be seeded into the database
+/**
+ * Pre-defined Questions
+ * 
+ * A list of introspective questions to seed the database
+ * These questions encourage self-reflection and personal growth
+ */
 export const questionsList = [
   "What brought you joy today, even if just for a moment?",
   "What small step did you take toward your goals yesterday?",

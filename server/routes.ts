@@ -1,3 +1,11 @@
+/**
+ * API Routes Configuration
+ * 
+ * This file defines all the API endpoints for the application. 
+ * It handles routing, authentication, request validation, and response formatting.
+ * The routes are organized by resource type (auth, questions, drops, messages).
+ */
+
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -6,19 +14,32 @@ import { z } from "zod";
 import { generateResponse } from "./services/anthropic";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
-// Check for API key
+// Check for required API key at startup
 if (!process.env.ANTHROPIC_API_KEY) {
   console.log("Missing ANTHROPIC_API_KEY environment variable.");
   console.log("Please provide an Anthropic API key to use the Claude AI integration.");
 }
 
+/**
+ * Main function to register all API routes with the Express application
+ * @param app - The Express application instance
+ * @returns An HTTP server instance
+ */
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up Replit Auth
+  // Initialize authentication (Replit Auth)
   await setupAuth(app);
   
-  // Auth routes
+  /**
+   * AUTHENTICATION ROUTES
+   */
+  
+  /**
+   * Get the current authenticated user
+   * GET /api/auth/user
+   */
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
+      // Extract user ID from the authenticated request
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       res.json(user);
@@ -27,7 +48,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
-  // API routes
+
+  /**
+   * QUESTION ROUTES
+   */
+  
+  /**
+   * Get the daily journal prompt question
+   * GET /api/daily-question
+   */
   app.get("/api/daily-question", isAuthenticated, async (req, res) => {
     try {
       const question = await storage.getDailyQuestion();
@@ -37,6 +66,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  /**
+   * Get all available questions
+   * GET /api/questions
+   */
   app.get("/api/questions", isAuthenticated, async (req, res) => {
     try {
       const questions = await storage.getQuestions();
@@ -46,6 +79,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * DROP/JOURNAL ENTRY ROUTES
+   */
+  
+  /**
+   * Get all drops for the authenticated user
+   * GET /api/drops
+   */
   app.get("/api/drops", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -57,17 +98,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Get a specific drop by ID
+   * GET /api/drops/:id
+   * Ensures that users can only access their own drops
+   */
   app.get("/api/drops/:id", isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id, 10);
       const userId = req.user.claims.sub;
       const drop = await storage.getDrop(id);
       
+      // Handle drop not found
       if (!drop) {
         return res.status(404).json({ message: "Drop not found" });
       }
       
-      // Ensure the drop belongs to the authenticated user
+      // Security check: ensure the drop belongs to the authenticated user
       if (drop.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
@@ -78,8 +125,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Create a new drop/journal entry
+   * POST /api/drops
+   * Validates the request body against the schema
+   */
   app.post("/api/drops", isAuthenticated, async (req: any, res) => {
     try {
+      // Validate the request data against the schema
       const parseResult = insertDropSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ message: "Invalid drop data", errors: parseResult.error.format() });
@@ -91,6 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user.claims.sub
       };
       
+      // Create the drop in the database
       const drop = await storage.createDrop(dropData);
       res.status(201).json(drop);
     } catch (error) {
@@ -98,30 +152,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Update a drop (currently only supports toggling favorite status)
+   * PATCH /api/drops/:id
+   * Validates the request body against a schema
+   */
   app.patch("/api/drops/:id", isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id, 10);
       const userId = req.user.claims.sub;
+      
+      // Define validation schema for updates
       const updateSchema = z.object({
         favorite: z.boolean().optional()
       });
       
-      // First check if the drop exists and belongs to the user
+      // Check if the drop exists and belongs to the user
       const existingDrop = await storage.getDrop(id);
       if (!existingDrop) {
         return res.status(404).json({ message: "Drop not found" });
       }
       
-      // Ensure the drop belongs to the authenticated user
+      // Security check: ensure the drop belongs to the authenticated user
       if (existingDrop.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
       
+      // Validate the update data
       const parseResult = updateSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ message: "Invalid update data", errors: parseResult.error.format() });
       }
       
+      // Update the drop in the database
       const updatedDrop = await storage.updateDrop(id, parseResult.data);
       
       res.json(updatedDrop);
@@ -131,22 +194,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * MESSAGE ROUTES
+   */
+  
+  /**
+   * Get all messages for a specific drop
+   * GET /api/drops/:id/messages
+   * Ensures users can only access messages for their own drops
+   */
   app.get("/api/drops/:id/messages", isAuthenticated, async (req: any, res) => {
     try {
       const dropId = parseInt(req.params.id, 10);
       const userId = req.user.claims.sub;
       
-      // First check if the drop exists and belongs to the user
+      // Check if the drop exists and belongs to the user
       const drop = await storage.getDrop(dropId);
       if (!drop) {
         return res.status(404).json({ message: "Drop not found" });
       }
       
-      // Ensure the drop belongs to the authenticated user
+      // Security check: ensure the drop belongs to the authenticated user
       if (drop.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
       
+      // Get messages for the drop
       const messages = await storage.getMessages(dropId);
       res.json(messages);
     } catch (error) {
@@ -155,8 +228,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Create a new message in a conversation
+   * POST /api/messages
+   * Validates the request body and automatically generates an AI response
+   */
   app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
+      // Validate the message data
       const parseResult = insertMessageSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ message: "Invalid message data", errors: parseResult.error.format() });
@@ -165,24 +244,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const dropId = parseResult.data.dropId;
       
-      // First check if the drop exists and belongs to the user
+      // Check if the drop exists and belongs to the user
       const drop = await storage.getDrop(dropId);
       if (!drop) {
         return res.status(404).json({ message: "Drop not found" });
       }
       
-      // Ensure the drop belongs to the authenticated user
+      // Security check: ensure the drop belongs to the authenticated user
       if (drop.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
       
+      // Save the user's message
       const message = await storage.createMessage(parseResult.data);
       
-      // Create an AI response using Claude
+      // Asynchronously generate and save an AI response
+      // We use setTimeout to make this non-blocking so we can return the user's message immediately
       setTimeout(async () => {
         try {
           if (!process.env.ANTHROPIC_API_KEY) {
-            // Fallback to a simple response if no API key is available
+            // If no API key is provided, use a fallback response
             const botResponse = "I'm sorry, I can't generate a thoughtful response right now. Please try again later.";
             await storage.createMessage({
               dropId: parseResult.data.dropId,
@@ -190,12 +271,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               fromUser: false
             });
           } else {
-            // Use Claude to generate a response
+            // Use Claude AI to generate a personalized response
             const botResponse = await generateResponse(
               parseResult.data.text,
               parseResult.data.dropId
             );
             
+            // Save the AI response to the database
             await storage.createMessage({
               dropId: parseResult.data.dropId,
               text: botResponse,
@@ -211,8 +293,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fromUser: false
           });
         }
-      }, 1500);
+      }, 1500); // Small delay to simulate thinking
       
+      // Return the user's message immediately
       res.status(201).json(message);
     } catch (error) {
       console.error("Error creating message:", error);
@@ -220,13 +303,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create and return the HTTP server
   const httpServer = createServer(app);
   return httpServer;
 }
 
+/**
+ * Simple fallback function to generate coaching responses
+ * Used when the AI integration is not available
+ * @param userMessage - The user's message to respond to
+ * @returns A randomly selected coaching response
+ */
 function generateBotResponse(userMessage: string): string {
-  // This is a simple function to generate responses
-  // In a real app, this would call an AI service
+  // Array of thoughtful coaching responses
   const responses = [
     "Thank you for sharing that. How did that make you feel?",
     "That's really interesting. Could you tell me more about why you think that way?",
@@ -240,6 +329,7 @@ function generateBotResponse(userMessage: string): string {
     "That's a deep insight. How has your thinking evolved on this topic over time?"
   ];
   
+  // Select a random response
   const randomIndex = Math.floor(Math.random() * responses.length);
   return responses[randomIndex];
 }

@@ -1,3 +1,10 @@
+/**
+ * Database Storage Implementation
+ * 
+ * This class provides the PostgreSQL database implementation of the IStorage interface.
+ * It handles all database operations, query construction, and error handling.
+ */
+
 import { db } from './db';
 import { eq, desc, sql, and, isNull } from 'drizzle-orm';
 import { 
@@ -19,20 +26,35 @@ import {
 import { getRandomInt } from "../client/src/lib/utils";
 import { IStorage } from './storage';
 
+/**
+ * DatabaseStorage - Concrete implementation of the IStorage interface
+ * This class uses Drizzle ORM to interact with the PostgreSQL database
+ */
 export class DatabaseStorage implements IStorage {
+  
+  /**
+   * Constructor
+   * Initializes the database storage and seeds initial data if needed
+   */
   constructor() {
-    // Seed questions if needed
+    // Automatically seed questions if the database is empty
     this.ensureQuestionsExist();
   }
 
+  /**
+   * Ensures that the database has starter questions
+   * This is called during initialization to seed the database if it's empty
+   * @private
+   */
   private async ensureQuestionsExist() {
-    // Check if there are any questions
+    // Check if there are any questions already in the database
     const existingQuestions = await db
       .select({ count: sql<number>`count(*)` })
       .from(questionTable);
     
+    // If no questions exist, seed the database with the default list
     if (existingQuestions[0].count === 0) {
-      // Insert the questions
+      // Insert all questions from the predefined list
       await db.insert(questionTable).values(
         questionsList.map(text => ({ 
           text,
@@ -44,17 +66,36 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // User methods
+  /**
+   * USER METHODS
+   */
+
+  /**
+   * Retrieves a user by their ID
+   * @param id - The unique identifier for the user
+   * @returns The user object or undefined if not found
+   */
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
+  /**
+   * Retrieves a user by their username
+   * @param username - The username to look up
+   * @returns The user object or undefined if not found
+   */
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
 
+  /**
+   * Creates a new user or updates an existing one
+   * Used for user registration and profile updates
+   * @param userData - The user data to insert or update
+   * @returns The created or updated user object
+   */
   async upsertUser(userData: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -63,16 +104,22 @@ export class DatabaseStorage implements IStorage {
         target: users.id,
         set: {
           ...userData,
-          updatedAt: new Date(),
+          updatedAt: new Date(), // Always update the timestamp
         },
       })
       .returning();
     return user;
   }
   
+  /**
+   * Retrieves all journal entries (drops) for a specific user
+   * Includes the question text from the related question
+   * @param userId - The ID of the user whose drops to retrieve
+   * @returns Array of drops with their associated questions
+   */
   async getUserDrops(userId: string): Promise<DropWithQuestion[]> {
     try {
-      // Join with questions to get the question text, filtered by userId
+      // Join with the questions table to get the question text, filtered by userId
       const dropsWithQuestions = await db
         .select({
           id: drops.id,
@@ -82,13 +129,13 @@ export class DatabaseStorage implements IStorage {
           createdAt: drops.createdAt,
           messageCount: drops.messageCount,
           userId: drops.userId,
-          // select the question text from question table
+          // Adding the question text from the joined table
           questionText: questionTable.text
         })
         .from(drops)
         .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
         .where(eq(drops.userId, userId))
-        .orderBy(desc(drops.createdAt));
+        .orderBy(desc(drops.createdAt)); // Most recent first
       
       return dropsWithQuestions as DropWithQuestion[];
     } catch (error) {
@@ -97,13 +144,21 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Drop methods
+  /**
+   * DROP/JOURNAL ENTRY METHODS
+   */
+  
+  /**
+   * Retrieves all drops/journal entries in the system
+   * Includes the question text from the related question
+   * @returns Array of all drops with their associated questions
+   */
   async getDrops(): Promise<DropWithQuestion[]> {
     try {
       // Join with questions to get the question text
-      // select all columns from drops table individually
       const dropsWithQuestions = await db
         .select({
+          // We select fields explicitly rather than using * to ensure type safety
           id: drops.id,
           questionId: drops.questionId,
           text: drops.text,
@@ -111,12 +166,12 @@ export class DatabaseStorage implements IStorage {
           createdAt: drops.createdAt,
           messageCount: drops.messageCount,
           userId: drops.userId,
-          // select the question text from question table
+          // Adding the question text from the joined table
           questionText: questionTable.text
         })
         .from(drops)
         .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
-        .orderBy(desc(drops.createdAt));
+        .orderBy(desc(drops.createdAt)); // Most recent first
       
       return dropsWithQuestions as DropWithQuestion[];
     } catch (error) {
@@ -125,6 +180,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  /**
+   * Retrieves a single drop/journal entry by ID
+   * Includes the question text from the related question
+   * @param id - The ID of the drop to retrieve
+   * @returns The drop with its associated question or undefined if not found
+   */
   async getDrop(id: number): Promise<DropWithQuestion | undefined> {
     try {
       // Join with questions to get the question text
@@ -137,7 +198,7 @@ export class DatabaseStorage implements IStorage {
           createdAt: drops.createdAt,
           messageCount: drops.messageCount,
           userId: drops.userId,
-          // select the question text from question table
+          // Adding the question text from the joined table
           questionText: questionTable.text
         })
         .from(drops)
@@ -151,11 +212,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  /**
+   * Creates a new drop/journal entry
+   * Also initializes the conversation with an AI response
+   * @param insertDrop - The drop data to insert
+   * @returns The created drop object
+   * @throws Error if creation fails
+   */
   async createDrop(insertDrop: InsertDrop): Promise<Drop> {
     try {
+      // Insert the new drop
       const [drop] = await db.insert(drops).values(insertDrop).returning();
       
-      // Create initial bot response
+      // Automatically create an initial bot response to start the conversation
       await this.createMessage({
         dropId: drop.id,
         text: `Thank you for sharing that. I'd like to explore your thoughts on this more deeply. What led you to this answer?`,
@@ -169,6 +238,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  /**
+   * Updates a drop/journal entry
+   * @param id - The ID of the drop to update
+   * @param updates - The fields to update
+   * @returns The updated drop or undefined if not found
+   */
   async updateDrop(id: number, updates: Partial<Drop>): Promise<Drop | undefined> {
     try {
       const [updatedDrop] = await db
@@ -184,14 +259,22 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Message methods
+  /**
+   * MESSAGE METHODS
+   */
+  
+  /**
+   * Retrieves all messages for a specific drop/journal entry
+   * @param dropId - The ID of the drop whose messages to retrieve
+   * @returns Array of messages in chronological order
+   */
   async getMessages(dropId: number): Promise<Message[]> {
     try {
       const messageList = await db
         .select()
         .from(messages)
         .where(eq(messages.dropId, dropId))
-        .orderBy(messages.createdAt);
+        .orderBy(messages.createdAt); // Chronological order
         
       return messageList;
     } catch (error) {
@@ -200,11 +283,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  /**
+   * Creates a new message in a conversation
+   * Also updates the message count on the parent drop
+   * @param insertMessage - The message data to insert
+   * @returns The created message object
+   * @throws Error if creation fails
+   */
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
     try {
+      // Insert the new message
       const [message] = await db.insert(messages).values(insertMessage).returning();
       
-      // Update message count on the drop
+      // Update the message count on the parent drop
+      // This is an atomic operation using SQL to increment
       await db
         .update(drops)
         .set({
@@ -219,29 +311,38 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Daily question
+  /**
+   * DAILY QUESTION METHODS
+   */
+  
+  /**
+   * Gets a question for the daily journal prompt
+   * Selects based on usage statistics to provide variety
+   * @returns The text of the selected question
+   */
   async getDailyQuestion(): Promise<string> {
     try {
-      // Get a question that hasn't been used recently, prioritizing 
-      // those with lower usage counts and marked as active
+      // Get a question that hasn't been used frequently
+      // Prioritizes questions with lower usage counts and that are marked as active
       const [question] = await db
         .select()
         .from(questionTable)
         .where(eq(questionTable.isActive, true))
-        .orderBy(questionTable.usageCount)
+        .orderBy(questionTable.usageCount) // Order by least used first
         .limit(1);
 
+      // Fallback if no questions are available
       if (!question) {
         console.error('No active questions found');
         return 'What is on your mind today?'; // Default fallback question
       }
 
-      // Update the usage statistics
+      // Update the usage statistics for the selected question
       await db
         .update(questionTable)
         .set({
           lastUsedAt: new Date(),
-          usageCount: sql`${questionTable.usageCount} + 1`
+          usageCount: sql`${questionTable.usageCount} + 1` // Increment usage count
         })
         .where(eq(questionTable.id, question.id));
 
@@ -252,13 +353,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Question management
+  /**
+   * QUESTION MANAGEMENT METHODS
+   */
+  
+  /**
+   * Retrieves all questions in the system
+   * @returns Array of all questions
+   */
   async getQuestions(): Promise<Question[]> {
     try {
       const questions = await db
         .select()
         .from(questionTable)
-        .orderBy(desc(questionTable.createdAt));
+        .orderBy(desc(questionTable.createdAt)); // Most recent first
         
       return questions;
     } catch (error) {
@@ -267,6 +375,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  /**
+   * Creates a new question
+   * @param insertQuestion - The question data to insert
+   * @returns The created question object
+   * @throws Error if creation fails
+   */
   async createQuestion(insertQuestion: InsertQuestion): Promise<Question> {
     try {
       const [question] = await db
@@ -280,6 +394,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  /**
+   * Updates a question
+   * @param id - The ID of the question to update
+   * @param updates - The fields to update
+   * @returns The updated question or undefined if not found
+   */
   async updateQuestion(id: number, updates: Partial<Question>): Promise<Question | undefined> {
     try {
       const [question] = await db

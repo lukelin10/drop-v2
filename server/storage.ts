@@ -1,3 +1,15 @@
+/**
+ * Storage Interface
+ * 
+ * This file defines the storage interface for all data operations in the application.
+ * It provides an abstraction layer between the application logic and the database,
+ * following the Repository pattern to centralize data access logic.
+ * 
+ * The IStorage interface defines all methods for CRUD operations on the database,
+ * organized by entity type. This allows for easy swapping of storage implementations
+ * (e.g., memory storage vs database storage) for testing or development purposes.
+ */
+
 import { 
   Question, InsertQuestion,
   Drop, InsertDrop, DropWithQuestion,
@@ -5,32 +17,60 @@ import {
   User, InsertUser
 } from "@shared/schema";
 
+/**
+ * The storage interface defines all methods for interacting with the application's data
+ * All route handlers and business logic should use this interface rather than
+ * accessing the database directly, promoting separation of concerns.
+ */
 export interface IStorage {
-  // User methods
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  upsertUser(user: InsertUser): Promise<User>;
+  /**
+   * User-related methods
+   * Handle user profile management and retrieval
+   */
+  getUser(id: string): Promise<User | undefined>;               // Get user by their ID
+  getUserByUsername(username: string): Promise<User | undefined>; // Get user by their username
+  upsertUser(user: InsertUser): Promise<User>;                  // Create or update a user record
   
-  // Drop methods
-  getDrops(): Promise<DropWithQuestion[]>;
-  getUserDrops(userId: string): Promise<DropWithQuestion[]>;
-  getDrop(id: number): Promise<DropWithQuestion | undefined>;
-  createDrop(drop: InsertDrop): Promise<Drop>;
-  updateDrop(id: number, updates: Partial<Drop>): Promise<Drop | undefined>;
+  /**
+   * Drop/Journal Entry methods
+   * Handle creation, retrieval, and updating of journal entries
+   */
+  getDrops(): Promise<DropWithQuestion[]>;                      // Get all drops with their associated questions
+  getUserDrops(userId: string): Promise<DropWithQuestion[]>;    // Get drops for a specific user
+  getDrop(id: number): Promise<DropWithQuestion | undefined>;   // Get a single drop by ID
+  createDrop(drop: InsertDrop): Promise<Drop>;                  // Create a new journal entry
+  updateDrop(id: number, updates: Partial<Drop>): Promise<Drop | undefined>; // Update an existing drop
   
-  // Message methods
-  getMessages(dropId: number): Promise<Message[]>;
-  createMessage(message: InsertMessage): Promise<Message>;
+  /**
+   * Message methods
+   * Handle chat messages in conversations with the AI coach
+   */
+  getMessages(dropId: number): Promise<Message[]>;              // Get all messages for a specific drop
+  createMessage(message: InsertMessage): Promise<Message>;      // Add a new message to a conversation
   
-  // Methods for the daily question
-  getDailyQuestion(): Promise<string>;
+  /**
+   * Daily Question methods
+   * Handle the selection and retrieval of daily journal prompts
+   */
+  getDailyQuestion(): Promise<string>;                          // Get a question for the daily prompt
   
-  // Question management
-  getQuestions(): Promise<Question[]>;
-  createQuestion(question: InsertQuestion): Promise<Question>;
-  updateQuestion(id: number, updates: Partial<Question>): Promise<Question | undefined>;
+  /**
+   * Question management methods
+   * Handle the creation and management of journal prompt questions
+   */
+  getQuestions(): Promise<Question[]>;                          // Get all available questions
+  createQuestion(question: InsertQuestion): Promise<Question>;  // Add a new question
+  updateQuestion(id: number, updates: Partial<Question>): Promise<Question | undefined>; // Update question attributes
 }
 
+/**
+ * Storage Implementation
+ * 
+ * The application uses a Postgres database via the DatabaseStorage implementation.
+ * This provides a concrete implementation of the IStorage interface,
+ * handling the actual database operations.
+ */
 import { DatabaseStorage } from './DatabaseStorage';
 
+// Single instance of the storage interface used throughout the application
 export const storage = new DatabaseStorage();
