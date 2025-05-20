@@ -2,19 +2,18 @@ import request from 'supertest';
 import { getTestApp } from '../testServer';
 import { TEST_USER_ID, cleanDatabase } from '../setup';
 import { storage } from '../../server/storage';
+import { generateResponse } from '../../server/services/anthropic';
 
-// Mock the Claude API
+// Mock the AI response generation
 jest.mock('../../server/services/anthropic', () => ({
-  generateResponse: jest.fn().mockImplementation(async (userMessage) => {
-    return `AI response to: ${userMessage}`;
-  }),
+  generateResponse: jest.fn().mockResolvedValue('This is a mock AI response'),
   getConversationHistory: jest.fn().mockResolvedValue([])
 }));
 
-describe('Full Conversation Flow', () => {
+describe('Complete Conversation Flow', () => {
   let app: any;
   let testQuestionId: number;
-
+  
   beforeAll(async () => {
     app = await getTestApp();
     
@@ -27,87 +26,219 @@ describe('Full Conversation Flow', () => {
     
     // Create a test question
     const question = await storage.createQuestion({
-      text: 'Test question for conversation flow?',
+      text: 'What are your goals for today?',
       isActive: true,
-      category: 'test'
+      category: 'daily'
     });
     testQuestionId = question.id;
   });
-
+  
   beforeEach(async () => {
     await cleanDatabase();
-  });
-
-  test('Complete conversation flow: create drop, exchange messages, receive AI responses', async () => {
-    // 1. Create a new drop
-    const newDrop = {
-      questionId: testQuestionId,
-      text: 'Initial reflection on test question'
-    };
     
+    // Reset the mock before each test
+    (generateResponse as jest.Mock).mockClear();
+  });
+  
+  test('Complete user journey from question to conversation', async () => {
+    // Step 1: User sees the daily question
+    const questionResponse = await request(app).get('/api/questions/daily');
+    expect(questionResponse.status).toBe(200);
+    expect(questionResponse.body).toBeTruthy();
+    expect(typeof questionResponse.body).toBe('string');
+    
+    // Step 2: User creates a drop (answers the daily question)
     const dropResponse = await request(app)
       .post('/api/drops')
-      .send(newDrop);
-      
+      .send({
+        questionId: testQuestionId,
+        text: 'My goal is to complete this project and learn something new.'
+      });
+    
     expect(dropResponse.status).toBe(201);
+    expect(dropResponse.body).toHaveProperty('id');
+    expect(dropResponse.body).toHaveProperty('text', 'My goal is to complete this project and learn something new.');
+    
     const dropId = dropResponse.body.id;
     
-    // 2. Send first message
-    const firstMessage = {
-      dropId,
-      text: 'I would like to discuss this further',
-      fromUser: true
-    };
+    // Step 3: User views their drops
+    const dropsResponse = await request(app).get('/api/drops');
+    expect(dropsResponse.status).toBe(200);
+    expect(Array.isArray(dropsResponse.body)).toBe(true);
+    expect(dropsResponse.body.length).toBe(1);
+    expect(dropsResponse.body[0].id).toBe(dropId);
     
-    const firstMessageResponse = await request(app)
+    // Step 4: User starts a conversation about the drop
+    // First message from user
+    const message1Response = await request(app)
       .post('/api/messages')
-      .send(firstMessage);
-      
-    expect(firstMessageResponse.status).toBe(201);
+      .send({
+        dropId: dropId,
+        text: 'I want to discuss my goals.',
+        fromUser: true
+      });
+    
+    expect(message1Response.status).toBe(201);
+    expect(message1Response.body).toHaveProperty('id');
+    expect(message1Response.body).toHaveProperty('text', 'I want to discuss my goals.');
+    expect(message1Response.body).toHaveProperty('fromUser', true);
+    
+    // Wait for AI response to be generated
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Check for AI response
+    const messagesResponse1 = await request(app).get(`/api/drops/${dropId}/messages`);
+    expect(messagesResponse1.status).toBe(200);
+    expect(messagesResponse1.body.length).toBe(2); // User message + AI response
+    expect(messagesResponse1.body[1].fromUser).toBe(false); // AI response
+    
+    // Step 5: User continues the conversation
+    const message2Response = await request(app)
+      .post('/api/messages')
+      .send({
+        dropId: dropId,
+        text: 'I want to learn more about testing.',
+        fromUser: true
+      });
+    
+    expect(message2Response.status).toBe(201);
     
     // Wait for AI response
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // 3. Check messages - should have user message and AI response
-    let messagesResponse = await request(app).get(`/api/drops/${dropId}/messages`);
-    expect(messagesResponse.status).toBe(200);
-    expect(messagesResponse.body.length).toBe(2);
-    expect(messagesResponse.body[0].fromUser).toBe(true);
-    expect(messagesResponse.body[0].text).toBe(firstMessage.text);
-    expect(messagesResponse.body[1].fromUser).toBe(false);
+    // Check for second AI response
+    const messagesResponse2 = await request(app).get(`/api/drops/${dropId}/messages`);
+    expect(messagesResponse2.status).toBe(200);
+    expect(messagesResponse2.body.length).toBe(4); // 2 user messages + 2 AI responses
     
-    // 4. Send a follow-up message
-    const secondMessage = {
-      dropId,
-      text: 'That\'s interesting, tell me more',
-      fromUser: true
-    };
+    // Step 6: User marks the drop as favorite
+    const updateResponse = await request(app)
+      .patch(`/api/drops/${dropId}`)
+      .send({
+        favorite: true
+      });
     
-    const secondMessageResponse = await request(app)
+    expect(updateResponse.status).toBe(200);
+    expect(updateResponse.body).toHaveProperty('favorite', true);
+    
+    // Step 7: Check updated drops list shows the favorite
+    const updatedDropsResponse = await request(app).get('/api/drops');
+    expect(updatedDropsResponse.status).toBe(200);
+    const favoriteDrop = updatedDropsResponse.body.find((drop: any) => drop.id === dropId);
+    expect(favoriteDrop).toBeTruthy();
+    expect(favoriteDrop.favorite).toBe(true);
+    
+    // Step 8: Verify message count is updated
+    expect(favoriteDrop.messageCount).toBe(4);
+  });
+  
+  test('Error handling during conversation flow', async () => {
+    // Create a drop first
+    const dropResponse = await request(app)
+      .post('/api/drops')
+      .send({
+        questionId: testQuestionId,
+        text: 'Test drop for error handling'
+      });
+    
+    const dropId = dropResponse.body.id;
+    
+    // Test: Attempting to update non-existent drop
+    const badUpdateResponse = await request(app)
+      .patch(`/api/drops/9999`)
+      .send({
+        favorite: true
+      });
+    
+    expect(badUpdateResponse.status).toBe(404);
+    
+    // Test: Attempting to send message to non-existent drop
+    const badMessageResponse = await request(app)
       .post('/api/messages')
-      .send(secondMessage);
-      
-    expect(secondMessageResponse.status).toBe(201);
+      .send({
+        dropId: 9999,
+        text: 'This should fail',
+        fromUser: true
+      });
+    
+    expect(badMessageResponse.status).toBe(404);
+    
+    // Test: Sending an empty message
+    const emptyMessageResponse = await request(app)
+      .post('/api/messages')
+      .send({
+        dropId: dropId,
+        text: '',
+        fromUser: true
+      });
+    
+    expect(emptyMessageResponse.status).toBe(400);
+    
+    // Test: Sending a message with missing required fields
+    const incompleteMessageResponse = await request(app)
+      .post('/api/messages')
+      .send({
+        dropId: dropId
+        // Missing text and fromUser fields
+      });
+    
+    expect(incompleteMessageResponse.status).toBe(400);
+  });
+  
+  test('Conversation history is maintained between messages', async () => {
+    // Create a drop
+    const dropResponse = await request(app)
+      .post('/api/drops')
+      .send({
+        questionId: testQuestionId,
+        text: 'Test drop for conversation history'
+      });
+    
+    const dropId = dropResponse.body.id;
+    
+    // First message
+    await request(app)
+      .post('/api/messages')
+      .send({
+        dropId: dropId,
+        text: 'Message 1',
+        fromUser: true
+      });
     
     // Wait for AI response
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // 5. Check all messages - should now have 4 messages in conversation
-    messagesResponse = await request(app).get(`/api/drops/${dropId}/messages`);
+    // Second message
+    await request(app)
+      .post('/api/messages')
+      .send({
+        dropId: dropId,
+        text: 'Message 2',
+        fromUser: true
+      });
+    
+    // Wait for AI response
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Verify the conversation history
+    const messagesResponse = await request(app).get(`/api/drops/${dropId}/messages`);
     expect(messagesResponse.status).toBe(200);
     expect(messagesResponse.body.length).toBe(4);
     
-    // Messages should alternate between user and AI
+    // Verify messages are in the correct order
+    expect(messagesResponse.body[0].text).toBe('Message 1');
     expect(messagesResponse.body[0].fromUser).toBe(true);
-    expect(messagesResponse.body[1].fromUser).toBe(false);
-    expect(messagesResponse.body[2].fromUser).toBe(true);
-    expect(messagesResponse.body[3].fromUser).toBe(false);
     
-    // 6. Check that the drops list includes our drop
-    const dropsResponse = await request(app).get('/api/drops');
-    expect(dropsResponse.status).toBe(200);
-    expect(dropsResponse.body.length).toBe(1);
-    expect(dropsResponse.body[0].id).toBe(dropId);
-    expect(dropsResponse.body[0].text).toBe(newDrop.text);
+    expect(messagesResponse.body[1].fromUser).toBe(false); // AI response
+    
+    expect(messagesResponse.body[2].text).toBe('Message 2');
+    expect(messagesResponse.body[2].fromUser).toBe(true);
+    
+    expect(messagesResponse.body[3].fromUser).toBe(false); // AI response
+    
+    // Verify the AI was called with the correct drop ID (which contains conversation history)
+    expect(generateResponse).toHaveBeenCalledTimes(2);
+    const lastCall = (generateResponse as jest.Mock).mock.calls[1];
+    expect(lastCall[1]).toBe(dropId); // Second argument should be dropId for history
   });
 });

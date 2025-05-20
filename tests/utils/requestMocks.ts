@@ -2,24 +2,19 @@ import { Request, Response } from 'express';
 import { TEST_USER_ID } from '../setup';
 
 /**
- * Creates a mock Express request object
+ * Creates a mock Express request object with authentication data
  */
 export function createMockRequest(overrides: Partial<Request> = {}): Partial<Request> {
-  interface AuthenticatedRequest extends Request {
-    user: {
-      claims: { sub: string };
-      expires_at: number;
-    };
-  }
-  
-  const req: Partial<AuthenticatedRequest> = {
+  // Create a simplified mock request with authentication properties
+  const req = {
+    // Set the authenticated user with the format expected by the app
     user: {
       claims: { sub: TEST_USER_ID },
       expires_at: Math.floor(Date.now() / 1000) + 3600
     },
-    isAuthenticated: function(this: AuthenticatedRequest): this is AuthenticatedRequest {
-      return true;
-    },
+    // Mock the isAuthenticated method that Express uses
+    isAuthenticated: jest.fn().mockReturnValue(true),
+    // Add any additional overrides
     ...overrides
   };
   
