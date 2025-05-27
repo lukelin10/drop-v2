@@ -146,17 +146,14 @@ describe('DatabaseStorage', () => {
       
       // Update drop
       const updatedDrop = await storage.updateDrop(drop.id, {
-        text: 'Updated text',
-        favorite: true
+        text: 'Updated text'
       });
       
       expect(updatedDrop).toHaveProperty('text', 'Updated text');
-      expect(updatedDrop).toHaveProperty('favorite', true);
       
       // Verify update in database
       const retrievedDrop = await storage.getDrop(drop.id);
       expect(retrievedDrop).toHaveProperty('text', 'Updated text');
-      expect(retrievedDrop).toHaveProperty('favorite', true);
     });
     
     test('getDrop returns undefined for non-existent drop', async () => {

@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS "drops" (
     "userId" INTEGER,
     "questionId" INTEGER,
     "text" TEXT NOT NULL,
-    "favorite" BOOLEAN DEFAULT false NOT NULL,
     "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY ("userId") REFERENCES "users"("id"),
     FOREIGN KEY ("questionId") REFERENCES "question"("id")

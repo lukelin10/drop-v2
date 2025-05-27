@@ -111,25 +111,12 @@ describe('Complete Conversation Flow', () => {
     expect(messagesResponse2.status).toBe(200);
     expect(messagesResponse2.body.length).toBe(4); // 2 user messages + 2 AI responses
     
-    // Step 6: User marks the drop as favorite
-    const updateResponse = await request(app)
-      .patch(`/api/drops/${dropId}`)
-      .send({
-        favorite: true
-      });
-    
-    expect(updateResponse.status).toBe(200);
-    expect(updateResponse.body).toHaveProperty('favorite', true);
-    
-    // Step 7: Check updated drops list shows the favorite
+    // Step 6: Verify message count is updated
     const updatedDropsResponse = await request(app).get('/api/drops');
     expect(updatedDropsResponse.status).toBe(200);
-    const favoriteDrop = updatedDropsResponse.body.find((drop: any) => drop.id === dropId);
-    expect(favoriteDrop).toBeTruthy();
-    expect(favoriteDrop.favorite).toBe(true);
-    
-    // Step 8: Verify message count is updated
-    expect(favoriteDrop.messageCount).toBe(4);
+    const updatedDrop = updatedDropsResponse.body.find((drop: any) => drop.id === dropId);
+    expect(updatedDrop).toBeTruthy();
+    expect(updatedDrop.messageCount).toBe(4);
   });
   
   test('Error handling during conversation flow', async () => {

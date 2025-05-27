@@ -179,11 +179,6 @@ describe('API Error Handling', () => {
           .patch(`/api/drops/${dropId}`)
           .send({
             text: 'Updated text 2'
-          }),
-        request(app)
-          .patch(`/api/drops/${dropId}`)
-          .send({
-            favorite: true
           })
       ];
       
@@ -200,10 +195,9 @@ describe('API Error Handling', () => {
       expect(finalResponse.status).toBe(200);
       
       // Since we can't control the exact order of concurrent operations,
-      // just verify that one of the text updates was applied and the favorite flag was updated
+      // just verify that one of the text updates was applied
       const finalDrop = finalResponse.body;
       expect(finalDrop.text).toMatch(/^Updated text [12]$/);
-      expect(finalDrop.favorite).toBe(true);
     });
   });
   

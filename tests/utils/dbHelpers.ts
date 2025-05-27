@@ -18,7 +18,6 @@ export async function createTestDrop(options: {
     text,
     createdAt: new Date(),
     updatedAt: new Date(),
-    favorite: false,
     messageCount: 0
   };
   

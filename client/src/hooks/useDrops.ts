@@ -8,7 +8,6 @@
  * - Fetches all user's journal entries
  * - Fetches the daily reflection question
  * - Creates new journal entries from user responses
- * - Manages favorite status of entries
  * - Provides utility functions for accessing and filtering entries
  */
 
@@ -56,35 +55,11 @@ export function useDrops() {
       // Create the new drop with the user's answer
       const res = await apiRequest("POST", "/api/drops", {
         questionId: questionId,
-        text: answer,
-        favorite: false
+        text: answer
       });
       return await res.json() as Drop;
     },
     // After successfully creating a drop, update the cache
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drops"] });
-    }
-  });
-
-  /**
-   * Mutation to toggle the favorite status of a journal entry
-   * 
-   * This allows users to mark/unmark entries as favorites for easier access
-   */
-  const toggleFavoriteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      // Find the drop in the cached data
-      const drop = drops.find(d => d.id === id);
-      if (!drop) throw new Error("Drop not found");
-      
-      // Send request to toggle the current favorite status
-      const res = await apiRequest("PATCH", `/api/drops/${id}`, {
-        favorite: !drop.favorite
-      });
-      return await res.json() as Drop;
-    },
-    // After successfully updating, refresh the drops cache
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/drops"] });
     }
@@ -97,14 +72,6 @@ export function useDrops() {
    */
   const answerDailyQuestion = async (answer: string): Promise<Drop> => {
     return await answerMutation.mutateAsync(answer);
-  };
-
-  /**
-   * Public method to toggle the favorite status of a drop
-   * @param id - The ID of the drop to toggle
-   */
-  const toggleFavorite = async (id: number): Promise<void> => {
-    await toggleFavoriteMutation.mutateAsync(id);
   };
 
   /**
@@ -141,7 +108,6 @@ export function useDrops() {
     previousDrops,         // Recent entries for display
     dailyQuestion: dailyQuestionData?.question || "What's on your mind today?", // Today's question with fallback
     answerDailyQuestion,   // Function to submit a new entry
-    toggleFavorite,        // Function to mark/unmark as favorite
     getDrop,               // Function to get a specific entry
     getLatestDropId        // Function to get the latest entry ID
   };

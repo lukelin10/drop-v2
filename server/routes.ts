@@ -153,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /**
-   * Update a drop (currently only supports toggling favorite status)
+   * Update a drop
    * PATCH /api/drops/:id
    * Validates the request body against a schema
    */
@@ -164,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Define validation schema for updates
       const updateSchema = z.object({
-        favorite: z.boolean().optional()
+        text: z.string().optional()
       });
       
       // Check if the drop exists and belongs to the user

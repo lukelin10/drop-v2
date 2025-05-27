@@ -92,7 +92,6 @@ export const insertQuestionSchema = createInsertSchema(questionTable).omit({
  * Drops Table (Journal Entries)
  * Stores user responses to daily questions
  * - Each drop is a journal entry responding to a question
- * - Can be favorited by users
  * - Connected to conversation messages
  */
 export const drops = pgTable("drops", {
@@ -101,7 +100,6 @@ export const drops = pgTable("drops", {
   // Important: Field is named 'answer' in database, but in our code it's referred to as 'text'
   text: text("answer").notNull(),                         // User's response to the question
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  favorite: boolean("favorite").default(false).notNull(), // User can mark entries as favorites
   messageCount: integer("message_count").default(0).notNull(), // Count of messages in the conversation
   userId: varchar("user_id").references(() => users.id),  // User who created this entry
 });
