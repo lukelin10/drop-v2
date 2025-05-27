@@ -106,12 +106,15 @@ export const drops = pgTable("drops", {
 
 /**
  * Schema for inserting new drops/journal entries
- * Omits auto-generated fields
+ * Omits auto-generated fields and adds validation for required fields
  */
 export const insertDropSchema = createInsertSchema(drops).omit({
   id: true,
   createdAt: true,
   messageCount: true,
+}).refine((data) => data.text && data.text.trim().length > 0, {
+  message: "Text field is required and cannot be empty",
+  path: ["text"],
 });
 
 /**
@@ -132,11 +135,17 @@ export const messages = pgTable("messages", {
 
 /**
  * Schema for inserting new messages
- * Omits auto-generated fields
+ * Omits auto-generated fields and adds validation for required fields
  */
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
+}).refine((data) => data.text && data.text.trim().length > 0, {
+  message: "Text field is required and cannot be empty",
+  path: ["text"],
+}).refine((data) => typeof data.fromUser === 'boolean', {
+  message: "fromUser field is required and must be a boolean",
+  path: ["fromUser"],
 });
 
 /**

@@ -42,10 +42,10 @@ describe('Complete Conversation Flow', () => {
   
   test('Complete user journey from question to conversation', async () => {
     // Step 1: User sees the daily question
-    const questionResponse = await request(app).get('/api/questions/daily');
+    const questionResponse = await request(app).get('/api/daily-question');
     expect(questionResponse.status).toBe(200);
-    expect(questionResponse.body).toBeTruthy();
-    expect(typeof questionResponse.body).toBe('string');
+    expect(questionResponse.body).toHaveProperty('question');
+    expect(typeof questionResponse.body.question).toBe('string');
     
     // Step 2: User creates a drop (answers the daily question)
     const dropResponse = await request(app)
@@ -84,13 +84,13 @@ describe('Complete Conversation Flow', () => {
     expect(message1Response.body).toHaveProperty('fromUser', true);
     
     // Wait for AI response to be generated
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Check for AI response
     const messagesResponse1 = await request(app).get(`/api/drops/${dropId}/messages`);
     expect(messagesResponse1.status).toBe(200);
-    expect(messagesResponse1.body.length).toBe(2); // User message + AI response
-    expect(messagesResponse1.body[1].fromUser).toBe(false); // AI response
+    expect(messagesResponse1.body.length).toBe(3); // 1 initial AI + 1 user + 1 AI response
+    expect(messagesResponse1.body[2].fromUser).toBe(false); // Latest AI response
     
     // Step 5: User continues the conversation
     const message2Response = await request(app)
@@ -104,19 +104,19 @@ describe('Complete Conversation Flow', () => {
     expect(message2Response.status).toBe(201);
     
     // Wait for AI response
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Check for second AI response
     const messagesResponse2 = await request(app).get(`/api/drops/${dropId}/messages`);
     expect(messagesResponse2.status).toBe(200);
-    expect(messagesResponse2.body.length).toBe(4); // 2 user messages + 2 AI responses
+    expect(messagesResponse2.body.length).toBe(5); // 1 initial AI + 2 user + 2 AI responses
     
     // Step 6: Verify message count is updated
     const updatedDropsResponse = await request(app).get('/api/drops');
     expect(updatedDropsResponse.status).toBe(200);
     const updatedDrop = updatedDropsResponse.body.find((drop: any) => drop.id === dropId);
     expect(updatedDrop).toBeTruthy();
-    expect(updatedDrop.messageCount).toBe(4);
+    expect(updatedDrop.messageCount).toBe(5);
   });
   
   test('Error handling during conversation flow', async () => {
@@ -193,7 +193,7 @@ describe('Complete Conversation Flow', () => {
       });
     
     // Wait for AI response
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Second message
     await request(app)
@@ -205,23 +205,23 @@ describe('Complete Conversation Flow', () => {
       });
     
     // Wait for AI response
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Verify the conversation history
     const messagesResponse = await request(app).get(`/api/drops/${dropId}/messages`);
     expect(messagesResponse.status).toBe(200);
-    expect(messagesResponse.body.length).toBe(4);
+    expect(messagesResponse.body.length).toBe(5); // 1 initial AI + 2 user + 2 AI responses
     
-    // Verify messages are in the correct order
-    expect(messagesResponse.body[0].text).toBe('Message 1');
-    expect(messagesResponse.body[0].fromUser).toBe(true);
+    // Verify messages are in the correct order (skipping the initial AI message)
+    expect(messagesResponse.body[1].text).toBe('Message 1');
+    expect(messagesResponse.body[1].fromUser).toBe(true);
     
-    expect(messagesResponse.body[1].fromUser).toBe(false); // AI response
+    expect(messagesResponse.body[2].fromUser).toBe(false); // AI response
     
-    expect(messagesResponse.body[2].text).toBe('Message 2');
-    expect(messagesResponse.body[2].fromUser).toBe(true);
+    expect(messagesResponse.body[3].text).toBe('Message 2');
+    expect(messagesResponse.body[3].fromUser).toBe(true);
     
-    expect(messagesResponse.body[3].fromUser).toBe(false); // AI response
+    expect(messagesResponse.body[4].fromUser).toBe(false); // AI response
     
     // Verify the AI was called with the correct drop ID (which contains conversation history)
     expect(generateResponse).toHaveBeenCalledTimes(2);

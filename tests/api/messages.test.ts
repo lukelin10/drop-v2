@@ -66,8 +66,8 @@ describe('Messages API', () => {
     // Verify the message was created
     const messagesResponse = await request(app).get(`/api/drops/${testDropId}/messages`);
     expect(messagesResponse.status).toBe(200);
-    expect(messagesResponse.body.length).toBe(1);
-    expect(messagesResponse.body[0].text).toBe(newMessage.text);
+    expect(messagesResponse.body.length).toBe(2); // 1 automatic initial message + 1 user message
+    expect(messagesResponse.body[1].text).toBe(newMessage.text); // User message is the second one
   });
 
   test('POST /api/messages returns 404 for non-existent drop', async () => {
@@ -119,14 +119,18 @@ describe('Messages API', () => {
     // Verify both user message and AI response exist
     const messagesResponse = await request(app).get(`/api/drops/${testDropId}/messages`);
     expect(messagesResponse.status).toBe(200);
-    expect(messagesResponse.body.length).toBe(2);
+    expect(messagesResponse.body.length).toBe(3); // 1 automatic initial message + 1 user message + 1 AI response
     
-    // First message should be from user
-    expect(messagesResponse.body[0].fromUser).toBe(true);
-    expect(messagesResponse.body[0].text).toBe(userMessage.text);
+    // First message should be the automatic initial message
+    expect(messagesResponse.body[0].fromUser).toBe(false);
+    expect(messagesResponse.body[0].text).toContain('Thank you for sharing');
     
-    // Second message should be from AI
-    expect(messagesResponse.body[1].fromUser).toBe(false);
-    expect(messagesResponse.body[1].text).toBe('Test AI response');
+    // Second message should be from user
+    expect(messagesResponse.body[1].fromUser).toBe(true);
+    expect(messagesResponse.body[1].text).toBe(userMessage.text);
+    
+    // Third message should be from AI (using the mock from testServer.ts)
+    expect(messagesResponse.body[2].fromUser).toBe(false);
+    expect(messagesResponse.body[2].text).toBe('Test AI response to: Hello AI assistant');
   });
 });

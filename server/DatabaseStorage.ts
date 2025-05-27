@@ -228,7 +228,9 @@ export class DatabaseStorage implements IStorage {
         fromUser: false
       });
       
-      return drop;
+      // Return the updated drop with the correct message count
+      const [updatedDrop] = await db.select().from(drops).where(eq(drops.id, drop.id));
+      return updatedDrop;
     } catch (error) {
       console.error('Error creating drop:', error);
       throw new Error('Failed to create drop');

@@ -87,10 +87,12 @@ describe('Drops API', () => {
     
     const dropId = dropResponse.body.id;
     
-    // Initially there should be no messages
+    // Initially there should be one automatic initial message
     const messagesResponse = await request(app).get(`/api/drops/${dropId}/messages`);
     expect(messagesResponse.status).toBe(200);
     expect(Array.isArray(messagesResponse.body)).toBe(true);
-    expect(messagesResponse.body.length).toBe(0);
+    expect(messagesResponse.body.length).toBe(1); // Automatic initial message
+    expect(messagesResponse.body[0].fromUser).toBe(false);
+    expect(messagesResponse.body[0].text).toContain('Thank you for sharing');
   });
 });

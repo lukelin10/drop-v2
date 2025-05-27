@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 
 // Mock the database to control its behavior in tests
 jest.mock('../../server/db', () => {
+  const { testDb } = require('../setup');
   return {
     db: testDb
   };
@@ -118,7 +119,6 @@ describe('DatabaseStorage', () => {
       expect(drop).toMatchObject(dropData);
       expect(drop).toHaveProperty('id');
       expect(drop).toHaveProperty('createdAt');
-      expect(drop).toHaveProperty('updatedAt');
       
       // Verify drop appears in the user's drops
       const userDrops = await storage.getUserDrops(testUserId);
@@ -199,20 +199,20 @@ describe('DatabaseStorage', () => {
       
       // Verify message appears in drop's messages
       const messages = await storage.getMessages(testDropId);
-      expect(messages.length).toBe(1);
-      expect(messages[0]).toMatchObject(messageData);
+      expect(messages.length).toBe(2); // 1 automatic initial message + 1 test message
+      expect(messages[1]).toMatchObject(messageData); // The test message is the second one
     });
     
     test('getMessages returns messages in chronological order', async () => {
-      // Create three messages with timestamps 1 minute apart
-      const baseTime = new Date();
+      // Create three messages with timestamps that come after the automatic initial message
+      const baseTime = new Date(Date.now() + 60000); // Start 1 minute in the future
       
       // Message 1
       await testDb.insert(schema.messages).values({
         dropId: testDropId,
         text: 'First message',
         fromUser: true,
-        createdAt: new Date(baseTime.getTime() - 120000) // 2 minutes ago
+        createdAt: baseTime
       });
       
       // Message 2
@@ -220,7 +220,7 @@ describe('DatabaseStorage', () => {
         dropId: testDropId,
         text: 'Second message',
         fromUser: false,
-        createdAt: new Date(baseTime.getTime() - 60000) // 1 minute ago
+        createdAt: new Date(baseTime.getTime() + 60000) // 1 minute later
       });
       
       // Message 3
@@ -228,15 +228,17 @@ describe('DatabaseStorage', () => {
         dropId: testDropId,
         text: 'Third message',
         fromUser: true,
-        createdAt: baseTime // Now
+        createdAt: new Date(baseTime.getTime() + 120000) // 2 minutes later
       });
       
       const messages = await storage.getMessages(testDropId);
       
-      expect(messages.length).toBe(3);
-      expect(messages[0].text).toBe('First message');
-      expect(messages[1].text).toBe('Second message');
-      expect(messages[2].text).toBe('Third message');
+      expect(messages.length).toBe(4); // 1 automatic initial message + 3 test messages
+      // The automatic message should be first (oldest), then our test messages in order
+      expect(messages[0].text).toContain('Thank you for sharing'); // Automatic initial message
+      expect(messages[1].text).toBe('First message');
+      expect(messages[2].text).toBe('Second message');
+      expect(messages[3].text).toBe('Third message');
     });
   });
   

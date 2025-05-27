@@ -4,26 +4,8 @@ import { TEST_USER_ID, cleanDatabase } from '../setup';
 import { storage } from '../../server/storage';
 import { generateResponse } from '../../server/services/anthropic';
 
-// Mock different responses based on message content
-const mockGenerateResponse = jest.fn().mockImplementation((userMessage: string) => {
-  if (userMessage.includes('hello')) {
-    return Promise.resolve('Hello! How are you feeling today?');
-  }
-  if (userMessage.includes('sad')) {
-    return Promise.resolve('I\'m sorry to hear you\'re feeling sad. Would you like to talk about what\'s troubling you?');
-  }
-  if (userMessage.includes('happy')) {
-    return Promise.resolve('That\'s wonderful! What has been bringing you joy recently?');
-  }
-  // Default response
-  return Promise.resolve(`I'm here to listen and provide guidance. Tell me more about your thoughts.`);
-});
-
-// Override the mock from testServer.ts with our more sophisticated mock
-jest.mock('../../server/services/anthropic', () => ({
-  generateResponse: mockGenerateResponse,
-  getConversationHistory: jest.fn().mockResolvedValue([])
-}));
+// Get the mocked function from the global mock (set up in testServer.ts)
+const mockGenerateResponse = generateResponse as jest.MockedFunction<typeof generateResponse>;
 
 describe('AI-Powered Chat', () => {
   let app: any;
@@ -79,9 +61,9 @@ describe('AI-Powered Chat', () => {
     
     // Check the response
     let messagesResponse = await request(app).get(`/api/drops/${testDropId}/messages`);
-    expect(messagesResponse.body.length).toBe(2);
-    expect(messagesResponse.body[1].fromUser).toBe(false);
-    expect(messagesResponse.body[1].text).toContain('How are you feeling today?');
+    expect(messagesResponse.body.length).toBe(3); // 1 automatic initial + 1 user + 1 AI response
+    expect(messagesResponse.body[2].fromUser).toBe(false);
+    expect(messagesResponse.body[2].text).toContain('Test AI response to: hello there');
     
     // Test with "sad" message
     await request(app)
@@ -97,9 +79,9 @@ describe('AI-Powered Chat', () => {
     
     // Check the response
     messagesResponse = await request(app).get(`/api/drops/${testDropId}/messages`);
-    expect(messagesResponse.body.length).toBe(4);
-    expect(messagesResponse.body[3].fromUser).toBe(false);
-    expect(messagesResponse.body[3].text).toContain('sorry to hear you\'re feeling sad');
+    expect(messagesResponse.body.length).toBe(5); // 1 automatic initial + 2 user + 2 AI responses
+    expect(messagesResponse.body[4].fromUser).toBe(false);
+    expect(messagesResponse.body[4].text).toContain('Test AI response to: I feel sad today');
     
     // Test with "happy" message
     await request(app)
@@ -115,9 +97,9 @@ describe('AI-Powered Chat', () => {
     
     // Check the response
     messagesResponse = await request(app).get(`/api/drops/${testDropId}/messages`);
-    expect(messagesResponse.body.length).toBe(6);
-    expect(messagesResponse.body[5].fromUser).toBe(false);
-    expect(messagesResponse.body[5].text).toContain('wonderful');
+    expect(messagesResponse.body.length).toBe(7); // 1 automatic initial + 3 user + 3 AI responses
+    expect(messagesResponse.body[6].fromUser).toBe(false);
+    expect(messagesResponse.body[6].text).toContain('Test AI response to: Actually I\'m feeling happy now');
   });
 
   test('AI receives conversation history for contextual responses', async () => {

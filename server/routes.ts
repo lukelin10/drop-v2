@@ -138,6 +138,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid drop data", errors: parseResult.error.format() });
       }
       
+      // Validate that the question exists
+      const questions = await storage.getQuestions();
+      const questionExists = questions.some(q => q.id === parseResult.data.questionId);
+      if (!questionExists) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
       // Add user ID to the drop data
       const dropData = {
         ...parseResult.data,
@@ -262,6 +269,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // We use setTimeout to make this non-blocking so we can return the user's message immediately
       setTimeout(async () => {
         try {
+          // First check if the drop still exists (in case it was deleted during cleanup)
+          const dropExists = await storage.getDrop(parseResult.data.dropId);
+          if (!dropExists) {
+            console.log(`Drop ${parseResult.data.dropId} no longer exists, skipping AI response generation`);
+            return;
+          }
+          
           if (!process.env.ANTHROPIC_API_KEY) {
             // If no API key is provided, use a fallback response
             const botResponse = "I'm sorry, I can't generate a thoughtful response right now. Please try again later.";
@@ -286,12 +300,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (error) {
           console.error("Error generating bot response:", error);
-          // Create a fallback response in case of error
-          await storage.createMessage({
-            dropId: parseResult.data.dropId,
-            text: "I apologize, but I'm having trouble processing your message right now. Could you try again?",
-            fromUser: false
-          });
+          // Only try to create a fallback response if the drop still exists
+          try {
+            const dropExists = await storage.getDrop(parseResult.data.dropId);
+            if (dropExists) {
+              await storage.createMessage({
+                dropId: parseResult.data.dropId,
+                text: "I apologize, but I'm having trouble processing your message right now. Could you try again?",
+                fromUser: false
+              });
+            }
+          } catch (fallbackError) {
+            console.error("Error creating fallback response:", fallbackError);
+          }
         }
       }, 1500); // Small delay to simulate thinking
       
