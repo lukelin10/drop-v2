@@ -316,36 +316,28 @@ export class DatabaseStorage implements IStorage {
   
   /**
    * Gets a question for the daily journal prompt
-   * Selects based on usage statistics to provide variety
+   * Randomly selects from all active questions
    * @returns The text of the selected question
    */
   async getDailyQuestion(): Promise<string> {
     try {
-      // Get a question that hasn't been used frequently
-      // Prioritizes questions with lower usage counts and that are marked as active
-      const [question] = await db
+      // Get all active questions
+      const questions = await db
         .select()
         .from(questionTable)
-        .where(eq(questionTable.isActive, true))
-        .orderBy(questionTable.usageCount) // Order by least used first
-        .limit(1);
+        .where(eq(questionTable.isActive, true));
 
       // Fallback if no questions are available
-      if (!question) {
+      if (!questions || questions.length === 0) {
         console.error('No active questions found');
         return 'What is on your mind today?'; // Default fallback question
       }
 
-      // Update the usage statistics for the selected question
-      await db
-        .update(questionTable)
-        .set({
-          lastUsedAt: new Date(),
-          usageCount: sql`${questionTable.usageCount} + 1` // Increment usage count
-        })
-        .where(eq(questionTable.id, question.id));
+      // Randomly select one question
+      const randomIndex = Math.floor(Math.random() * questions.length);
+      const selectedQuestion = questions[randomIndex];
 
-      return question.text;
+      return selectedQuestion.text;
     } catch (error) {
       console.error('Error fetching daily question:', error);
       return 'How are you feeling today?'; // Emergency fallback question
