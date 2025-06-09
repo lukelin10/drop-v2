@@ -26,9 +26,9 @@ export function useDrops() {
 
   /**
    * Query to fetch the daily reflection question
-   * This question is randomly selected by the backend
+   * This question is selected using date-based cycling to ensure consistency per day
    */
-  const { data: dailyQuestionData } = useQuery<{ question: string }>({
+  const { data: dailyQuestionData, isLoading: isDailyQuestionLoading } = useQuery<{ question: string }>({
     queryKey: ["/api/daily-question"],
   });
 
@@ -106,7 +106,8 @@ export function useDrops() {
   return {
     drops,                 // All journal entries
     previousDrops,         // Recent entries for display
-    dailyQuestion: dailyQuestionData?.question || "What's on your mind today?", // Today's question with fallback
+    dailyQuestion: dailyQuestionData?.question, // Today's question (undefined while loading)
+    isDailyQuestionLoading, // Loading state for the question
     answerDailyQuestion,   // Function to submit a new entry
     getDrop,               // Function to get a specific entry
     getLatestDropId        // Function to get the latest entry ID

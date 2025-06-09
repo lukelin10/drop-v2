@@ -249,6 +249,107 @@ describe('DatabaseStorage', () => {
       expect(typeof question).toBe('string');
       expect(question.length).toBeGreaterThan(0);
     });
+
+    test('getDailyQuestion returns consistent question for same day', async () => {
+      // Mock Date constructor to return consistent date
+      const originalDate = global.Date;
+      const mockDate = new originalDate('2024-01-01T12:00:00Z');
+      
+      global.Date = jest.fn(() => mockDate) as any;
+      global.Date.now = originalDate.now;
+
+      try {
+        const question1 = await storage.getDailyQuestion();
+        const question2 = await storage.getDailyQuestion();
+        const question3 = await storage.getDailyQuestion();
+
+        // All calls on same day should return same question
+        expect(question1).toBe(question2);
+        expect(question2).toBe(question3);
+      } finally {
+        // Restore original Date
+        global.Date = originalDate;
+      }
+    });
+
+    test('getDailyQuestion returns different questions for different days', async () => {
+      const originalDate = global.Date;
+
+      try {
+        // Day 1
+        global.Date = jest.fn(() => new originalDate('2024-01-01T12:00:00Z')) as any;
+        global.Date.now = originalDate.now;
+        const day1Question = await storage.getDailyQuestion();
+
+        // Day 2  
+        global.Date = jest.fn(() => new originalDate('2024-01-02T12:00:00Z')) as any;
+        global.Date.now = originalDate.now;
+        const day2Question = await storage.getDailyQuestion();
+
+        // Day 3
+        global.Date = jest.fn(() => new originalDate('2024-01-03T12:00:00Z')) as any;
+        global.Date.now = originalDate.now;
+        const day3Question = await storage.getDailyQuestion();
+
+        // Different days should return different questions
+        expect(day1Question).not.toBe(day2Question);
+        expect(day2Question).not.toBe(day3Question);
+        expect(day1Question).not.toBe(day3Question);
+      } finally {
+        global.Date = originalDate;
+      }
+    });
+
+    test('getDailyQuestion cycles through all available questions', async () => {
+      const originalDate = global.Date;
+
+      try {
+        // Get all active questions to determine pool size
+        const allQuestions = await storage.getQuestions();
+        const activeQuestions = allQuestions.filter(q => q.isActive);
+        const poolSize = activeQuestions.length;
+
+        const receivedQuestions = new Set();
+
+        // Test enough days to cycle through entire pool + some extra
+        for (let day = 1; day <= poolSize + 3; day++) {
+          global.Date = jest.fn(() => new originalDate(`2024-01-${day.toString().padStart(2, '0')}T12:00:00Z`)) as any;
+          global.Date.now = originalDate.now;
+          const question = await storage.getDailyQuestion();
+          receivedQuestions.add(question);
+        }
+
+        // Should have received multiple different questions
+        expect(receivedQuestions.size).toBeGreaterThan(1);
+        
+        // If we have enough questions in the pool, we should see cycling
+        if (poolSize >= 2) {
+          expect(receivedQuestions.size).toBeGreaterThanOrEqual(2);
+        }
+      } finally {
+        global.Date = originalDate;
+      }
+    });
+
+    test('getDailyQuestion handles empty question pool gracefully', async () => {
+      // Temporarily disable all questions
+      const allQuestions = await storage.getQuestions();
+      for (const question of allQuestions) {
+        await storage.updateQuestion(question.id, { isActive: false });
+      }
+
+      try {
+        const question = await storage.getDailyQuestion();
+        
+        // Should return fallback question
+        expect(question).toBe('What brought you joy today?');
+      } finally {
+        // Re-enable all questions
+        for (const question of allQuestions) {
+          await storage.updateQuestion(question.id, { isActive: true });
+        }
+      }
+    });
     
     test('getQuestions returns all questions', async () => {
       // Create a few test questions

@@ -6,7 +6,7 @@
  */
 
 import { db } from './db';
-import { eq, desc, sql, and, isNull } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { 
   questionTable,
   drops,
@@ -316,31 +316,38 @@ export class DatabaseStorage implements IStorage {
   
   /**
    * Gets a question for the daily journal prompt
-   * Randomly selects from all active questions
+   * Uses date-based modulo to ensure the same question per day while cycling through all questions
    * @returns The text of the selected question
    */
   async getDailyQuestion(): Promise<string> {
     try {
-      // Get all active questions
+      // Get all active questions ordered by ID for consistent cycling
       const questions = await db
         .select()
         .from(questionTable)
-        .where(eq(questionTable.isActive, true));
+        .where(eq(questionTable.isActive, true))
+        .orderBy(questionTable.id);
 
       // Fallback if no questions are available
-      if (!questions || questions.length === 0) {
+      if (questions.length === 0) {
         console.error('No active questions found');
-        return 'What is on your mind today?'; // Default fallback question
+        return 'What brought you joy today?';
       }
 
-      // Randomly select one question
-      const randomIndex = Math.floor(Math.random() * questions.length);
-      const selectedQuestion = questions[randomIndex];
+      // Use date-based index to ensure same question per day
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const day = today.getDate();
+      
+      // Create a simple day number that increments each day
+      const dayNumber = year * 365 + month * 31 + day;
+      const questionIndex = dayNumber % questions.length;
 
-      return selectedQuestion.text;
+      return questions[questionIndex].text;
     } catch (error) {
       console.error('Error fetching daily question:', error);
-      return 'How are you feeling today?'; // Emergency fallback question
+      return 'What brought you joy today?';
     }
   }
   

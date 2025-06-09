@@ -6,7 +6,7 @@
  * which then initiates a conversation with the AI coach.
  * 
  * Key features:
- * - Displays a randomly selected daily question for reflection
+ * - Displays a daily question for reflection (consistent per day, cycles through all questions)
  * - Provides a form for users to submit their response
  * - Submits the response to create a new "drop" (journal entry)
  * - Redirects to the chat page to continue the conversation with the AI
@@ -44,7 +44,7 @@ function DailyDrop() {
   // Global loading state for transitions
   const { setLoading } = useAppContext();
   // Custom hook for accessing and submitting journal entries
-  const { dailyQuestion, answerDailyQuestion } = useDrops();
+  const { dailyQuestion, isDailyQuestionLoading, answerDailyQuestion } = useDrops();
   // Local submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -114,9 +114,18 @@ function DailyDrop() {
       <div className="px-4 mb-8 pt-6">
         <div className="bg-gradient-to-br from-[hsl(var(--medium-terracotta))] to-[hsl(var(--light-terracotta))] rounded-2xl shadow-sm border border-[hsl(var(--soft-terracotta)_/_20%)]">
           <div className="px-8 py-8">
-            <p className="text-[hsl(var(--rich-chestnut))] text-2xl font-serif font-normal leading-relaxed tracking-tight">
-              {dailyQuestion}
-            </p>
+            {isDailyQuestionLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <i className="ri-loader-4-line animate-spin text-2xl text-[hsl(var(--rich-chestnut))] mr-3"></i>
+                <p className="text-[hsl(var(--rich-chestnut))] text-xl font-serif">
+                  Loading today's question...
+                </p>
+              </div>
+            ) : (
+              <p className="text-[hsl(var(--rich-chestnut))] text-2xl font-serif font-normal leading-relaxed tracking-tight">
+                {dailyQuestion}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -155,7 +164,7 @@ function DailyDrop() {
               <Button 
                 type="submit" 
                 className="px-8 py-3 rounded-full bg-[hsl(var(--soft-terracotta))] text-white hover:bg-[hsl(var(--deep-terracotta))] shadow-md transition-colors"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isDailyQuestionLoading}
               >
                 {isSubmitting ? (
                   // Loading state
