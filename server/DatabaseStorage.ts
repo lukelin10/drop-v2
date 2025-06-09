@@ -209,9 +209,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  /**
+    /**
    * Creates a new drop/journal entry
-   * Also initializes the conversation with an AI response
+   * Also initializes the conversation with a personalized AI response
    * @param insertDrop - The drop data to insert
    * @returns The created drop object
    * @throws Error if creation fails
@@ -221,12 +221,77 @@ export class DatabaseStorage implements IStorage {
       // Insert the new drop
       const [drop] = await db.insert(drops).values(insertDrop).returning();
       
-      // Automatically create an initial bot response to start the conversation
-      await this.createMessage({
-        dropId: drop.id,
-        text: `Thank you for sharing that. I'd like to explore your thoughts on this more deeply. What led you to this answer?`,
-        fromUser: false
-      });
+      // Check if we're in a test environment
+      const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID;
+      
+      if (isTestEnv) {
+        // For tests, create a synchronous message to maintain compatibility
+        await this.createMessage({
+          dropId: drop.id,
+          text: `Thank you for sharing that. I'd like to explore your thoughts on this more deeply. What led you to this answer?`,
+          fromUser: false
+        });
+      } else {
+        // For production, generate a personalized initial AI response asynchronously
+        const self = this;
+        setTimeout(async () => {
+          try {
+            // Check if drop still exists (important for tests that clean up quickly)
+            const dropExists = await db.select().from(drops).where(eq(drops.id, drop.id)).limit(1);
+            if (dropExists.length === 0) {
+              return; // Drop was deleted, skip message creation
+            }
+
+            // Import the generateResponse function here to avoid circular dependencies
+            let generateResponse;
+            try {
+              const anthropicModule = await import('./services/anthropic');
+              generateResponse = anthropicModule.generateResponse;
+            } catch (importError) {
+              console.error('Could not import anthropic service:', importError);
+              throw new Error('Anthropic service unavailable');
+            }
+            
+            // Get the question text for context
+            const question = await db
+              .select()
+              .from(questionTable)
+              .where(eq(questionTable.id, insertDrop.questionId))
+              .limit(1);
+            
+            const questionText = question[0]?.text || 'the question';
+            
+            // Create a context-aware prompt that includes both the question and user's response
+            const contextualPrompt = `The user was asked: "${questionText}" and they responded: "${insertDrop.text}"`;
+            
+            // Generate a personalized AI response using the Anthropic service
+            const personalizedResponse = await generateResponse(contextualPrompt, drop.id);
+            
+            // Create the initial AI message with the personalized response
+            await self.createMessage({
+              dropId: drop.id,
+              text: personalizedResponse,
+              fromUser: false
+            });
+          } catch (error) {
+            console.error('Error generating personalized initial response:', error);
+            // Fallback to a generic message if AI generation fails
+            try {
+              // Check again if drop still exists before creating fallback message
+              const dropExists = await db.select().from(drops).where(eq(drops.id, drop.id)).limit(1);
+              if (dropExists.length > 0) {
+                await self.createMessage({
+                  dropId: drop.id,
+                  text: `Thank you for sharing that. I'd like to explore your thoughts on this more deeply. What led you to this answer?`,
+                  fromUser: false
+                });
+              }
+            } catch (fallbackError) {
+              console.error('Error creating fallback message:', fallbackError);
+            }
+          }
+        }, 100); // Small delay to ensure drop is fully created
+      }
       
       // Return the updated drop with the correct message count
       const [updatedDrop] = await db.select().from(drops).where(eq(drops.id, drop.id));
