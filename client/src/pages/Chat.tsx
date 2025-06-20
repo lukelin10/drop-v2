@@ -296,16 +296,30 @@ function Chat() {
                 {newMessage.trim() && (
                   <Button 
                     type="submit" 
-                    className="w-12 h-12 bg-[hsl(var(--soft-terracotta))] text-white rounded-full flex items-center justify-center p-0 hover:bg-[hsl(var(--deep-terracotta))] transition-all shadow-md flex-shrink-0"
+                    className="w-12 h-12 bg-[#B8865A] text-white rounded-full flex items-center justify-center p-0 hover:bg-[#A67650] transition-all shadow-md flex-shrink-0"
                     disabled={isTyping}
                     aria-label="Send message"
                   >
-                    <i className="ri-arrow-up-line text-lg"></i>
+                    <i className="ri-arrow-up-line text-xl font-bold"></i>
                   </Button>
                 )}
               </form>
             )}
           </div>
+        </div>
+      </div>
+      
+      {/* Persistent Go to Feed Button */}
+      <div className="px-6 pb-6">
+        <div className="max-w-md mx-auto">
+          <Button 
+            variant="outline" 
+            className="w-full bg-white hover:bg-gray-50 border-border/20 rounded-2xl px-6 py-3 text-base font-medium text-foreground transition-colors"
+            onClick={() => navigate("/feed")}
+          >
+            <i className="ri-arrow-left-line mr-2"></i>
+            Go to Feed
+          </Button>
         </div>
       </div>
     </section>
