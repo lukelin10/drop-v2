@@ -296,7 +296,7 @@ function Chat() {
                 {newMessage.trim() && (
                   <Button 
                     type="submit" 
-                    className="w-12 h-12 bg-[#B8865A] text-white rounded-full flex items-center justify-center p-0 hover:bg-[#A67650] transition-all shadow-md flex-shrink-0"
+                    className="w-12 h-12 bg-[hsl(var(--soft-terracotta))] text-white rounded-full flex items-center justify-center p-0 hover:bg-[hsl(var(--deep-terracotta))] transition-all shadow-md flex-shrink-0"
                     disabled={isTyping}
                     aria-label="Send message"
                   >
