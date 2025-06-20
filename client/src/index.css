@@ -79,6 +79,7 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    font-size: 0.9rem; /* 10% smaller than default 1rem */
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -110,13 +111,13 @@
     @apply bg-transparent text-foreground hover:bg-muted rounded-full px-4 py-2 transition-all;
   }
 
-  /* Chat bubbles - softer styling that matches app visual language */
+  /* Chat bubbles - full width styling inspired by Claude interface */
   .chat-bubble-user {
-    @apply bg-[hsl(var(--user-bubble))] text-[hsl(var(--user-bubble-foreground))] rounded-2xl rounded-br-lg p-2.5 max-w-[85%] shadow-sm;
+    @apply bg-[hsl(var(--user-bubble))] text-[hsl(var(--user-bubble-foreground))] rounded-2xl p-4 w-full shadow-sm;
   }
 
   .chat-bubble-bot {
-    @apply bg-[hsl(var(--bot-bubble))] text-[hsl(var(--bot-bubble-foreground))] rounded-2xl rounded-bl-lg p-2.5 max-w-[85%] shadow-sm border border-border/10;
+    @apply bg-[hsl(var(--bot-bubble))] text-[hsl(var(--bot-bubble-foreground))] rounded-2xl p-4 w-full shadow-sm border border-border/10;
   }
 
   /* Bottom Navigation */

@@ -168,60 +168,47 @@ function Chat() {
         </div>
       
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto py-6 px-6 bg-[hsl(var(--app-background))]" id="chat-messages">
-          <div className="space-y-6 max-w-md mx-auto">
+        <div className="flex-1 overflow-y-auto py-6 bg-[hsl(var(--app-background))]" id="chat-messages">
+          <div className="space-y-4 max-w-4xl mx-auto px-4">
             {/* Label for the initial user reflection */}
-            <div className="text-center mb-4">
+            <div className="text-center mb-6">
               <span className="text-sm font-medium bg-[hsl(var(--app-background))] text-primary px-4 py-2 rounded-full border border-primary/10">
                 Your reflection
               </span>
             </div>
             
             {/* Display the user's initial journal entry */}
-            <div className="flex justify-end mb-6">
+            <div className="mb-6">
+              <div className="mb-2 text-sm font-medium text-muted-foreground">You</div>
               <div className="chat-bubble-user">
-                <p className="text-base">{drop.text}</p>
+                <p>{drop.text}</p>
               </div>
             </div>
             
             {/* Display all messages in the conversation */}
             {messages.map((message, index) => (
-              <div 
-                key={index} 
-                className={cn(
-                  "flex", 
-                  message.fromUser ? "justify-end" : "justify-start", // Align based on sender
-                  "mb-6"
-                )}
-              >
-                {/* AI message bubble */}
-                {!message.fromUser && (
-                  <div className="max-w-[85%]">
-                    <div className="chat-bubble-bot">
-                      <p className="text-base">{message.text}</p>
-                    </div>
-                  </div>
-                )}
+              <div key={index} className="mb-6">
+                {/* Message label */}
+                <div className="mb-2 text-sm font-medium text-muted-foreground">
+                  {message.fromUser ? "You" : "DropBot"}
+                </div>
                 
-                {/* User message bubble */}
-                {message.fromUser && (
-                  <div className="chat-bubble-user">
-                    <p className="text-base">{message.text}</p>
-                  </div>
-                )}
+                {/* Message content */}
+                <div className={message.fromUser ? "chat-bubble-user" : "chat-bubble-bot"}>
+                  <p>{message.text}</p>
+                </div>
               </div>
             ))}
             
             {/* Typing indicator when AI is generating a response */}
             {isTyping && (
-              <div className="flex justify-start mb-6">
-                <div className="max-w-[85%]">
-                  <div className="chat-bubble-bot py-3 px-4">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-[#AAAAAA] rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-[#AAAAAA] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <div className="w-2 h-2 bg-[#AAAAAA] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                    </div>
+              <div className="mb-6">
+                <div className="mb-2 text-sm font-medium text-muted-foreground">DropBot</div>
+                <div className="chat-bubble-bot">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-[#AAAAAA] rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-[#AAAAAA] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-[#AAAAAA] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                   </div>
                 </div>
               </div>
@@ -245,7 +232,7 @@ function Chat() {
             </button>
           </div>
         
-          <div className="px-6 pb-6 pt-2 max-w-md mx-auto">
+          <div className="px-6 pb-6 pt-2 max-w-4xl mx-auto">
             {/* Show end of conversation message if limit reached */}
             {isLimitReached ? (
               <div className="flex flex-col items-center space-y-4">
@@ -311,7 +298,7 @@ function Chat() {
       
       {/* Persistent Go to Feed Button */}
       <div className="px-6 pb-6">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-4xl mx-auto">
           <Button 
             variant="outline" 
             className="w-full bg-white hover:bg-gray-50 border-border/20 rounded-2xl px-6 py-3 text-base font-medium text-foreground transition-colors"
