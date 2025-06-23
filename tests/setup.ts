@@ -10,16 +10,17 @@ neonConfig.poolQueryViaFetch = true;
 process.env.NODE_ENV = 'test';
 process.env.ANTHROPIC_API_KEY = 'test-api-key'; // Mock API key for tests
 
-// Make sure we have a test database URL
-if (!process.env.TEST_DATABASE_URL && process.env.DATABASE_URL) {
-  // For development, we can use the main database but with a test prefix
-  // This is not ideal for a real production app, but works for our purposes
-  process.env.TEST_DATABASE_URL = process.env.DATABASE_URL;
-  console.warn('Warning: Using main DATABASE_URL for tests. This is not recommended for production.');
-}
-
+// Ensure we have a separate test database - NEVER use production database for tests
 if (!process.env.TEST_DATABASE_URL) {
-  throw new Error('TEST_DATABASE_URL must be set for running tests');
+  // Create a separate test database connection string
+  if (process.env.DATABASE_URL) {
+    // Extract base URL and create a test database
+    const baseUrl = process.env.DATABASE_URL.replace(/\/[^\/]*$/, '');
+    process.env.TEST_DATABASE_URL = `${baseUrl}/test_db`;
+    console.log('Created separate test database URL');
+  } else {
+    throw new Error('TEST_DATABASE_URL must be set for running tests. Never use production database for tests.');
+  }
 }
 
 // Test database setup
@@ -128,6 +129,19 @@ export async function createTestTables() {
 
 // Helper to clean database tables between tests
 export async function cleanDatabase() {
+  // SAFETY CHECK: Only run cleanup in test environment
+  if (process.env.NODE_ENV !== 'test') {
+    console.error('CRITICAL: cleanDatabase() should only run in test environment!');
+    throw new Error('Database cleanup attempted outside of test environment');
+  }
+
+  // Additional safety check: ensure we're using a test database
+  const testDbUrl = process.env.TEST_DATABASE_URL || '';
+  if (!testDbUrl.includes('test') && !testDbUrl.includes('TEST')) {
+    console.error('CRITICAL: Test database URL does not appear to be a test database!');
+    throw new Error('Database cleanup attempted on non-test database');
+  }
+
   try {
     // Delete all records from tables in correct order to respect foreign key constraints
     // 1. First, delete analysis_drops (junction table)
@@ -174,6 +188,10 @@ export function getMockAuthUser() {
 
 // Before and after hooks to set up and tear down test environment
 beforeAll(async () => {
+  // SAFETY CHECK: Only run test hooks in test environment
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('Test hooks should only run in test environment');
+  }
   // Create all necessary tables for tests
   await createTestTables();
 });
@@ -183,6 +201,10 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
+  // SAFETY CHECK: Only run cleanup in test environment
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('Test cleanup should only run in test environment');
+  }
   await cleanDatabase();
 });
 
