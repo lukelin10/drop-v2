@@ -5,12 +5,16 @@ const config: Config = {
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
+    '^@/(.*)$': '<rootDir>/client/src/$1',
     '^@shared/(.*)$': '<rootDir>/shared/$1',
     '^@client/(.*)$': '<rootDir>/client/src/$1',
     '^@server/(.*)$': '<rootDir>/server/$1',
   },
-  testMatch: ['**/tests/**/*.test.ts'],
+  testMatch: [
+    '**/tests/**/*.test.ts',
+    // Exclude React component tests from the main test run
+    '!**/client/src/**/*.test.{ts,tsx}'
+  ],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',

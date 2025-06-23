@@ -1,227 +1,192 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/context/AppContext";
 import { useToast } from "@/hooks/use-toast";
-import { useDrops } from "@/hooks/useDrops";
+import { useAnalyses } from "@/hooks/useAnalyses";
+import { useAnalysisEligibility } from "@/hooks/useAnalysisEligibility";
+import { AnalysisProgress } from "@/components/AnalysisProgress";
+import { AnalysisCard } from "@/components/AnalysisCard";
 import { cn } from "@/lib/utils";
-
-interface Analysis {
-  id: number;
-  title: string;
-  description: string;
-  createdAt: string;
-  status: "completed" | "in_progress";
-  progress: number;
-}
-
-interface Theme {
-  id: number;
-  name: string;
-  icon: string;
-  color: string;
-  percentage: number;
-}
 
 function Analysis() {
   const { setLoading } = useAppContext();
   const { toast } = useToast();
-  const { drops } = useDrops();
-  
-  // Mock data for analysis
-  const analyses: Analysis[] = [
-    {
-      id: 1,
-      title: "Monthly Reflection Patterns",
-      description: "Analysis of your reflection patterns over the last 30 days, highlighting your most common themes and emotional trends.",
-      createdAt: "2023-10-18T12:00:00Z",
-      status: "completed",
-      progress: 100
-    },
-    {
-      id: 2,
-      title: "Growth Analysis",
-      description: "Tracking your personal development goals and identifying areas of progress and opportunities for future growth.",
-      createdAt: "2023-10-10T12:00:00Z",
-      status: "in_progress",
-      progress: 75
-    }
-  ];
-  
-  const themes: Theme[] = [
-    {
-      id: 1,
-      name: "Relationships",
-      icon: "ri-heart-line",
-      color: "primary",
-      percentage: 68
-    },
-    {
-      id: 2,
-      name: "Learning",
-      icon: "ri-book-open-line",
-      color: "secondary",
-      percentage: 52
-    },
-    {
-      id: 3,
-      name: "Wellbeing",
-      icon: "ri-mental-health-line",
-      color: "primary",
-      percentage: 45
-    },
-    {
-      id: 4,
-      name: "Goals",
-      icon: "ri-focus-3-line",
-      color: "secondary",
-      percentage: 40
-    }
-  ];
+  const { 
+    analyses, 
+    isLoading, 
+    error, 
+    hasMore, 
+    isCreatingAnalysis,
+    createAnalysis, 
+    toggleFavorite, 
+    loadMoreAnalyses 
+  } = useAnalyses();
+  const { isEligible, refetch: refetchEligibility } = useAnalysisEligibility();
 
-  function handleCreateNewAnalysis() {
-    setLoading(true);
-    
-    setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Analysis Started",
-        description: "Your new analysis is being generated and will be ready soon.",
-      });
-    }, 1000);
-  }
+  // Handle global loading state
+  useEffect(() => {
+    setLoading(isCreatingAnalysis);
+  }, [isCreatingAnalysis, setLoading]);
 
-  function handleViewAnalysisDetails(id: number) {
-    setLoading(true);
-    
-    setTimeout(() => {
-      setLoading(false);
+  // Handle errors
+  useEffect(() => {
+    if (error) {
       toast({
-        title: "Analysis Details",
-        description: "This feature is coming soon.",
+        title: "Error",
+        description: error,
+        variant: "destructive",
       });
-    }, 500);
-  }
+    }
+  }, [error, toast]);
+
+  const handleCreateAnalysis = () => {
+    createAnalysis({
+      onSuccess: (analysis) => {
+        toast({
+          title: "Analysis Complete",
+          description: "Your new analysis is ready to explore.",
+        });
+        // Refresh eligibility after creating analysis
+        refetchEligibility();
+      },
+      onError: (error) => {
+        toast({
+          title: "Analysis Failed",
+          description: error.message || "Please try again later.",
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  const handleAnalysisComplete = () => {
+    // Refresh both analyses and eligibility after analysis completion
+    refetchEligibility();
+  };
+
+  const handleToggleFavorite = (id: number, isFavorited: boolean) => {
+    toggleFavorite(id, isFavorited);
+  };
+
+  const handleLoadMore = () => {
+    if (!isLoading && hasMore) {
+      loadMoreAnalyses();
+    }
+  };
 
   return (
     <section className="flex flex-col min-h-[calc(100vh-120px)] py-4">
-      {/* Overview */}
+      {/* Analysis Progress Section */}
       <div className="px-4 mb-6">
-        <div className="card p-5">
-          <div className="flex justify-between items-center mb-5">
-            <h3 className="text-base font-medium text-foreground">Overview</h3>
-            <Button 
-              variant="link" 
-              className="text-sm text-primary flex items-center p-0"
-              onClick={handleCreateNewAnalysis}
-            >
-              <i className="ri-add-line mr-1"></i>
-              <span>New Analysis</span>
-            </Button>
-          </div>
-          
+        <AnalysisProgress 
+          onAnalysisComplete={handleAnalysisComplete}
+        />
+      </div>
+
+      {/* Analysis Feed */}
+      <div className="px-4 flex-grow">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-base font-medium text-foreground">Your Analyses</h3>
+          {analyses.length > 0 && (
+            <span className="text-sm text-muted-foreground">
+              {analyses.length} analysis{analyses.length === 1 ? '' : 'es'}
+            </span>
+          )}
+        </div>
+
+        {/* Loading state for initial load */}
+        {isLoading && analyses.length === 0 ? (
           <div className="space-y-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
-                <i className="ri-water-drop-fill text-primary"></i>
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="card p-4">
+                <div className="animate-pulse space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-6 w-6 bg-muted rounded-full"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-muted rounded w-full"></div>
+                    <div className="h-3 bg-muted rounded w-2/3"></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-3 bg-muted rounded w-24"></div>
+                    <div className="h-3 bg-muted rounded w-16"></div>
+                  </div>
+                </div>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-foreground">{drops.length} total drops</p>
-                <p className="text-xs text-muted-foreground">Since joining Sep 2023</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-secondary bg-opacity-10 flex items-center justify-center">
-                <i className="ri-calendar-check-line text-secondary"></i>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-foreground">28 day streak</p>
-                <p className="text-xs text-muted-foreground">You're on a roll!</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
-                <i className="ri-emotion-happy-line text-primary"></i>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-foreground">Mood trend: Positive</p>
-                <p className="text-xs text-muted-foreground">75% positive entries this month</p>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
-      </div>
-      
-      {/* Recent Analyses */}
-      <div className="px-4 mb-8">
-        <h3 className="text-base font-medium text-foreground mb-3">Recent Analyses</h3>
-        
-        <div className="space-y-3">
-          {analyses.map(analysis => (
-            <div 
-              key={analysis.id}
-              className="card cursor-pointer"
-              onClick={() => handleViewAnalysisDetails(analysis.id)}
-            >
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-medium text-foreground text-sm">{analysis.title}</h4>
-                  <span className={cn(
-                    "text-xs px-2 py-1 rounded-full ml-2",
-                    analysis.status === "completed" 
-                      ? "bg-secondary bg-opacity-10 text-secondary" 
-                      : "bg-primary bg-opacity-10 text-primary"
-                  )}>
-                    {analysis.status === "completed" ? "Completed" : "In Progress"}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-3">{analysis.description}</p>
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <i className="ri-time-line mr-1"></i>
-                  <span>Created {new Date(analysis.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                </div>
+        ) : analyses.length > 0 ? (
+          <div className="space-y-4">
+            {/* Analysis Cards */}
+            {analyses.map((analysis) => (
+              <AnalysisCard
+                key={analysis.id}
+                analysis={analysis}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            ))}
+
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="flex justify-center pt-6">
+                <Button
+                  variant="outline"
+                  onClick={handleLoadMore}
+                  disabled={isLoading}
+                  className="min-w-32"
+                >
+                  {isLoading ? (
+                    <>
+                      <i className="ri-loader-4-line animate-spin mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <i className="ri-add-line mr-2" />
+                      Load More
+                    </>
+                  )}
+                </Button>
               </div>
-              <div className="h-1 w-full bg-muted">
-                <div className={cn(
-                  "h-1", 
-                  analysis.status === "completed" ? "bg-secondary" : "bg-primary"
-                )} style={{ width: `${analysis.progress}%` }}></div>
-              </div>
+            )}
+          </div>
+        ) : (
+          /* Empty State */
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <i className="ri-lightbulb-line text-2xl text-primary" />
             </div>
-          ))}
-        </div>
-      </div>
-      
-      {/* Topics & Themes */}
-      <div className="px-4">
-        <h3 className="text-base font-medium text-foreground mb-3">Common Themes</h3>
-        
-        <div className="grid grid-cols-2 gap-3">
-          {themes.map(theme => (
-            <div key={theme.id} className="card p-3">
-              <div className="flex items-center mb-2">
-                <div className={cn(
-                  "w-8 h-8 rounded-full bg-opacity-10 flex items-center justify-center",
-                  theme.color === "primary" ? "bg-primary" : "bg-secondary"
-                )}>
-                  <i className={cn(
-                    theme.icon,
-                    theme.color === "primary" ? "text-primary" : "text-secondary"
-                  )}></i>
-                </div>
-                <h4 className="ml-2 font-medium text-foreground text-sm">{theme.name}</h4>
-              </div>
-              <div className="h-1.5 w-full bg-muted rounded-full">
-                <div className={cn(
-                  "h-1.5 rounded-full",
-                  theme.color === "primary" ? "bg-primary" : "bg-secondary"
-                )} style={{ width: `${theme.percentage}%` }}></div>
-              </div>
-              <p className="text-xs text-right mt-1 text-muted-foreground">{theme.percentage}%</p>
-            </div>
-          ))}
-        </div>
+            <h4 className="text-base font-medium text-foreground mb-2">
+              No analyses yet
+            </h4>
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+              {isEligible 
+                ? "You have enough drops to create your first analysis!"
+                : "Keep reflecting! You need 7 drops to generate your first analysis."
+              }
+            </p>
+            {isEligible && (
+              <Button 
+                onClick={handleCreateAnalysis}
+                disabled={isCreatingAnalysis}
+                className="min-w-32"
+              >
+                {isCreatingAnalysis ? (
+                  <>
+                    <i className="ri-loader-4-line animate-spin mr-2" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <i className="ri-lightbulb-line mr-2" />
+                    Create Analysis
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

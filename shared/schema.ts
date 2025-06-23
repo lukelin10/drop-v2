@@ -50,7 +50,10 @@ export const users = pgTable("sessions_users", {
   profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+  lastAnalysisDate: timestamp("last_analysis_date"),  // When user last ran an analysis (for eligibility tracking)
+}, (table) => [
+  index("users_last_analysis_date_idx").on(table.lastAnalysisDate),
+]);
 
 /**
  * Schema for inserting new users
@@ -149,6 +152,75 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 });
 
 /**
+ * Analyses Table
+ * Stores AI-generated analyses of user journal entries
+ * - Each analysis contains insights from 7+ journal entries
+ * - Users can favorite analyses that resonate with them
+ */
+export const analyses = pgTable("analyses", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id), // User who owns this analysis
+  content: text("content").notNull(),                              // Full analysis content (3 paragraphs max)
+  summary: text("summary").notNull(),                              // One-line summary (15 words or less)
+  bulletPoints: text("bullet_points").notNull(),                  // 3-5 key insights as bullet points
+  createdAt: timestamp("created_at").defaultNow().notNull(),      // When the analysis was generated
+  isFavorited: boolean("is_favorited").default(false).notNull(),  // Whether user has hearted this analysis
+}, (table) => [
+  index("analyses_user_id_idx").on(table.userId),
+  index("analyses_created_at_idx").on(table.createdAt),
+  index("analyses_is_favorited_idx").on(table.isFavorited),
+]);
+
+/**
+ * Schema for inserting new analyses
+ * Omits auto-generated fields and adds validation for required fields
+ */
+export const insertAnalysisSchema = createInsertSchema(analyses).omit({
+  id: true,
+  createdAt: true,
+}).refine((data) => data.content && data.content.trim().length > 0, {
+  message: "Content field is required and cannot be empty",
+  path: ["content"],
+}).refine((data) => data.summary && data.summary.trim().length > 0, {
+  message: "Summary field is required and cannot be empty",
+  path: ["summary"],
+}).refine((data) => data.bulletPoints && data.bulletPoints.trim().length > 0, {
+  message: "Bullet points field is required and cannot be empty",
+  path: ["bulletPoints"],
+});
+
+/**
+ * Analysis Drops Junction Table
+ * Tracks which drops/journal entries were included in each analysis
+ * - Prevents duplicate drop inclusion in same analysis
+ * - Enables tracking analysis scope and recreating analysis context
+ */
+export const analysisDrops = pgTable("analysis_drops", {
+  id: serial("id").primaryKey(),
+  analysisId: integer("analysis_id").notNull().references(() => analyses.id, { onDelete: "cascade" }), // Analysis this drop belongs to
+  dropId: integer("drop_id").notNull().references(() => drops.id, { onDelete: "cascade" }),        // Drop included in the analysis
+  createdAt: timestamp("created_at").defaultNow().notNull(),                                        // When this relationship was created
+}, (table) => [
+  index("analysis_drops_analysis_id_idx").on(table.analysisId),
+  index("analysis_drops_drop_id_idx").on(table.dropId),
+]);
+
+/**
+ * Schema for inserting new analysis-drop relationships
+ * Omits auto-generated fields and adds validation for required fields
+ */
+export const insertAnalysisDropSchema = createInsertSchema(analysisDrops).omit({
+  id: true,
+  createdAt: true,
+}).refine((data) => typeof data.analysisId === 'number' && data.analysisId > 0, {
+  message: "Analysis ID is required and must be a positive number",
+  path: ["analysisId"],
+}).refine((data) => typeof data.dropId === 'number' && data.dropId > 0, {
+  message: "Drop ID is required and must be a positive number",
+  path: ["dropId"],
+});
+
+/**
  * Relationship Definitions
  * 
  * These establish the connections between tables for Drizzle ORM
@@ -174,6 +246,8 @@ export const dropsRelations = relations(drops, ({ one, many }) => ({
     fields: [drops.userId],
     references: [users.id],
   }),
+  // Each drop can be included in multiple analyses
+  analysisDrops: many(analysisDrops),
 }));
 
 // Message relationships
@@ -189,6 +263,33 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
   // Each user can have many drops
   drops: many(drops),
+  // Each user can have many analyses
+  analyses: many(analyses),
+}));
+
+// Analysis relationships
+export const analysesRelations = relations(analyses, ({ one, many }) => ({
+  // Each analysis belongs to one user
+  user: one(users, {
+    fields: [analyses.userId],
+    references: [users.id],
+  }),
+  // Each analysis can include many drops
+  analysisDrops: many(analysisDrops),
+}));
+
+// Analysis drops relationships
+export const analysisDropsRelations = relations(analysisDrops, ({ one }) => ({
+  // Each analysis-drop relationship belongs to one analysis
+  analysis: one(analyses, {
+    fields: [analysisDrops.analysisId],
+    references: [analyses.id],
+  }),
+  // Each analysis-drop relationship belongs to one drop
+  drop: one(drops, {
+    fields: [analysisDrops.dropId],
+    references: [drops.id],
+  }),
 }));
 
 /**
@@ -209,6 +310,12 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Analysis = typeof analyses.$inferSelect;
+export type InsertAnalysis = z.infer<typeof insertAnalysisSchema>;
+
+export type AnalysisDrop = typeof analysisDrops.$inferSelect;
+export type InsertAnalysisDrop = z.infer<typeof insertAnalysisDropSchema>;
 
 /**
  * Extended Drop type 

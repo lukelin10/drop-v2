@@ -29,6 +29,7 @@ const Chat = lazy(() => import("@/pages/Chat"));             // Conversation wit
 const LatestChat = lazy(() => import("@/pages/LatestChat")); // Redirects to most recent chat
 const Feed = lazy(() => import("@/pages/Feed"));             // Journal entries feed/history
 const Analysis = lazy(() => import("@/pages/Analysis"));     // Insights and trends
+const AnalysisDetail = lazy(() => import("@/pages/AnalysisDetail")); // Individual analysis view
 const Settings = lazy(() => import("@/pages/Settings"));     // User preferences
 const Login = lazy(() => import("@/pages/Login"));          // Authentication page
 
@@ -48,6 +49,7 @@ function ProtectedRoutes() {
           <Route path="/chat/latest" component={LatestChat} />   {/* Redirects to latest conversation */}
           <Route path="/chat/:id" component={Chat} />           {/* Specific conversation by ID */}
           <Route path="/feed" component={Feed} />               {/* History of journal entries */}
+          <Route path="/analysis/:id" component={AnalysisDetail} /> {/* Individual analysis view */}
           <Route path="/analysis" component={Analysis} />       {/* Insights and trends */}
           <Route path="/settings" component={Settings} />       {/* User settings */}
           <Route component={NotFound} />                       {/* 404 page for unmatched routes */}

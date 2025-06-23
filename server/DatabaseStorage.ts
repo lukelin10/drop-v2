@@ -12,6 +12,8 @@ import {
   drops,
   messages,
   users,
+  analyses,
+  analysisDrops,
   type Question,
   type InsertQuestion,
   type Drop,
@@ -21,6 +23,10 @@ import {
   type User,
   type InsertUser,
   type DropWithQuestion,
+  type Analysis,
+  type InsertAnalysis,
+  type AnalysisDrop,
+  type InsertAnalysisDrop,
   questionsList
 } from "@shared/schema";
 import { getRandomInt } from "../client/src/lib/utils";
@@ -474,6 +480,224 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error updating question with id ${id}:`, error);
       return undefined;
+    }
+  }
+
+  /**
+   * ANALYSIS METHODS
+   */
+
+  /**
+   * Creates a new analysis and tracks which drops were included
+   * @param insertAnalysis - The analysis data to insert
+   * @param includedDropIds - Array of drop IDs that were analyzed
+   * @returns The created analysis object
+   * @throws Error if creation fails
+   */
+  async createAnalysis(insertAnalysis: InsertAnalysis, includedDropIds: number[]): Promise<Analysis> {
+    try {
+      // Insert the new analysis
+      const [analysis] = await db.insert(analyses).values(insertAnalysis).returning();
+      
+      // Create analysis-drop relationships for each included drop
+      if (includedDropIds.length > 0) {
+        const analysisDropData = includedDropIds.map(dropId => ({
+          analysisId: analysis.id,
+          dropId: dropId
+        }));
+        
+        await db.insert(analysisDrops).values(analysisDropData);
+      }
+      
+      // Update user's last analysis date
+      await db
+        .update(users)
+        .set({ lastAnalysisDate: new Date() })
+        .where(eq(users.id, insertAnalysis.userId));
+      
+      return analysis;
+    } catch (error) {
+      console.error('Error creating analysis:', error);
+      throw new Error('Failed to create analysis');
+    }
+  }
+
+  /**
+   * Retrieves all analyses for a specific user
+   * @param userId - The ID of the user whose analyses to retrieve
+   * @param limit - Maximum number of analyses to return (default: 20)
+   * @param offset - Number of analyses to skip for pagination (default: 0)
+   * @returns Array of analyses ordered by newest first
+   */
+  async getUserAnalyses(userId: string, limit: number = 20, offset: number = 0): Promise<Analysis[]> {
+    try {
+      const userAnalyses = await db
+        .select()
+        .from(analyses)
+        .where(eq(analyses.userId, userId))
+        .orderBy(desc(analyses.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return userAnalyses;
+    } catch (error) {
+      console.error('Error fetching user analyses:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Retrieves a single analysis by ID
+   * @param id - The ID of the analysis to retrieve
+   * @returns The analysis or undefined if not found
+   */
+  async getAnalysis(id: number): Promise<Analysis | undefined> {
+    try {
+      const [analysis] = await db
+        .select()
+        .from(analyses)
+        .where(eq(analyses.id, id));
+      
+      return analysis;
+    } catch (error) {
+      console.error(`Error fetching analysis with id ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Updates the favorite status of an analysis
+   * @param id - The ID of the analysis to update
+   * @param isFavorited - Whether the analysis should be favorited
+   * @returns The updated analysis or undefined if not found
+   */
+  async updateAnalysisFavorite(id: number, isFavorited: boolean): Promise<Analysis | undefined> {
+    try {
+      const [analysis] = await db
+        .update(analyses)
+        .set({ isFavorited })
+        .where(eq(analyses.id, id))
+        .returning();
+      
+      return analysis;
+    } catch (error) {
+      console.error(`Error updating analysis favorite status with id ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Checks if a user is eligible for analysis (has 7+ unanalyzed drops)
+   * @param userId - The ID of the user to check
+   * @returns Object containing eligibility status and count information
+   */
+  async getAnalysisEligibility(userId: string): Promise<{
+    isEligible: boolean;
+    unanalyzedCount: number;
+    requiredCount: number;
+  }> {
+    try {
+      // Get user's last analysis date
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+      
+      if (!user) {
+        return { isEligible: false, unanalyzedCount: 0, requiredCount: 7 };
+      }
+      
+      // Count drops created since last analysis (or all drops if no previous analysis)
+      const lastAnalysisDate = user.lastAnalysisDate || new Date(0); // Epoch if never analyzed
+      
+      const [result] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(drops)
+        .where(sql`${drops.userId} = ${userId} AND ${drops.createdAt} > ${lastAnalysisDate}`);
+      
+      const unanalyzedCount = Number(result.count);
+      const requiredCount = 7;
+      
+      return {
+        isEligible: unanalyzedCount >= requiredCount,
+        unanalyzedCount,
+        requiredCount
+      };
+    } catch (error) {
+      console.error('Error checking analysis eligibility:', error);
+      return { isEligible: false, unanalyzedCount: 0, requiredCount: 7 };
+    }
+  }
+
+  /**
+   * Gets unanalyzed drops for a user (drops created since last analysis)
+   * @param userId - The ID of the user whose unanalyzed drops to retrieve  
+   * @returns Array of drops that haven't been analyzed yet
+   */
+  async getUnanalyzedDrops(userId: string): Promise<DropWithQuestion[]> {
+    try {
+      // Get user's last analysis date
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+      
+      if (!user) {
+        return [];
+      }
+      
+      // Get drops created since last analysis (or all drops if no previous analysis)
+      const lastAnalysisDate = user.lastAnalysisDate || new Date(0); // Epoch if never analyzed
+      
+      const unanalyzedDrops = await db
+        .select({
+          id: drops.id,
+          questionId: drops.questionId,
+          text: drops.text,
+          createdAt: drops.createdAt,
+          messageCount: drops.messageCount,
+          userId: drops.userId,
+          questionText: questionTable.text
+        })
+        .from(drops)
+        .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
+        .where(sql`${drops.userId} = ${userId} AND ${drops.createdAt} > ${lastAnalysisDate}`)
+        .orderBy(drops.createdAt); // Chronological order for analysis
+      
+      return unanalyzedDrops as DropWithQuestion[];
+    } catch (error) {
+      console.error('Error fetching unanalyzed drops:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Gets drops that were included in a specific analysis
+   * @param analysisId - The ID of the analysis
+   * @returns Array of drops that were analyzed
+   */
+  async getAnalysisDrops(analysisId: number): Promise<DropWithQuestion[]> {
+    try {
+      const analysisDropsList = await db
+        .select({
+          id: drops.id,
+          questionId: drops.questionId,
+          text: drops.text,
+          createdAt: drops.createdAt,
+          messageCount: drops.messageCount,
+          userId: drops.userId,
+          questionText: questionTable.text
+        })
+        .from(analysisDrops)
+        .innerJoin(drops, eq(analysisDrops.dropId, drops.id))
+        .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
+        .where(eq(analysisDrops.analysisId, analysisId))
+        .orderBy(drops.createdAt);
+      
+      return analysisDropsList as DropWithQuestion[];
+    } catch (error) {
+      console.error(`Error fetching drops for analysis ${analysisId}:`, error);
+      return [];
     }
   }
 }

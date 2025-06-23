@@ -324,6 +324,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * ANALYSIS ROUTES
+   */
+  
+  /**
+   * Check if user is eligible for analysis
+   * GET /api/analyses/eligibility
+   */
+  app.get("/api/analyses/eligibility", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const eligibility = await storage.getAnalysisEligibility(userId);
+      res.json(eligibility);
+    } catch (error) {
+      console.error("Error checking analysis eligibility:", error);
+      res.status(500).json({ message: "Failed to check analysis eligibility" });
+    }
+  });
+
+  /**
+   * Create a new analysis
+   * POST /api/analyses
+   */
+  app.post("/api/analyses", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Import the analysis service
+      const { createAnalysisForUser } = await import('./services/analysisService');
+      
+      // Create analysis using the orchestration service
+      const result = await createAnalysisForUser(userId);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: result.error,
+          metadata: result.metadata
+        });
+      }
+      
+      res.status(201).json(result.analysis);
+    } catch (error) {
+      console.error("Error creating analysis:", error);
+      res.status(500).json({ message: "Failed to create analysis" });
+    }
+  });
+
+  /**
+   * Get all analyses for the authenticated user
+   * GET /api/analyses
+   */
+  app.get("/api/analyses", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const analyses = await storage.getUserAnalyses(userId, limit, offset);
+      res.json(analyses);
+    } catch (error) {
+      console.error("Error fetching user analyses:", error);
+      res.status(500).json({ message: "Failed to fetch analyses" });
+    }
+  });
+
+  /**
+   * Get a specific analysis by ID
+   * GET /api/analyses/:id
+   */
+  app.get("/api/analyses/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const userId = req.user.claims.sub;
+      const analysis = await storage.getAnalysis(id);
+      
+      if (!analysis) {
+        return res.status(404).json({ message: "Analysis not found" });
+      }
+      
+      // Security check: ensure the analysis belongs to the authenticated user
+      if (analysis.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error fetching analysis:", error);
+      res.status(500).json({ message: "Failed to fetch analysis" });
+    }
+  });
+
+  /**
+   * Toggle favorite status of an analysis
+   * PUT /api/analyses/:id/favorite
+   */
+  app.put("/api/analyses/:id/favorite", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const userId = req.user.claims.sub;
+      const { isFavorited } = req.body;
+      
+      if (typeof isFavorited !== 'boolean') {
+        return res.status(400).json({ message: "isFavorited must be a boolean" });
+      }
+      
+      // Check if analysis exists and belongs to user
+      const existingAnalysis = await storage.getAnalysis(id);
+      if (!existingAnalysis) {
+        return res.status(404).json({ message: "Analysis not found" });
+      }
+      
+      if (existingAnalysis.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Update favorite status
+      const updatedAnalysis = await storage.updateAnalysisFavorite(id, isFavorited);
+      
+      res.json(updatedAnalysis);
+    } catch (error) {
+      console.error("Error updating analysis favorite status:", error);
+      res.status(500).json({ message: "Failed to update analysis favorite status" });
+    }
+  });
+
+  /**
+   * Analysis service health check
+   * GET /api/analyses/health
+   */
+  app.get("/api/analyses/health", async (req, res) => {
+    try {
+      const { healthCheck } = await import('./services/analysisService');
+      const health = await healthCheck();
+      
+      const statusCode = health.healthy ? 200 : 503;
+      res.status(statusCode).json(health);
+    } catch (error) {
+      console.error("Analysis health check failed:", error);
+      res.status(503).json({ 
+        healthy: false,
+        error: "Health check service unavailable"
+      });
+    }
+  });
+
   // Create and return the HTTP server
   const httpServer = createServer(app);
   return httpServer;

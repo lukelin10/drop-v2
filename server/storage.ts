@@ -14,7 +14,8 @@ import {
   Question, InsertQuestion,
   Drop, InsertDrop, DropWithQuestion,
   Message, InsertMessage, 
-  User, InsertUser
+  User, InsertUser,
+  Analysis, InsertAnalysis
 } from "@shared/schema";
 
 /**
@@ -61,6 +62,22 @@ export interface IStorage {
   getQuestions(): Promise<Question[]>;                          // Get all available questions
   createQuestion(question: InsertQuestion): Promise<Question>;  // Add a new question
   updateQuestion(id: number, updates: Partial<Question>): Promise<Question | undefined>; // Update question attributes
+  
+  /**
+   * Analysis methods
+   * Handle AI-powered analysis creation, retrieval, and management
+   */
+  createAnalysis(analysis: InsertAnalysis, includedDropIds: number[]): Promise<Analysis>; // Create new analysis with included drops
+  getUserAnalyses(userId: string, limit?: number, offset?: number): Promise<Analysis[]>; // Get user's analyses with pagination
+  getAnalysis(id: number): Promise<Analysis | undefined>;        // Get a single analysis by ID
+  updateAnalysisFavorite(id: number, isFavorited: boolean): Promise<Analysis | undefined>; // Toggle analysis favorite status
+  getAnalysisEligibility(userId: string): Promise<{             // Check if user can run analysis
+    isEligible: boolean;
+    unanalyzedCount: number;
+    requiredCount: number;
+  }>;
+  getUnanalyzedDrops(userId: string): Promise<DropWithQuestion[]>; // Get drops that haven't been analyzed
+  getAnalysisDrops(analysisId: number): Promise<DropWithQuestion[]>; // Get drops included in specific analysis
 }
 
 /**

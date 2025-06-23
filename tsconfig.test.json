@@ -1,9 +1,9 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["tests/**/*", "shared/**/*", "server/**/*"],
+  "include": ["tests/**/*", "shared/**/*", "server/**/*", "client/src/**/*"],
   "exclude": ["node_modules", "build", "dist"],
   "compilerOptions": {
-    "types": ["node", "jest"],
+    "types": ["node", "jest", "jsdom"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",

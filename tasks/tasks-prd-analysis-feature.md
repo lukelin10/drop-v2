@@ -50,59 +50,59 @@ Based on PRD: `prd-analysis-feature.md`
 
 ## Tasks
 
-- [ ] 1.0 Database Schema & Backend Infrastructure
-  - [ ] 1.1 Create database migration for `analyses` table with fields: id, user_id, content, summary, bullet_points, created_at, is_favorited
-  - [ ] 1.2 Create database migration for `analysis_drops` junction table to track which drops were included in each analysis
-  - [ ] 1.3 Add `last_analysis_date` field to users table via migration
-  - [ ] 1.4 Create Analysis model with CRUD operations (create, read, update favorite status)
-  - [ ] 1.5 Implement API endpoints: POST /api/analyses, GET /api/analyses, GET /api/analyses/:id, PUT /api/analyses/:id/favorite, GET /api/analyses/eligibility
-  - [ ] 1.6 Add database indexes for performance optimization on user_id and created_at fields
-  - [ ] 1.7 Write unit tests for Analysis model and API endpoints
+- [x ] 1.0 Database Schema & Backend Infrastructure
+  - [ x] 1.1 Create database migration for `analyses` table with fields: id, user_id, content, summary, bullet_points, created_at, is_favorited
+  - [ x] 1.2 Create database migration for `analysis_drops` junction table to track which drops were included in each analysis
+  - [ x] 1.3 Add `last_analysis_date` field to users table via migration
+  - [ x] 1.4 Create Analysis model with CRUD operations (create, read, update favorite status)
+  - [ x] 1.5 Implement API endpoints: POST /api/analyses, GET /api/analyses, GET /api/analyses/:id, PUT /api/analyses/:id/favorite, GET /api/analyses/eligibility
+  - [x ] 1.6 Add database indexes for performance optimization on user_id and created_at fields
+  - [x ] 1.7 Write unit tests for Analysis model and API endpoints
 
 - [ ] 2.0 Analysis Eligibility & Progress Tracking System
-  - [ ] 2.1 Implement logic to count unanalyzed drops since last analysis
-  - [ ] 2.2 Create eligibility check service that returns current progress (e.g., 4 out of 7)
-  - [ ] 2.3 Build AnalysisProgress component with visual progress bar and counter display, reusing existing progress bar components and color scheme from the app where possible
-  - [ ] 2.4 Implement "Run Analysis" button using existing Button component with consistent styling and primary color theme
-  - [ ] 2.5 Add subtitle text "Drop deeper with an analysis after 7 entries" using existing typography classes and muted text colors
-  - [ ] 2.6 Create useAnalysisEligibility hook to manage eligibility state
-  - [ ] 2.7 Implement counter reset logic after analysis completion
-  - [ ] 2.8 Write unit tests for eligibility logic and progress components
+  - [x] 2.1 Implement logic to count unanalyzed drops since last analysis
+  - [x] 2.2 Create eligibility check service that returns current progress (e.g., 4 out of 7)
+  - [x] 2.3 Build AnalysisProgress component with visual progress bar and counter display, reusing existing progress bar components and color scheme from the app where possible
+  - [x] 2.4 Implement "Run Analysis" button using existing Button component with consistent styling and primary color theme
+  - [x] 2.5 Add subtitle text "Drop deeper with an analysis after 7 entries" using existing typography classes and muted text colors
+  - [x] 2.6 Create useAnalysisEligibility hook to manage eligibility state
+  - [x] 2.7 Implement counter reset logic after analysis completion
+  - [x] 2.8 Write unit tests for eligibility logic and progress components
 
-- [ ] 3.0 LLM Integration & Analysis Generation
-  - [ ] 3.1 Create LLM service with the specified analysis prompt for psychology/CBT/life coaching insights
-  - [ ] 3.2 Implement function to compile chat histories from 7+ unanalyzed drops
-  - [ ] 3.3 Add retry logic with exponential backoff for failed LLM requests (up to 2 retries)
-  - [ ] 3.4 Set appropriate timeout limits for analysis generation requests
-  - [ ] 3.5 Implement rate limiting to prevent LLM service abuse
-  - [ ] 3.6 Add logging for analysis requests and responses for monitoring
-  - [ ] 3.7 Parse LLM response to extract one-line summary, 3 paragraphs, and 3-5 bullet points
-  - [ ] 3.8 Create analysis service to orchestrate the full analysis generation process
-  - [ ] 3.9 Write comprehensive unit tests for LLM integration and analysis generation
+- [x] 3.0 LLM Integration & Analysis Generation
+  - [x] 3.1 Create LLM service with the specified analysis prompt for psychology/CBT/life coaching insights
+  - [x] 3.2 Implement function to compile chat histories from 7+ unanalyzed drops
+  - [x] 3.3 Add retry logic with exponential backoff for failed LLM requests (up to 2 retries)
+  - [x] 3.4 Set appropriate timeout limits for analysis generation requests
+  - [x] 3.5 Implement rate limiting to prevent LLM service abuse
+  - [x] 3.6 Add logging for analysis requests and responses for monitoring
+  - [x] 3.7 Parse LLM response to extract one-line summary, 3 paragraphs, and 3-5 bullet points
+  - [x] 3.8 Create analysis service to orchestrate the full analysis generation process
+  - [x] 3.9 Write comprehensive unit tests for LLM integration and analysis generation
 
-- [ ] 4.0 Analysis Feed & Display Components
-  - [ ] 4.1 Replace existing Analysis.tsx with new analysis feed implementation, maintaining the same layout structure and section styling as current page
-  - [ ] 4.2 Create AnalysisCard component using existing card component as base, maintaining consistent padding, border radius, and shadow styling
-  - [ ] 4.3 Implement chronological feed layout (newest first) using existing spacing utilities and grid/flex patterns from the app
-  - [ ] 4.4 Add heart/favorite toggle functionality using existing icon components (ri-heart-line/ri-heart-fill) and primary/secondary color scheme
-  - [ ] 4.5 Implement infinite scroll or pagination matching existing patterns in the app (reuse pagination components if available)
-  - [ ] 4.6 Create useAnalyses hook for fetching and managing analysis data
-  - [ ] 4.7 Add loading states using existing loading components/skeletons and empty states using existing empty state patterns
-  - [ ] 4.8 Ensure all components use existing design tokens (colors, typography, spacing) from the app's theme system
-  - [ ] 4.9 Implement smooth animations using existing animation utilities and transition classes from the app
-  - [ ] 4.10 Write unit tests for feed components and analysis management hooks
+- [x] 4.0 Analysis Feed & Display Components
+  - [x] 4.1 Replace existing Analysis.tsx with new analysis feed implementation, maintaining the same layout structure and section styling as current page
+  - [x] 4.2 Create AnalysisCard component using existing card component as base, maintaining consistent padding, border radius, and shadow styling
+  - [x] 4.3 Implement chronological feed layout (newest first) using existing spacing utilities and grid/flex patterns from the app
+  - [x] 4.4 Add heart/favorite toggle functionality using existing icon components (ri-heart-line/ri-heart-fill) and primary/secondary color scheme
+  - [x] 4.5 Implement infinite scroll or pagination matching existing patterns in the app (reuse pagination components if available)
+  - [x] 4.6 Create useAnalyses hook for fetching and managing analysis data
+  - [x] 4.7 Add loading states using existing loading components/skeletons and empty states using existing empty state patterns
+  - [x] 4.8 Ensure all components use existing design tokens (colors, typography, spacing) from the app's theme system
+  - [x] 4.9 Implement smooth animations using existing animation utilities and transition classes from the app
+  - [x] 4.10 Write unit tests for feed components and analysis management hooks
 
-- [ ] 5.0 Individual Analysis Page & Navigation
-  - [ ] 5.1 Create AnalysisDetail.tsx page using existing page layout components and maintaining consistent header/content structure
-  - [ ] 5.2 Implement typography hierarchy using existing text classes (text-base, text-sm, text-xs) and font weights from the app's design system
-  - [ ] 5.3 Add navigation from analysis cards using existing navigation patterns and link components
-  - [ ] 5.4 Implement back navigation using existing back button component or icon (ri-arrow-left-line) with consistent styling
-  - [ ] 5.5 Add routing for /analysis (feed) and /analysis/:id (individual analysis) following existing routing patterns
-  - [ ] 5.6 Handle deep linking to specific analyses using existing routing utilities
-  - [ ] 5.7 Add heart/favorite functionality using the same heart icon components and interaction patterns as the feed
-  - [ ] 5.8 Use existing spacing utilities (p-4, mb-3, etc.) and layout components to maintain visual consistency
-  - [ ] 5.9 Add loading states using existing loading spinner/skeleton components from the app
-  - [ ] 5.10 Write unit tests for analysis detail page and navigation
+- [x] 5.0 Individual Analysis Page & Navigation
+  - [x] 5.1 Create AnalysisDetail.tsx page using existing page layout components and maintaining consistent header/content structure
+  - [x] 5.2 Implement typography hierarchy using existing text classes (text-base, text-sm, text-xs) and font weights from the app's design system
+  - [x] 5.3 Add navigation from analysis cards using existing navigation patterns and link components
+  - [x] 5.4 Implement back navigation using existing back button component or icon (ri-arrow-left-line) with consistent styling
+  - [x] 5.5 Add routing for /analysis (feed) and /analysis/:id (individual analysis) following existing routing patterns
+  - [x] 5.6 Handle deep linking to specific analyses using existing routing utilities
+  - [x] 5.7 Add heart/favorite functionality using the same heart icon components and interaction patterns as the feed
+  - [x] 5.8 Use existing spacing utilities (p-4, mb-3, etc.) and layout components to maintain visual consistency
+  - [x] 5.9 Add loading states using existing loading spinner/skeleton components from the app
+  - [x] 5.10 Write unit tests for analysis detail page and navigation
 
 - [ ] 6.0 Error Handling & Reliability Features
   - [ ] 6.1 Implement automatic retry mechanism for failed analysis generation (up to 2 retries)
