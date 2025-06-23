@@ -44,7 +44,7 @@ export class DatabaseStorage implements IStorage {
    */
   constructor() {
     // Automatically seed questions if the database is empty
-    this.ensureQuestionsExist();
+    // this.ensureQuestionsExist(); // Commented out to prevent automatic seeding
   }
 
   /**
