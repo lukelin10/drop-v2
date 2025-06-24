@@ -6,7 +6,7 @@
  */
 
 import { db } from './db';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, and } from 'drizzle-orm';
 import { 
   questionTable,
   drops,
@@ -360,35 +360,72 @@ export class DatabaseStorage implements IStorage {
   
   /**
    * Gets a question for the daily journal prompt
-   * Uses date-based modulo to ensure the same question per day while cycling through all questions
-   * @returns The text of the selected question
+   * Returns the same question for the entire day, advancing to the next question each day
+   * Questions are selected sequentially by ID starting from the lowest unused question
+   * @returns The text of the selected question for today
    */
   async getDailyQuestion(): Promise<string> {
     try {
-      // Get all active questions ordered by ID for consistent cycling
-      const questions = await db
+      // Get today's date in UTC to ensure consistent behavior across timezones
+      const today = new Date();
+      const todayDateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      // Check if we already have a question marked for today
+      const todaysQuestion = await db
         .select()
         .from(questionTable)
-        .where(eq(questionTable.isActive, true))
-        .orderBy(questionTable.id);
+        .where(and(
+          eq(questionTable.isActive, true),
+          sql`DATE(${questionTable.lastUsedAt}) = ${todayDateString}`
+        ))
+        .limit(1);
 
-      // Fallback if no questions are available
-      if (questions.length === 0) {
+      // If we already selected a question for today, return it
+      if (todaysQuestion.length > 0) {
+        return todaysQuestion[0].text;
+      }
+
+      // No question selected for today yet, so select the next one
+      // First, try to get the next unused question (where lastUsedAt is null)
+      let nextQuestion = await db
+        .select()
+        .from(questionTable)
+        .where(and(
+          eq(questionTable.isActive, true),
+          sql`${questionTable.lastUsedAt} IS NULL`
+        ))
+        .orderBy(questionTable.id)
+        .limit(1);
+
+      // If no unused questions, fallback to the oldest used question
+      // This handles the case where all questions have been used at least once
+      if (nextQuestion.length === 0) {
+        nextQuestion = await db
+          .select()
+          .from(questionTable)
+          .where(eq(questionTable.isActive, true))
+          .orderBy(questionTable.lastUsedAt, questionTable.id)
+          .limit(1);
+      }
+
+      // Final fallback if no active questions exist
+      if (nextQuestion.length === 0) {
         console.error('No active questions found');
         return 'What brought you joy today?';
       }
 
-      // Use date-based index to ensure same question per day
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const day = today.getDate();
-      
-      // Create a simple day number that increments each day
-      const dayNumber = year * 365 + month * 31 + day;
-      const questionIndex = dayNumber % questions.length;
+      const selectedQuestion = nextQuestion[0];
 
-      return questions[questionIndex].text;
+      // Mark this question as used for today
+      await db
+        .update(questionTable)
+        .set({
+          lastUsedAt: new Date(), // This will be today's timestamp
+          usageCount: sql`${questionTable.usageCount} + 1`
+        })
+        .where(eq(questionTable.id, selectedQuestion.id));
+
+      return selectedQuestion.text;
     } catch (error) {
       console.error('Error fetching daily question:', error);
       return 'What brought you joy today?';

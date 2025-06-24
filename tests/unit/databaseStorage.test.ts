@@ -252,85 +252,164 @@ describe('DatabaseStorage', () => {
       expect(question.length).toBeGreaterThan(0);
     });
 
-    test('getDailyQuestion returns consistent question for same day', async () => {
-      // Mock Date constructor to return consistent date
-      const originalDate = global.Date;
-      const mockDate = new originalDate('2024-01-01T12:00:00Z');
+    test('getDailyQuestion returns same question for same day', async () => {
+      // Clear any existing usage data
+      const questions = await storage.getQuestions();
+      for (const question of questions) {
+        await storage.updateQuestion(question.id, { lastUsedAt: null, usageCount: 0 });
+      }
+
+      // Create a test question
+      const testQuestion = await storage.createQuestion({
+        text: 'Same day test question?',
+        isActive: true,
+        category: 'test'
+      });
+
+      // Get the question multiple times on the same day
+      const question1 = await storage.getDailyQuestion();
+      const question2 = await storage.getDailyQuestion();
+      const question3 = await storage.getDailyQuestion();
+
+      // Should get the same question each time
+      expect(question1).toBe(question2);
+      expect(question2).toBe(question3);
+      expect(question1).toBe(question3);
+    });
+
+    test('getDailyQuestion updates lastUsedAt and usageCount on first call of day', async () => {
+      // Create a test question
+      const questionData = {
+        text: 'Usage tracking test question?',
+        isActive: true,
+        category: 'test'
+      };
       
-      global.Date = jest.fn(() => mockDate) as any;
-      global.Date.now = originalDate.now;
-
-      try {
-        const question1 = await storage.getDailyQuestion();
-        const question2 = await storage.getDailyQuestion();
-        const question3 = await storage.getDailyQuestion();
-
-        // All calls on same day should return same question
-        expect(question1).toBe(question2);
-        expect(question2).toBe(question3);
-      } finally {
-        // Restore original Date
-        global.Date = originalDate;
-      }
+      const question = await storage.createQuestion(questionData);
+      
+      // Verify initial state
+      expect(question.lastUsedAt).toBeNull();
+      expect(question.usageCount).toBe(0);
+      
+      // Get the question (which should update the tracking fields on first call)
+      const questionText = await storage.getDailyQuestion();
+      expect(questionText).toBe(questionData.text);
+      
+      // Verify the question was marked as used
+      const updatedQuestions = await storage.getQuestions();
+      const updatedQuestion = updatedQuestions.find(q => q.id === question.id);
+      
+      expect(updatedQuestion?.lastUsedAt).not.toBeNull();
+      expect(updatedQuestion?.usageCount).toBe(1);
+      expect(updatedQuestion?.lastUsedAt).toBeInstanceOf(Date);
+      
+      // Second call should not increment usage count
+      await storage.getDailyQuestion();
+      const questionsAfterSecondCall = await storage.getQuestions();
+      const questionAfterSecondCall = questionsAfterSecondCall.find(q => q.id === question.id);
+      expect(questionAfterSecondCall?.usageCount).toBe(1); // Still 1, not 2
     });
 
-    test('getDailyQuestion returns different questions for different days', async () => {
-      const originalDate = global.Date;
-
-      try {
-        // Day 1
-        global.Date = jest.fn(() => new originalDate('2024-01-01T12:00:00Z')) as any;
-        global.Date.now = originalDate.now;
-        const day1Question = await storage.getDailyQuestion();
-
-        // Day 2  
-        global.Date = jest.fn(() => new originalDate('2024-01-02T12:00:00Z')) as any;
-        global.Date.now = originalDate.now;
-        const day2Question = await storage.getDailyQuestion();
-
-        // Day 3
-        global.Date = jest.fn(() => new originalDate('2024-01-03T12:00:00Z')) as any;
-        global.Date.now = originalDate.now;
-        const day3Question = await storage.getDailyQuestion();
-
-        // Different days should return different questions
-        expect(day1Question).not.toBe(day2Question);
-        expect(day2Question).not.toBe(day3Question);
-        expect(day1Question).not.toBe(day3Question);
-      } finally {
-        global.Date = originalDate;
+    test('getDailyQuestion advances to next question on different days', async () => {
+      // Clear existing usage and create test scenario
+      const allQuestions = await storage.getQuestions();
+      for (const question of allQuestions) {
+        await storage.updateQuestion(question.id, { lastUsedAt: null, usageCount: 0 });
       }
+
+      // Create test questions
+      const question1 = await storage.createQuestion({
+        text: 'Day progression test 1?',
+        isActive: true,
+        category: 'test'
+      });
+
+      const question2 = await storage.createQuestion({
+        text: 'Day progression test 2?',
+        isActive: true,
+        category: 'test'
+      });
+
+      // Simulate question1 being used yesterday
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      await storage.updateQuestion(question1.id, { 
+        lastUsedAt: yesterday, 
+        usageCount: 1 
+      });
+
+      // Today's call should get question2 (next unused)
+      const selectedQuestion = await storage.getDailyQuestion();
+      expect(selectedQuestion).toBe('Day progression test 2?');
     });
 
-    test('getDailyQuestion cycles through all available questions', async () => {
-      const originalDate = global.Date;
-
-      try {
-        // Get all active questions to determine pool size
-        const allQuestions = await storage.getQuestions();
-        const activeQuestions = allQuestions.filter(q => q.isActive);
-        const poolSize = activeQuestions.length;
-
-        const receivedQuestions = new Set();
-
-        // Test enough days to cycle through entire pool + some extra
-        for (let day = 1; day <= poolSize + 3; day++) {
-          global.Date = jest.fn(() => new originalDate(`2024-01-${day.toString().padStart(2, '0')}T12:00:00Z`)) as any;
-          global.Date.now = originalDate.now;
-          const question = await storage.getDailyQuestion();
-          receivedQuestions.add(question);
-        }
-
-        // Should have received multiple different questions
-        expect(receivedQuestions.size).toBeGreaterThan(1);
-        
-        // If we have enough questions in the pool, we should see cycling
-        if (poolSize >= 2) {
-          expect(receivedQuestions.size).toBeGreaterThanOrEqual(2);
-        }
-      } finally {
-        global.Date = originalDate;
+    test('getDailyQuestion prefers unused questions over used ones', async () => {
+      // Clear existing usage and create test scenario
+      const allQuestions = await storage.getQuestions();
+      for (const question of allQuestions) {
+        await storage.updateQuestion(question.id, { lastUsedAt: null, usageCount: 0 });
       }
+
+      // Create two test questions
+      const unusedQuestion = await storage.createQuestion({
+        text: 'Unused question?',
+        isActive: true,
+        category: 'test'
+      });
+
+      const usedQuestion = await storage.createQuestion({
+        text: 'Used question?',
+        isActive: true,
+        category: 'test'
+      });
+
+      // Mark one as used on a previous day
+      const previousDay = new Date();
+      previousDay.setDate(previousDay.getDate() - 1);
+      await storage.updateQuestion(usedQuestion.id, { 
+        lastUsedAt: previousDay, 
+        usageCount: 1 
+      });
+
+      // getDailyQuestion should return the unused one first
+      const selectedQuestion = await storage.getDailyQuestion();
+      expect(selectedQuestion).toBe('Unused question?');
+    });
+
+    test('getDailyQuestion handles when all questions are used', async () => {
+      // Create test questions and mark them all as used on previous days
+      const question1 = await storage.createQuestion({
+        text: 'All used test 1?',
+        isActive: true,
+        category: 'test'
+      });
+
+      const question2 = await storage.createQuestion({
+        text: 'All used test 2?',
+        isActive: true,
+        category: 'test'
+      });
+
+      // Mark both as used on different previous days (question1 used more recently)
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+      await storage.updateQuestion(question1.id, { 
+        lastUsedAt: twoDaysAgo, 
+        usageCount: 1 
+      });
+
+      await storage.updateQuestion(question2.id, { 
+        lastUsedAt: threeDaysAgo, 
+        usageCount: 1 
+      });
+
+      // Should return the oldest used question (question2)
+      const selectedQuestion = await storage.getDailyQuestion();
+      expect(selectedQuestion).toBe('All used test 2?');
     });
 
     test('getDailyQuestion handles empty question pool gracefully', async () => {
