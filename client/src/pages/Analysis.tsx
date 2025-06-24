@@ -119,7 +119,7 @@ function Analysis() {
         ) : analyses.length > 0 ? (
           <div className="space-y-4">
             {/* Analysis Cards */}
-            {analyses.map((analysis) => (
+            {analyses.map((analysis: any) => (
               <AnalysisCard
                 key={analysis.id}
                 analysis={analysis}

@@ -10,6 +10,7 @@
  * - Provides a form for users to submit their response
  * - Submits the response to create a new "drop" (journal entry)
  * - Redirects to the chat page to continue the conversation with the AI
+ * - Shows success screen if user has already answered today's question
  */
 
 import { useState } from "react";
@@ -24,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { formatDateLong } from "@/lib/utils";
+import DailyDropSuccess from "@/components/DailyDropSuccess";
 
 /**
  * Validation schema for the reflection form
@@ -44,9 +46,12 @@ function DailyDrop() {
   // Global loading state for transitions
   const { setLoading } = useAppContext();
   // Custom hook for accessing and submitting journal entries
-  const { dailyQuestion, isDailyQuestionLoading, answerDailyQuestion } = useDrops();
+  const { dailyQuestion, isDailyQuestionLoading, answerDailyQuestion, hasAnsweredTodaysQuestion } = useDrops();
   // Local submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Check if user has already answered today's question
+  const hasAnswered = hasAnsweredTodaysQuestion();
   
   /**
    * Form setup with React Hook Form
@@ -98,6 +103,11 @@ function DailyDrop() {
         variant: "destructive"
       });
     }
+  }
+
+  // Show success screen if user has already answered today's question
+  if (hasAnswered && !isDailyQuestionLoading) {
+    return <DailyDropSuccess />;
   }
 
   return (

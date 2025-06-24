@@ -9,6 +9,7 @@
  * - Fetches the daily reflection question
  * - Creates new journal entries from user responses
  * - Provides utility functions for accessing and filtering entries
+ * - Checks if user has already answered today's question
  */
 
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -75,6 +76,27 @@ export function useDrops() {
   };
 
   /**
+   * Check if the user has already answered today's daily question
+   * @returns true if user has already answered today's question, false otherwise
+   */
+  const hasAnsweredTodaysQuestion = (): boolean => {
+    if (!dailyQuestionData?.question || drops.length === 0) {
+      return false;
+    }
+
+    // Get today's date in YYYY-MM-DD format for comparison
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Check if any drop was created today for the current daily question
+    return drops.some(drop => {
+      const dropDate = new Date(drop.createdAt).toISOString().split('T')[0];
+      const isToday = dropDate === today;
+      const isCurrentQuestion = drop.questionText === dailyQuestionData.question;
+      return isToday && isCurrentQuestion;
+    });
+  };
+
+  /**
    * Utility function to get a specific drop by ID
    * @param id - The ID of the drop to retrieve
    * @returns The drop object or undefined if not found
@@ -110,6 +132,7 @@ export function useDrops() {
     isDailyQuestionLoading, // Loading state for the question
     answerDailyQuestion,   // Function to submit a new entry
     getDrop,               // Function to get a specific entry
-    getLatestDropId        // Function to get the latest entry ID
+    getLatestDropId,       // Function to get the latest entry ID
+    hasAnsweredTodaysQuestion, // Function to check if user answered today's question
   };
 }
