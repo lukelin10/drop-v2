@@ -26,8 +26,7 @@ import {
   type Analysis,
   type InsertAnalysis,
   type AnalysisDrop,
-  type InsertAnalysisDrop,
-  questionsList
+  type InsertAnalysisDrop
 } from "@shared/schema";
 import { getRandomInt } from "../client/src/lib/utils";
 import { IStorage } from './storage';
@@ -40,36 +39,10 @@ export class DatabaseStorage implements IStorage {
   
   /**
    * Constructor
-   * Initializes the database storage and seeds initial data if needed
+   * Initializes the database storage
    */
   constructor() {
-    // Automatically seed questions if the database is empty
-    // this.ensureQuestionsExist(); // Commented out to prevent automatic seeding
-  }
-
-  /**
-   * Ensures that the database has starter questions
-   * This is called during initialization to seed the database if it's empty
-   * @private
-   */
-  private async ensureQuestionsExist() {
-    // Check if there are any questions already in the database
-    const existingQuestions = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(questionTable);
-    
-    // If no questions exist, seed the database with the default list
-    if (existingQuestions[0].count === 0) {
-      // Insert all questions from the predefined list
-      await db.insert(questionTable).values(
-        questionsList.map(text => ({ 
-          text,
-          isActive: true,
-          category: 'general'
-        }))
-      );
-      console.log(`Seeded ${questionsList.length} questions`);
-    }
+    // Database storage initialization - no automatic seeding or modifications
   }
 
   /**

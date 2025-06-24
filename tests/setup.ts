@@ -10,17 +10,18 @@ neonConfig.poolQueryViaFetch = true;
 process.env.NODE_ENV = 'test';
 process.env.ANTHROPIC_API_KEY = 'test-api-key'; // Mock API key for tests
 
-// Ensure we have a separate test database - NEVER use production database for tests
+// CRITICAL SAFETY: Ensure we have a separate test database - NEVER use production database for tests
 if (!process.env.TEST_DATABASE_URL) {
-  // Create a separate test database connection string
-  if (process.env.DATABASE_URL) {
-    // Extract base URL and create a test database
-    const baseUrl = process.env.DATABASE_URL.replace(/\/[^\/]*$/, '');
-    process.env.TEST_DATABASE_URL = `${baseUrl}/test_db`;
-    console.log('Created separate test database URL');
-  } else {
-    throw new Error('TEST_DATABASE_URL must be set for running tests. Never use production database for tests.');
-  }
+  throw new Error(`
+    CRITICAL ERROR: TEST_DATABASE_URL environment variable is required for running tests.
+    
+    You must set up a separate test database to avoid any risk of affecting production data.
+    
+    Example:
+    TEST_DATABASE_URL="postgresql://username:password@localhost:5432/test_database"
+    
+    NEVER use the same database as production for tests!
+  `);
 }
 
 // Test database setup
@@ -139,7 +140,14 @@ export async function cleanDatabase() {
   const testDbUrl = process.env.TEST_DATABASE_URL || '';
   if (!testDbUrl.includes('test') && !testDbUrl.includes('TEST')) {
     console.error('CRITICAL: Test database URL does not appear to be a test database!');
+    console.error('Database URL:', testDbUrl);
     throw new Error('Database cleanup attempted on non-test database');
+  }
+
+  // Triple safety check: verify we're not accidentally using production DATABASE_URL
+  if (testDbUrl === process.env.DATABASE_URL) {
+    console.error('CRITICAL: TEST_DATABASE_URL is the same as DATABASE_URL!');
+    throw new Error('Test database URL cannot be the same as production database URL');
   }
 
   try {

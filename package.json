@@ -9,11 +9,15 @@
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:quick": "jest --testPathPattern=databaseStorage.test.ts",
-    "test:react": "jest --config=jest.config.react.ts",
-    "test:react:watch": "jest --config=jest.config.react.ts --watch"
+    "test": "node tests/verify-test-safety.js && jest",
+    "test:unsafe": "jest",
+    "test:watch": "node tests/verify-test-safety.js && jest --watch",
+    "test:quick": "node tests/verify-test-safety.js && jest --testPathPattern=databaseStorage.test.ts",
+    "test:react": "node tests/verify-test-safety.js && jest --config=jest.config.react.ts",
+    "test:react:watch": "node tests/verify-test-safety.js && jest --config=jest.config.react.ts --watch",
+    "test:safety-check": "node tests/verify-test-safety.js",
+    "test:integration": "node tests/verify-test-safety.js && jest --testPathPattern=tests/integration",
+    "test:api": "node tests/verify-test-safety.js && jest --testPathPattern=tests/api"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
