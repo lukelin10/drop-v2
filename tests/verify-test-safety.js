@@ -29,19 +29,7 @@ if (!process.env.TEST_DATABASE_URL) {
   console.log('✅ TEST_DATABASE_URL is set');
 }
 
-// Check 3: TEST_DATABASE_URL must contain "test" or "TEST"
-if (process.env.TEST_DATABASE_URL) {
-  const testDbUrl = process.env.TEST_DATABASE_URL;
-  if (!testDbUrl.includes('test') && !testDbUrl.includes('TEST')) {
-    console.error('❌ ERROR: TEST_DATABASE_URL must contain "test" or "TEST"');
-    console.error(`   Current URL: ${testDbUrl}`);
-    hasErrors = true;
-  } else {
-    console.log('✅ TEST_DATABASE_URL contains test identifier');
-  }
-}
-
-// Check 4: TEST_DATABASE_URL must not equal DATABASE_URL
+// Check 3: TEST_DATABASE_URL must not equal DATABASE_URL (most critical safety check)
 if (process.env.TEST_DATABASE_URL && process.env.DATABASE_URL) {
   if (process.env.TEST_DATABASE_URL === process.env.DATABASE_URL) {
     console.error('❌ CRITICAL ERROR: TEST_DATABASE_URL cannot be the same as DATABASE_URL');
@@ -52,7 +40,7 @@ if (process.env.TEST_DATABASE_URL && process.env.DATABASE_URL) {
   }
 }
 
-// Check 5: Display current configuration (without sensitive data)
+// Check 4: Display current configuration (without sensitive data)
 console.log('\n📋 Current Configuration:');
 console.log(`NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
 

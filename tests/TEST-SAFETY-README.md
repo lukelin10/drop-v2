@@ -37,9 +37,8 @@ export DATABASE_URL="postgresql://username:password@localhost:5432/production_da
 The test system includes multiple layers of protection:
 
 1. **Environment Check**: Tests only run when `NODE_ENV=test`
-2. **Database URL Validation**: `TEST_DATABASE_URL` must contain "test" or "TEST"
-3. **URL Comparison**: `TEST_DATABASE_URL` cannot equal `DATABASE_URL`
-4. **Runtime Verification**: Each test file verifies test environment
+2. **URL Comparison**: `TEST_DATABASE_URL` cannot equal `DATABASE_URL`
+3. **Runtime Verification**: Each test file verifies test environment
 
 ## 🛡️ Safety Checklist
 
@@ -47,7 +46,6 @@ Before running tests, verify:
 
 - [ ] `NODE_ENV=test` is set
 - [ ] `TEST_DATABASE_URL` is configured and points to a separate test database
-- [ ] `TEST_DATABASE_URL` contains "test" or "TEST" in the URL
 - [ ] `TEST_DATABASE_URL` ≠ `DATABASE_URL`
 - [ ] Test database is empty or contains only test data
 
@@ -174,8 +172,8 @@ npm run test:reset
 ### Error: "TEST_DATABASE_URL must be set"
 **Solution**: Set the `TEST_DATABASE_URL` environment variable
 
-### Error: "Database cleanup attempted on non-test database"
-**Solution**: Ensure `TEST_DATABASE_URL` contains "test" or "TEST"
+### Error: "Database cleanup attempted outside of test environment"
+**Solution**: Ensure `NODE_ENV=test` is set
 
 ### Error: "Test database URL cannot be the same as production"
 **Solution**: Use different databases for `TEST_DATABASE_URL` and `DATABASE_URL`

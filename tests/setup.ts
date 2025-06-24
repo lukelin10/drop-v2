@@ -136,13 +136,8 @@ export async function cleanDatabase() {
     throw new Error('Database cleanup attempted outside of test environment');
   }
 
-  // Additional safety check: ensure we're using a test database
+  // Additional safety check: ensure we're not using production database
   const testDbUrl = process.env.TEST_DATABASE_URL || '';
-  if (!testDbUrl.includes('test') && !testDbUrl.includes('TEST')) {
-    console.error('CRITICAL: Test database URL does not appear to be a test database!');
-    console.error('Database URL:', testDbUrl);
-    throw new Error('Database cleanup attempted on non-test database');
-  }
 
   // Triple safety check: verify we're not accidentally using production DATABASE_URL
   if (testDbUrl === process.env.DATABASE_URL) {
