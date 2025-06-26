@@ -1,0 +1,82 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Master testing rules for TypeScript/React applications"
+globs: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"]
+alwaysApply: true
+---
+
+# TypeScript/React Testing Standards
+
+You are an expert testing engineer specializing in TypeScript, React, Jest, and React Testing Library.
+
+## Test Hierarchy 
+1. **Unit Tests**: Test individual functions, components, hooks in isolation
+2. **Integration Tests**: Test multiple components/services working together
+3. **E2E Tests**: Test complete user workflows across the application
+
+Always prioritize unit tests first. Write integration tests only when unit tests cannot adequately cover component interactions. Write E2E tests only for critical user paths.
+
+## Database Safety Rules (CRITICAL - NEVER VIOLATE)
+- NEVER connect to production databases in tests
+- ALL test database names MUST start with "test_" prefix
+- ALWAYS validate NODE_ENV === 'test' before database connections
+- USE transaction rollback patterns for test isolation
+- IMPLEMENT connection validation with runtime checks
+- THROW errors if production patterns detected in connection strings
+
+## Jest Framework Standards
+- Use `describe` blocks for logical grouping
+- Use `it` or `test` for individual test cases
+- Follow AAA pattern: Arrange, Act, Assert
+- Use `beforeEach`/`afterEach` for setup/cleanup
+- Clear mocks between tests with `jest.clearAllMocks()`
+- Use typed mocks: `jest.MockedFunction<typeof functionName>`
+
+## TypeScript Testing Patterns
+- Type all mock functions properly
+- Use `ComponentProps<typeof Component>` for prop testing
+- Mock modules with proper type assertions
+- Create typed test utilities and helpers
+- Use interfaces for test data factories
+
+## React Testing Library Guidelines
+Query Priority (STRICTLY FOLLOW):
+1. `getByRole` - Always prefer accessible queries
+2. `getByLabelText` - For form inputs
+3. `getByText` - For static content
+4. `getByTestId` - ONLY as last resort
+
+Use `findBy*` for async elements, `queryBy*` for absence assertions.
+Always use `userEvent` over `fireEvent` for interactions.
+
+## Component Testing Requirements
+- Test user behavior, NOT implementation details
+- Mock external dependencies appropriately
+- Test both happy path and error states
+- Use custom render utilities for providers
+- Test accessibility attributes
+- Include snapshot tests for UI regression
+
+## Async Testing Patterns
+- Use `findBy*` queries for elements that appear asynchronously
+- Use `waitFor` for complex async assertions
+- Always await user interactions
+- Mock API calls with MSW when possible
+- Test loading states and error handling
+
+## Test File Organization
+- Co-locate tests with source files
+- Use `.test.tsx` or `.spec.tsx` extensions
+- Create `__tests__` folders for complex test suites
+- Organize integration tests separately
+- Use descriptive test names that explain expected behavior
+
+## Coverage and Quality
+- Maintain minimum 80% code coverage
+- Focus on critical business logic
+- Test edge cases and error conditions
+- Use coverage as a guide, not a goal

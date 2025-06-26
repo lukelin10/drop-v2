@@ -1,0 +1,58 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Jest configuration best practices for TypeScript/React"
+globs: ["jest.config.*", "**/*.test.*", "**/*.spec.*"]
+---
+
+# Jest Configuration Standards
+
+## Basic TypeScript/React Configuration
+```typescript
+import type { Config } from 'jest';
+
+const config: Config = {
+  preset: 'ts-jest',
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '\\.(css|less|scss)$': 'identity-obj-proxy',
+  },
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/*.stories.{ts,tsx}',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+};
+```
+
+## Test Environment Setup
+Always create setupTests.ts with:
+- `import '@testing-library/jest-dom'`
+- Browser API mocks (matchMedia, ResizeObserver, IntersectionObserver)
+- MSW server setup for API mocking
+- Global test utilities and custom matchers
+
+## Multi-Environment Configuration
+- Separate configs for unit, integration, and E2E tests
+- Use different test environments appropriately
+- Configure proper timeouts for each test type
+- Implement proper coverage collection strategies
+
+## Performance Optimizations
+- Use `maxWorkers: '50%'` in CI environments
+- Enable caching with proper cache directory
+- Use `coverageProvider: 'v8'` for faster coverage
+- Implement test file pattern optimizations

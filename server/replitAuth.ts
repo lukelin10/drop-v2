@@ -49,10 +49,28 @@ const getOidcConfig = memoize(
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
   
+  // CRITICAL SAFETY: Use environment-based database URL selection
+  // This ensures tests use TEST_DATABASE_URL and production uses DATABASE_URL
+  let databaseUrl: string;
+  
+  if (process.env.NODE_ENV === 'test') {
+    // In test environment, REQUIRE a separate test database
+    if (!process.env.TEST_DATABASE_URL) {
+      throw new Error("TEST_DATABASE_URL must be set for running tests. NEVER use production database for tests!");
+    }
+    databaseUrl = process.env.TEST_DATABASE_URL;
+  } else {
+    // In production/development, use the main database
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+    }
+    databaseUrl = process.env.DATABASE_URL;
+  }
+  
   // Set up PostgreSQL session store
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
+    conString: databaseUrl,
     createTableIfMissing: false, // Table should already exist via schema
     tableName: "sessions",
   });
