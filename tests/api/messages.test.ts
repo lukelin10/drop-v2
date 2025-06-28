@@ -68,6 +68,10 @@ describe('Messages API Endpoint Tests', () => {
     // Reset all mocks
     resetStorageMocks();
     jest.clearAllMocks();
+    
+    // Reset AI service mock to default success behavior
+    mockGenerateResponse.mockReset();
+    mockGenerateResponse.mockResolvedValue('Default test AI response');
 
     // Create test data
     testQuestionId = 1;
@@ -105,8 +109,11 @@ describe('Messages API Endpoint Tests', () => {
     await registerRoutes(app);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     jest.restoreAllMocks();
+    
+    // Wait a bit to ensure any async operations complete
+    await new Promise(resolve => setTimeout(resolve, 100));
   });
 
   describe('POST /api/messages', () => {
@@ -189,109 +196,156 @@ describe('Messages API Endpoint Tests', () => {
     });
 
     test('should handle user message and trigger AI response asynchronously', async () => {
-      // Arrange
-      const userMessage = {
-        dropId: testDropId,
-        text: 'Hello AI assistant',
-        fromUser: true
-      };
-
-      const createdUserMessage = createMockMessage({
-        id: 1,
-        dropId: testDropId,
-        text: 'Hello AI assistant',
-        fromUser: true
-      });
-
-      mockStorage.createMessage.mockResolvedValue(createdUserMessage);
-      mockGenerateResponse.mockResolvedValue('Test AI response to: Hello AI assistant');
-
-      // Act
-      const response = await request(app)
-        .post('/api/messages')
-        .set('Authorization', authToken)
-        .send(userMessage)
-        .expect(201);
-
-      // Assert - User message created immediately
-      expect(response.body).toMatchObject({
-        id: 1,
-        text: 'Hello AI assistant',
-        dropId: testDropId,
-        fromUser: true
-      });
-
-      expect(mockStorage.createMessage).toHaveBeenCalledWith(userMessage);
-
-      // Wait for AI response to be generated asynchronously
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Verify AI service was called
-      expect(mockGenerateResponse).toHaveBeenCalledWith('Hello AI assistant', testDropId);
-
-      // Verify AI response message was created
-      expect(mockStorage.createMessage).toHaveBeenCalledWith(userMessage);
+      // Set ANTHROPIC_API_KEY to ensure AI path is taken
+      const originalApiKey = process.env.ANTHROPIC_API_KEY;
+      process.env.ANTHROPIC_API_KEY = 'test-api-key';
       
-      // Find the AI response call (should be the last call)
-      const calls = mockStorage.createMessage.mock.calls;
-      const aiMessageCall = calls.find(call => 
-        call[0].text === 'Test AI response to: Hello AI assistant' && 
-        call[0].fromUser === false
-      );
-      
-      expect(aiMessageCall).toBeDefined();
-      if (aiMessageCall) {
-        expect(aiMessageCall[0]).toMatchObject({
+      try {
+        // Clear all mock calls from previous tests
+        jest.clearAllMocks();
+        resetStorageMocks();
+        
+        // Arrange
+        const userMessage = {
           dropId: testDropId,
-          text: 'Test AI response to: Hello AI assistant',
-          fromUser: false
+          text: 'Hello AI assistant',
+          fromUser: true
+        };
+
+        const createdUserMessage = createMockMessage({
+          id: 1,
+          dropId: testDropId,
+          text: 'Hello AI assistant',
+          fromUser: true
         });
+
+        // Setup storage mocks
+        mockStorage.createMessage.mockResolvedValue(createdUserMessage);
+        
+        // Ensure the drop exists for the async AI call
+        mockStorage.getDrop.mockResolvedValue(createMockDropWithQuestion({
+          id: testDropId,
+          userId: testUserId,
+          questionId: testQuestionId,
+          text: 'Test drop'
+        }));
+
+        // Setup AI service mock - ensure it's clean and properly configured
+        mockGenerateResponse.mockReset();
+        mockGenerateResponse.mockResolvedValue('Test AI response to: Hello AI assistant');
+
+        // Act
+        const response = await request(app)
+          .post('/api/messages')
+          .set('Authorization', authToken)
+          .send(userMessage)
+          .expect(201);
+
+        // Assert - User message created immediately
+        expect(response.body).toMatchObject({
+          id: 1,
+          text: 'Hello AI assistant',
+          dropId: testDropId,
+          fromUser: true
+        });
+
+        expect(mockStorage.createMessage).toHaveBeenCalledWith(userMessage);
+
+        // Wait for AI response to be generated asynchronously (1500ms delay + processing time)
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+                 // Verify AI service was called
+         expect(mockGenerateResponse).toHaveBeenCalledWith('Hello AI assistant', testDropId);
+         
+         // Verify AI response message was created (should include user message + AI response)
+         expect(mockStorage.createMessage).toHaveBeenCalledWith(
+           expect.objectContaining({
+             dropId: testDropId,
+             text: 'Test AI response to: Hello AI assistant',
+             fromUser: false
+           })
+         );
+         
+         // Verify at least 2 calls were made (user message + AI response)
+         expect(mockStorage.createMessage).toHaveBeenCalledWith(userMessage);
+         expect(mockStorage.createMessage.mock.calls.length).toBeGreaterThanOrEqual(2);
+      } finally {
+        // Restore original API key
+        if (originalApiKey) {
+          process.env.ANTHROPIC_API_KEY = originalApiKey;
+        } else {
+          delete process.env.ANTHROPIC_API_KEY;
+        }
       }
     });
 
     test('should handle AI service errors gracefully', async () => {
-      // Arrange
-      const userMessage = {
-        dropId: testDropId,
-        text: 'Hello AI assistant',
-        fromUser: true
-      };
-
-      const createdUserMessage = createMockMessage({
-        id: 1,
-        dropId: testDropId,
-        text: 'Hello AI assistant',
-        fromUser: true
-      });
-
-      mockStorage.createMessage.mockResolvedValue(createdUserMessage);
-      mockGenerateResponse.mockRejectedValue(new Error('AI service unavailable'));
-
-      // Act
-      const response = await request(app)
-        .post('/api/messages')
-        .set('Authorization', authToken)
-        .send(userMessage)
-        .expect(201);
-
-      // Assert - User message still created successfully
-      expect(response.body).toMatchObject({
-        text: 'Hello AI assistant',
-        fromUser: true
-      });
-
-      // Wait for AI response handling
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Verify AI service was called but failed
-      expect(mockGenerateResponse).toHaveBeenCalledWith('Hello AI assistant', testDropId);
-
-      // Verify fallback response was created
-      expect(mockStorage.createMessage).toHaveBeenCalledTimes(2);
+      // Set ANTHROPIC_API_KEY to ensure AI path is taken
+      const originalApiKey = process.env.ANTHROPIC_API_KEY;
+      process.env.ANTHROPIC_API_KEY = 'test-api-key';
       
-      const fallbackCall = mockStorage.createMessage.mock.calls[1][0];
-      expect(fallbackCall.text).toContain('trouble processing');
-      expect(fallbackCall.fromUser).toBe(false);
+      try {
+        // Arrange
+        const userMessage = {
+          dropId: testDropId,
+          text: 'Hello AI assistant',
+          fromUser: true
+        };
+
+        const createdUserMessage = createMockMessage({
+          id: 1,
+          dropId: testDropId,
+          text: 'Hello AI assistant',
+          fromUser: true
+        });
+
+        // Setup storage mocks
+        mockStorage.createMessage.mockResolvedValue(createdUserMessage);
+        
+        // Ensure the drop exists for the async AI call
+        mockStorage.getDrop.mockResolvedValue(createMockDropWithQuestion({
+          id: testDropId,
+          userId: testUserId,
+          questionId: testQuestionId,
+          text: 'Test drop'
+        }));
+        
+        // Setup AI service to throw an error
+        mockGenerateResponse.mockRejectedValue(new Error('AI service unavailable'));
+
+        // Act
+        const response = await request(app)
+          .post('/api/messages')
+          .set('Authorization', authToken)
+          .send(userMessage)
+          .expect(201);
+
+        // Assert - User message still created successfully
+        expect(response.body).toMatchObject({
+          text: 'Hello AI assistant',
+          fromUser: true
+        });
+
+        // Wait for AI response handling (1500ms delay + processing time)
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        // Verify AI service was called but failed
+        expect(mockGenerateResponse).toHaveBeenCalledWith('Hello AI assistant', testDropId);
+
+        // Verify fallback response was created
+        expect(mockStorage.createMessage).toHaveBeenCalledTimes(2);
+        
+        const fallbackCall = mockStorage.createMessage.mock.calls[1][0];
+        expect(fallbackCall.text).toContain('trouble processing');
+        expect(fallbackCall.fromUser).toBe(false);
+      } finally {
+        // Restore original API key
+        if (originalApiKey) {
+          process.env.ANTHROPIC_API_KEY = originalApiKey;
+        } else {
+          delete process.env.ANTHROPIC_API_KEY;
+        }
+      }
     });
 
     test('should validate message content', async () => {
