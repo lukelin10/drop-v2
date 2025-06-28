@@ -28,4 +28,11 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
+  server: {
+    allowedHosts: [
+      "59c5ac0a-f3f5-40c1-8204-4bb08340b946-00-1dspxlp20ll7q.janeway.replit.dev",
+      "localhost",
+      ".replit.dev", // Allow all replit.dev subdomains
+    ],
+  },
 });
