@@ -1,11 +1,15 @@
 /**
  * React Testing Setup
  * 
- * This file configures the testing environment for React components.
- * It extends jest-dom matchers and sets up global test utilities.
+ * This file configures the testing environment specifically for React components.
+ * It extends jest-dom matchers and sets up browser API mocks needed for jsdom.
  */
 
 import '@testing-library/jest-dom';
+
+// ====================================================================
+// BROWSER API MOCKS FOR JSDOM ENVIRONMENT
+// ====================================================================
 
 // Mock IntersectionObserver which is not available in jsdom
 (global as any).IntersectionObserver = class IntersectionObserver {
@@ -41,24 +45,17 @@ Object.defineProperty(window, 'matchMedia', {
 // Mock scrollTo which is not available in jsdom
 global.scrollTo = jest.fn();
 
-// Suppress console warnings in tests unless explicitly needed
-const originalWarn = console.warn;
-const originalError = console.error;
-
-beforeEach(() => {
-  console.warn = jest.fn();
-  console.error = jest.fn();
-});
-
-afterEach(() => {
-  console.warn = originalWarn;
-  console.error = originalError;
-});
-
-// Mock fetch globally for all tests
+// Mock fetch for API calls in React components
 global.fetch = jest.fn();
+
+// ====================================================================
+// REACT-SPECIFIC TEST UTILITIES
+// ====================================================================
 
 // Setup fetch mock reset before each test
 beforeEach(() => {
   (global.fetch as jest.Mock).mockClear();
+  
+  // Reset scroll mock
+  (global.scrollTo as jest.Mock).mockClear();
 }); 

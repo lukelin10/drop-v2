@@ -11,7 +11,7 @@
  * in a realistic environment with actual database operations.
  */
 
-import { testDb, cleanDatabase, TEST_USER_ID } from '../setup';
+import { testDb, cleanDatabase, TEST_USER_ID } from '../setup-server';
 import * as schema from '../../shared/schema';
 import { createAnalysisForUser } from '../../server/services/analysisService';
 import { storage } from '../../server/storage';
@@ -22,7 +22,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 import { eq, desc } from 'drizzle-orm';
 import request from 'supertest';
-import { getTestApp } from '../testServer';
+import { getTestApp } from '../setup-server';
 import type { Express } from 'express';
 
 // Mock external dependencies

@@ -1,6 +1,5 @@
 import request from 'supertest';
-import { getTestApp } from '../testServer';
-import { TEST_USER_ID, cleanDatabase } from '../setup';
+import { getTestApp, TEST_USER_ID, cleanDatabase } from '../setup-server';
 import { storage } from '../../server/storage';
 import { generateResponse } from '../../server/services/anthropic';
 

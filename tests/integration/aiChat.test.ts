@@ -1,48 +1,84 @@
+import { enableMocksForAPITests, getTestApp, getMockStorage, TEST_USER_ID } from '../setup-server';
+
+// Enable mocks before any other imports
+enableMocksForAPITests();
+
 import request from 'supertest';
-import { getTestApp } from '../testServer';
-import { TEST_USER_ID, cleanDatabase } from '../setup';
-import { storage } from '../../server/storage';
+import { createMockUser, createMockQuestion, createMockDrop, createMockDropWithQuestion, createMockMessage } from '../factories/testData';
 import { generateResponse } from '../../server/services/anthropic';
 
-// Get the mocked function from the global mock (set up in testServer.ts)
+// Get the mocked function from the setup-server.ts configuration
 const mockGenerateResponse = generateResponse as jest.MockedFunction<typeof generateResponse>;
 
 describe('AI-Powered Chat', () => {
   let app: any;
-  let testQuestionId: number;
-  let testDropId: number;
+  const testQuestionId = 1;
+  const testDropId = 1;
+  let currentMessageId = 1;
 
   beforeAll(async () => {
     app = await getTestApp();
-    
-    // Create a test user
-    await storage.upsertUser({
-      id: TEST_USER_ID,
-      username: 'testuser',
-      email: 'test@example.com',
-    });
-    
-    // Create a test question
-    const question = await storage.createQuestion({
-      text: 'How are you feeling today?',
-      isActive: true,
-      category: 'daily'
-    });
-    testQuestionId = question.id;
   });
 
-  beforeEach(async () => {
-    await cleanDatabase();
+  beforeEach(() => {
+    jest.clearAllMocks();
+    currentMessageId = 1;
     
-    // Create a fresh test drop for each test
-    const drop = await storage.createDrop({
-      userId: TEST_USER_ID,
-      questionId: testQuestionId,
-      text: 'Reflecting on my feelings'
+    // Get mock storage instance
+    const mockStorage = getMockStorage();
+    
+    // Set up basic mocks
+    const mockUser = createMockUser({ id: TEST_USER_ID });
+    const mockQuestion = createMockQuestion({ 
+      id: testQuestionId, 
+      text: 'How are you feeling today?' 
     });
-    testDropId = drop.id;
+    const mockDrop = createMockDropWithQuestion({ 
+      id: testDropId, 
+      userId: TEST_USER_ID, 
+      questionId: testQuestionId,
+      text: 'Reflecting on my feelings',
+      questionText: 'How are you feeling today?'
+    });
     
-    // Reset the mock before each test
+    mockStorage.getUser.mockResolvedValue(mockUser);
+    mockStorage.createQuestion.mockResolvedValue(mockQuestion);
+    mockStorage.createDrop.mockResolvedValue(mockDrop);
+    mockStorage.getDrop.mockResolvedValue(mockDrop);
+    
+    // Mock message creation to simulate realistic message flow
+    mockStorage.createMessage.mockImplementation(async (messageData) => 
+      createMockMessage({ 
+        ...messageData, 
+        id: currentMessageId++,
+        dropId: testDropId 
+      })
+    );
+    
+    // Mock message retrieval to return current conversation state
+    let messages: any[] = [
+      createMockMessage({ 
+        id: 1, 
+        dropId: testDropId, 
+        text: 'How are you feeling today?', 
+        fromUser: false 
+      })
+    ];
+    
+    mockStorage.getMessages.mockImplementation(async () => [...messages]);
+    
+    // Update the mock when messages are created
+    mockStorage.createMessage.mockImplementation(async (messageData) => {
+      const newMessage = createMockMessage({ 
+        ...messageData, 
+        id: currentMessageId++,
+        dropId: testDropId 
+      });
+      messages.push(newMessage);
+      return newMessage;
+    });
+    
+    // Reset the anthropic mock
     mockGenerateResponse.mockClear();
   });
 

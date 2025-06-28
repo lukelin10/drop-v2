@@ -1,33 +1,48 @@
+import { enableMocksForAPITests, getTestApp, getMockStorage, TEST_USER_ID } from '../setup-server';
+
+// Enable mocks before any other imports
+enableMocksForAPITests();
+
 import request from 'supertest';
-import { getTestApp } from '../testServer';
-import { TEST_USER_ID, cleanDatabase } from '../setup';
-import { storage } from '../../server/storage';
+import { createMockUser, createMockQuestion, createMockDrop } from '../factories/testData';
 
 describe('API Error Handling', () => {
   let app: any;
-  let testQuestionId: number;
+  const testQuestionId = 1;
   
   beforeAll(async () => {
     app = await getTestApp();
-    
-    // Create a test user
-    await storage.upsertUser({
-      id: TEST_USER_ID,
-      username: 'testuser',
-      email: 'test@example.com',
-    });
-    
-    // Create a test question
-    const question = await storage.createQuestion({
-      text: 'Test question for error handling',
-      isActive: true,
-      category: 'test'
-    });
-    testQuestionId = question.id;
   });
   
-  beforeEach(async () => {
-    await cleanDatabase();
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // Set up basic mocks for error testing
+    const mockStorage = getMockStorage();
+    const mockUser = createMockUser({ id: TEST_USER_ID });
+    const mockQuestion = createMockQuestion({ 
+      id: testQuestionId, 
+      text: 'Test question for error handling' 
+    });
+    
+    mockStorage.getUser.mockResolvedValue(mockUser);
+    mockStorage.createQuestion.mockResolvedValue(mockQuestion);
+    
+    // Mock error responses for 404 tests
+    mockStorage.getDrop.mockImplementation(async (id: number) => {
+      if (id === 9999) return null; // Simulate not found
+      return createMockDrop({ id });
+    });
+    
+    mockStorage.getMessages.mockImplementation(async (dropId: number) => {
+      if (dropId === 9999) return null; // Simulate drop not found
+      return [];
+    });
+    
+    mockStorage.updateDrop.mockImplementation(async (id: number, updates: any) => {
+      if (id === 9999) return null; // Simulate not found
+      return createMockDrop({ id, ...updates });
+    });
   });
   
   describe('Input Validation', () => {

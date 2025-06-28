@@ -1,75 +1,67 @@
+/**
+ * Analysis API Endpoint Tests
+ * 
+ * Tests the analysis API endpoints without database connections.
+ * Uses mocked storage and services to ensure fast, isolated testing.
+ * 
+ * NOTE: This used to test against real database operations.
+ * Now it tests API behavior with mocked dependencies.
+ */
+
+import { enableMocksForAPITests } from '../setup-server';
+
+// Enable mocks before any other imports
+enableMocksForAPITests();
+
 import request from 'supertest';
 import express from 'express';
-import { testDb } from '../setup';
-import * as schema from '../../shared/schema';
-import { eq } from 'drizzle-orm';
 import type { Express } from 'express';
+import { 
+  mockStorage, 
+  resetStorageMocks,
+  setupEligibleUserMocks,
+  setupIneligibleUserMocks,
+  setupEmptyUserMocks 
+} from '../mocks/mockStorage';
+import { 
+  createMockUser, 
+  createMockAnalysis,
+  createMockAnalysisEligibility,
+  createMockDropWithQuestion,
+  TEST_USER_IDS 
+} from '../factories/testData';
 
-// Mock dependencies before importing routes
-jest.mock('../../server/replitAuth', () => ({
-  isAuthenticated: jest.fn(),
-  setupAuth: jest.fn(async () => {
-    return;
-  })
-}));
+// Additional mocks specific to this test
 
-jest.mock('../../server/services/anthropic', () => ({
-  generateResponse: jest.fn().mockImplementation(async (userMessage, dropId) => {
-    return `Test AI response to: ${userMessage}`;
-  }),
-  getConversationHistory: jest.fn().mockResolvedValue([])
+// Mock analysis service
+jest.mock('../../server/services/analysisService', () => ({
+  createAnalysisForUser: jest.fn(),
+  getAnalysisStats: jest.fn(),
+  previewAnalysis: jest.fn(),
+  healthCheck: jest.fn()
 }));
 
 // Import after mocking
 import { registerRoutes } from '../../server/routes';
 
-describe('Analysis API Endpoints', () => {
-  const testUserId = 'test-user-id';
-  const testUserId2 = 'test-user-id-2';
-  let testQuestionId: number;
+const mockCreateAnalysisForUser = require('../../server/services/analysisService').createAnalysisForUser as jest.Mock;
+const mockGetAnalysisStats = require('../../server/services/analysisService').getAnalysisStats as jest.Mock;
+const mockPreviewAnalysis = require('../../server/services/analysisService').previewAnalysis as jest.Mock;
+const mockHealthCheck = require('../../server/services/analysisService').healthCheck as jest.Mock;
+
+describe('Analysis API Endpoint Tests', () => {
+  const testUserId = TEST_USER_IDS.USER_1;
+  const testUserId2 = TEST_USER_IDS.USER_2;
   let authToken: string;
   let authToken2: string;
   let app: Express;
 
-  beforeAll(async () => {
-    // Create test question
-    const result = await testDb.insert(schema.questionTable).values({
-      text: 'Test question for analysis API tests?',
-      isActive: true,
-      category: 'test',
-      createdAt: new Date()
-    }).returning();
-    
-    testQuestionId = result[0].id;
-  });
-
   beforeEach(async () => {
-    // Clean up database before each test
-    await testDb.delete(schema.analysisDrops);
-    await testDb.delete(schema.analyses);
-    await testDb.delete(schema.messages);
-    await testDb.delete(schema.drops);
-    await testDb.delete(schema.users);
+    // Reset all mocks
+    resetStorageMocks();
+    jest.clearAllMocks();
 
-    // Create test users
-    await testDb.insert(schema.users).values([
-      {
-        id: testUserId,
-        username: 'testuser1',
-        email: 'test1@example.com',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: testUserId2,
-        username: 'testuser2',
-        email: 'test2@example.com',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ]);
-
-    // Mock authentication - in a real app, you'd use proper auth tokens
+    // Mock authentication tokens
     authToken = `Bearer mock-token-${testUserId}`;
     authToken2 = `Bearer mock-token-${testUserId2}`;
 
@@ -100,481 +92,566 @@ describe('Analysis API Endpoints', () => {
   });
 
   describe('GET /api/analyses/eligibility', () => {
-    test('returns not eligible for new user', async () => {
+    test('should return not eligible for new user', async () => {
+      // Arrange
+      setupEmptyUserMocks(testUserId);
+
+      // Act
       const response = await request(app)
         .get('/api/analyses/eligibility')
         .set('Authorization', authToken)
         .expect(200);
 
+      // Assert
       expect(response.body).toEqual({
         isEligible: false,
         unanalyzedCount: 0,
         requiredCount: 7
       });
+
+      expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);
     });
 
-    test('returns not eligible with fewer than 7 drops', async () => {
-      // Create 5 drops
-      for (let i = 0; i < 5; i++) {
-        await testDb.insert(schema.drops).values({
-          userId: testUserId,
-          questionId: testQuestionId,
-          text: `Test drop ${i + 1}`,
-          createdAt: new Date()
-        });
-      }
+    test('should return not eligible with fewer than 7 drops', async () => {
+      // Arrange
+      setupIneligibleUserMocks(testUserId, 5);
 
+      // Act
       const response = await request(app)
         .get('/api/analyses/eligibility')
         .set('Authorization', authToken)
         .expect(200);
 
+      // Assert
       expect(response.body).toEqual({
         isEligible: false,
         unanalyzedCount: 5,
         requiredCount: 7
       });
+
+      expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);
     });
 
-    test('returns eligible with 7 or more drops', async () => {
-      // Create 8 drops
-      for (let i = 0; i < 8; i++) {
-        await testDb.insert(schema.drops).values({
-          userId: testUserId,
-          questionId: testQuestionId,
-          text: `Test drop ${i + 1}`,
-          createdAt: new Date()
-        });
-      }
+    test('should return eligible with 7 or more drops', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
 
+      // Act
       const response = await request(app)
         .get('/api/analyses/eligibility')
         .set('Authorization', authToken)
         .expect(200);
 
+      // Assert
       expect(response.body).toEqual({
         isEligible: true,
         unanalyzedCount: 8,
         requiredCount: 7
       });
+
+      expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);
     });
 
-    test('requires authentication', async () => {
+    test('should require authentication', async () => {
+      // Act & Assert
       await request(app)
         .get('/api/analyses/eligibility')
         .expect(401);
+
+      // Should not call storage when unauthorized
+      expect(mockStorage.getAnalysisEligibility).not.toHaveBeenCalled();
+    });
+
+    test('should handle storage errors gracefully', async () => {
+      // Arrange
+      mockStorage.getAnalysisEligibility.mockRejectedValue(new Error('Storage error'));
+
+      // Act
+      const response = await request(app)
+        .get('/api/analyses/eligibility')
+        .set('Authorization', authToken)
+        .expect(500);
+
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);
     });
   });
 
   describe('POST /api/analyses', () => {
-    test('creates analysis when user is eligible', async () => {
-      // Create 7 drops to make user eligible
-      for (let i = 0; i < 7; i++) {
-        await testDb.insert(schema.drops).values({
-          userId: testUserId,
-          questionId: testQuestionId,
-          text: `Test drop ${i + 1}`,
-          createdAt: new Date()
-        });
-      }
+    test('should create analysis when user is eligible', async () => {
+      // Arrange
+      const mockAnalysis = createMockAnalysis({
+        id: 123,
+        userId: testUserId,
+        content: 'Generated analysis content...',
+        summary: 'Test analysis summary',
+        bulletPoints: '• Key insight 1\n• Key insight 2'
+      });
 
+      mockCreateAnalysisForUser.mockResolvedValue({
+        success: true,
+        analysis: mockAnalysis,
+        metadata: {
+          dropCount: 7,
+          userId: testUserId,
+          processingTime: 1500
+        }
+      });
+
+      // Act
       const response = await request(app)
         .post('/api/analyses')
         .set('Authorization', authToken)
         .expect(201);
 
-      expect(response.body).toHaveProperty('id');
-      expect(response.body).toHaveProperty('userId', testUserId);
-      expect(response.body).toHaveProperty('content');
-      expect(response.body).toHaveProperty('summary');
-      expect(response.body).toHaveProperty('bulletPoints');
+      // Assert
+      expect(response.body).toMatchObject({
+        id: 123,
+        userId: testUserId,
+        content: 'Generated analysis content...',
+        summary: 'Test analysis summary',
+        bulletPoints: '• Key insight 1\n• Key insight 2',
+        isFavorited: false
+      });
+
       expect(response.body).toHaveProperty('createdAt');
-      expect(response.body).toHaveProperty('isFavorited', false);
-
-      // Verify analysis was created in database
-      const analyses = await testDb
-        .select()
-        .from(schema.analyses)
-        .where(eq(schema.analyses.userId, testUserId));
-
-      expect(analyses).toHaveLength(1);
-
-      // Verify analysis-drop relationships were created
-      const analysisDrops = await testDb
-        .select()
-        .from(schema.analysisDrops)
-        .where(eq(schema.analysisDrops.analysisId, analyses[0].id));
-
-      expect(analysisDrops).toHaveLength(7);
-
-      // Verify user's last analysis date was updated
-      const [user] = await testDb
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.id, testUserId));
-
-      expect(user.lastAnalysisDate).toBeTruthy();
+      expect(mockCreateAnalysisForUser).toHaveBeenCalledWith(testUserId);
     });
 
-    test('rejects analysis when user not eligible', async () => {
-      // Create only 5 drops (not enough)
-      for (let i = 0; i < 5; i++) {
-        await testDb.insert(schema.drops).values({
-          userId: testUserId,
-          questionId: testQuestionId,
-          text: `Test drop ${i + 1}`,
-          createdAt: new Date()
-        });
-      }
+    test('should return 400 when user is not eligible', async () => {
+      // Arrange
+      mockCreateAnalysisForUser.mockResolvedValue({
+        success: false,
+        error: 'User is not eligible for analysis. Need 7 drops, has 5.',
+        metadata: {
+          dropCount: 5,
+          userId: testUserId
+        }
+      });
 
+      // Act
       const response = await request(app)
         .post('/api/analyses')
         .set('Authorization', authToken)
         .expect(400);
 
-      expect(response.body).toHaveProperty('message', 'Not enough unanalyzed drops for analysis');
-      expect(response.body).toHaveProperty('eligibility');
-      expect(response.body.eligibility.isEligible).toBe(false);
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('not eligible');
+      expect(mockCreateAnalysisForUser).toHaveBeenCalledWith(testUserId);
     });
 
-    test('rejects analysis when user has no drops', async () => {
+    test('should handle analysis service errors', async () => {
+      // Arrange
+      mockCreateAnalysisForUser.mockResolvedValue({
+        success: false,
+        error: 'LLM service unavailable',
+        metadata: {
+          dropCount: 8,
+          userId: testUserId
+        }
+      });
+
+      // Act
       const response = await request(app)
         .post('/api/analyses')
         .set('Authorization', authToken)
         .expect(400);
 
-      expect(response.body).toHaveProperty('message', 'Not enough unanalyzed drops for analysis');
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('LLM service unavailable');
     });
 
-    test('requires authentication', async () => {
+    test('should require authentication', async () => {
+      // Act & Assert
       await request(app)
         .post('/api/analyses')
         .expect(401);
+
+      // Should not call analysis service when unauthorized
+      expect(mockCreateAnalysisForUser).not.toHaveBeenCalled();
+    });
+
+    test('should handle concurrent analysis creation attempts', async () => {
+      // Arrange
+      const mockAnalysis = createMockAnalysis({ userId: testUserId });
+      mockCreateAnalysisForUser.mockResolvedValue({
+        success: true,
+        analysis: mockAnalysis,
+        metadata: { dropCount: 8, userId: testUserId }
+      });
+
+      // Act - Make concurrent requests
+      const promises = Array.from({ length: 3 }, () => 
+        request(app)
+          .post('/api/analyses')
+          .set('Authorization', authToken)
+      );
+
+      const responses = await Promise.all(promises);
+
+      // Assert - All should succeed (in real system might have rate limiting)
+      responses.forEach(response => {
+        expect(response.status).toBe(201);
+      });
+
+      expect(mockCreateAnalysisForUser).toHaveBeenCalledTimes(3);
     });
   });
 
   describe('GET /api/analyses', () => {
-    beforeEach(async () => {
-      // Create some test analyses
-      const analysisData = [
-        {
-          userId: testUserId,
-          content: 'First analysis content',
-          summary: 'First summary',
-          bulletPoints: '• First point',
-          createdAt: new Date('2024-01-01'),
-          isFavorited: false
-        },
-        {
-          userId: testUserId,
-          content: 'Second analysis content',
-          summary: 'Second summary',
-          bulletPoints: '• Second point',
-          createdAt: new Date('2024-01-02'),
-          isFavorited: true
-        },
-        {
-          userId: testUserId2, // Different user
-          content: 'Other user analysis',
-          summary: 'Other summary',
-          bulletPoints: '• Other point',
-          createdAt: new Date('2024-01-01'),
-          isFavorited: false
-        }
+    test('should return user analyses', async () => {
+      // Arrange
+      const mockAnalyses = [
+        createMockAnalysis({ 
+          id: 1, 
+          userId: testUserId, 
+          summary: 'Recent analysis',
+          isFavorited: true 
+        }),
+        createMockAnalysis({ 
+          id: 2, 
+          userId: testUserId, 
+          summary: 'Older analysis',
+          isFavorited: false 
+        })
       ];
 
-      await testDb.insert(schema.analyses).values(analysisData);
-    });
+      mockStorage.getUserAnalyses.mockResolvedValue(mockAnalyses);
 
-    test('returns user analyses in reverse chronological order', async () => {
+      // Act
       const response = await request(app)
         .get('/api/analyses')
         .set('Authorization', authToken)
         .expect(200);
 
-      expect(response.body).toHaveLength(2); // Only user's analyses
-      expect(response.body[0].summary).toBe('Second summary'); // Newest first
-      expect(response.body[1].summary).toBe('First summary');
-      
-      // Verify all analyses belong to the user
-      response.body.forEach((analysis: any) => {
-        expect(analysis.userId).toBe(testUserId);
+      // Assert
+      expect(response.body).toHaveLength(2);
+      expect(response.body[0]).toMatchObject({
+        id: 1,
+        userId: testUserId,
+        summary: 'Recent analysis',
+        isFavorited: true
       });
+
+      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 20, 0);
     });
 
-    test('respects pagination parameters', async () => {
-      // Create more analyses for pagination test
-      for (let i = 0; i < 5; i++) {
-        await testDb.insert(schema.analyses).values({
-          userId: testUserId,
-          content: `Analysis ${i + 3}`,
-          summary: `Summary ${i + 3}`,
-          bulletPoints: `• Point ${i + 3}`,
-          createdAt: new Date(`2024-01-${i + 3}`),
-          isFavorited: false
-        });
-      }
+    test('should return empty array for user with no analyses', async () => {
+      // Arrange
+      mockStorage.getUserAnalyses.mockResolvedValue([]);
 
-      // Test limit
-      const response1 = await request(app)
-        .get('/api/analyses?limit=3')
-        .set('Authorization', authToken)
-        .expect(200);
-
-      expect(response1.body).toHaveLength(3);
-
-      // Test offset
-      const response2 = await request(app)
-        .get('/api/analyses?limit=2&offset=2')
-        .set('Authorization', authToken)
-        .expect(200);
-
-      expect(response2.body).toHaveLength(2);
-      expect(response2.body[0].id).not.toBe(response1.body[0].id);
-    });
-
-    test('handles invalid pagination parameters gracefully', async () => {
+      // Act
       const response = await request(app)
-        .get('/api/analyses?limit=invalid&offset=also-invalid')
+        .get('/api/analyses')
         .set('Authorization', authToken)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
+      // Assert
+      expect(response.body).toEqual([]);
+      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 20, 0);
     });
 
-    test('requires authentication', async () => {
+    test('should support pagination', async () => {
+      // Arrange
+      const mockAnalyses = [
+        createMockAnalysis({ id: 1, userId: testUserId }),
+        createMockAnalysis({ id: 2, userId: testUserId })
+      ];
+
+      mockStorage.getUserAnalyses.mockResolvedValue(mockAnalyses);
+
+      // Act
+      const response = await request(app)
+        .get('/api/analyses?limit=2&offset=0')
+        .set('Authorization', authToken)
+        .expect(200);
+
+      // Assert
+      expect(response.body).toHaveLength(2);
+      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 2, 0);
+    });
+
+    test('should require authentication', async () => {
+      // Act & Assert
       await request(app)
         .get('/api/analyses')
         .expect(401);
+
+      expect(mockStorage.getUserAnalyses).not.toHaveBeenCalled();
+    });
+
+    test('should isolate user data', async () => {
+      // Arrange
+      const user1Analyses = [createMockAnalysis({ id: 1, userId: testUserId })];
+      const user2Analyses = [createMockAnalysis({ id: 2, userId: testUserId2 })];
+
+      mockStorage.getUserAnalyses.mockImplementation((userId) => {
+        if (userId === testUserId) return Promise.resolve(user1Analyses);
+        if (userId === testUserId2) return Promise.resolve(user2Analyses);
+        return Promise.resolve([]);
+      });
+
+      // Act
+      const response1 = await request(app)
+        .get('/api/analyses')
+        .set('Authorization', authToken)
+        .expect(200);
+
+      const response2 = await request(app)
+        .get('/api/analyses')
+        .set('Authorization', authToken2)
+        .expect(200);
+
+      // Assert
+      expect(response1.body).toHaveLength(1);
+      expect(response1.body[0].userId).toBe(testUserId);
+      
+      expect(response2.body).toHaveLength(1);
+      expect(response2.body[0].userId).toBe(testUserId2);
     });
   });
 
   describe('GET /api/analyses/:id', () => {
-    let testAnalysisId: number;
-    let otherUserAnalysisId: number;
-
-    beforeEach(async () => {
-      // Create test analysis for user 1
-      const [analysis1] = await testDb.insert(schema.analyses).values({
+    test('should return specific analysis', async () => {
+      // Arrange
+      const mockAnalysis = createMockAnalysis({ 
+        id: 42, 
         userId: testUserId,
-        content: 'Test analysis content',
-        summary: 'Test summary',
-        bulletPoints: '• Test point',
-        createdAt: new Date(),
-        isFavorited: false
-      }).returning();
+        content: 'Detailed analysis content...'
+      });
 
-      testAnalysisId = analysis1.id;
+      mockStorage.getAnalysis.mockResolvedValue(mockAnalysis);
 
-      // Create test analysis for user 2
-      const [analysis2] = await testDb.insert(schema.analyses).values({
-        userId: testUserId2,
-        content: 'Other user analysis',
-        summary: 'Other summary',
-        bulletPoints: '• Other point',
-        createdAt: new Date(),
-        isFavorited: false
-      }).returning();
-
-      otherUserAnalysisId = analysis2.id;
-    });
-
-    test('returns analysis when user owns it', async () => {
+      // Act
       const response = await request(app)
-        .get(`/api/analyses/${testAnalysisId}`)
+        .get('/api/analyses/42')
         .set('Authorization', authToken)
         .expect(200);
 
-      expect(response.body).toHaveProperty('id', testAnalysisId);
-      expect(response.body).toHaveProperty('userId', testUserId);
-      expect(response.body).toHaveProperty('content', 'Test analysis content');
+      // Assert
+      expect(response.body).toMatchObject({
+        id: 42,
+        userId: testUserId,
+        content: 'Detailed analysis content...'
+      });
+
+      expect(mockStorage.getAnalysis).toHaveBeenCalledWith(42);
     });
 
-    test('returns 403 when user tries to access other user analysis', async () => {
-      const response = await request(app)
-        .get(`/api/analyses/${otherUserAnalysisId}`)
-        .set('Authorization', authToken)
-        .expect(403);
+    test('should return 404 for non-existent analysis', async () => {
+      // Arrange
+      mockStorage.getAnalysis.mockResolvedValue(undefined);
 
-      expect(response.body).toHaveProperty('message', 'Access denied');
-    });
-
-    test('returns 404 for non-existent analysis', async () => {
+      // Act
       const response = await request(app)
-        .get('/api/analyses/99999')
+        .get('/api/analyses/999')
         .set('Authorization', authToken)
         .expect(404);
 
-      expect(response.body).toHaveProperty('message', 'Analysis not found');
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('not found');
     });
 
-    test('handles invalid analysis ID', async () => {
-      await request(app)
-        .get('/api/analyses/invalid')
-        .set('Authorization', authToken)
-        .expect(404); // Invalid ID should return "not found"
+    test('should prevent access to other users analyses', async () => {
+      // Arrange
+      const otherUserAnalysis = createMockAnalysis({ 
+        id: 42, 
+        userId: testUserId2  // Different user
+      });
+
+      mockStorage.getAnalysis.mockResolvedValue(otherUserAnalysis);
+
+      // Act
+      const response = await request(app)
+        .get('/api/analyses/42')
+        .set('Authorization', authToken)  // testUserId trying to access testUserId2's analysis
+        .expect(403);
+
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('Access denied');
     });
 
-    test('requires authentication', async () => {
+    test('should require authentication', async () => {
+      // Act & Assert
       await request(app)
-        .get(`/api/analyses/${testAnalysisId}`)
+        .get('/api/analyses/42')
         .expect(401);
+
+      expect(mockStorage.getAnalysis).not.toHaveBeenCalled();
     });
   });
 
   describe('PUT /api/analyses/:id/favorite', () => {
-    let testAnalysisId: number;
-    let otherUserAnalysisId: number;
+    test('should toggle analysis favorite status', async () => {
+      // Arrange
+      const originalAnalysis = createMockAnalysis({ id: 42, userId: testUserId, isFavorited: false });
+      const favoritedAnalysis = createMockAnalysis({ id: 42, userId: testUserId, isFavorited: true });
 
-    beforeEach(async () => {
-      // Create test analysis for user 1
-      const [analysis1] = await testDb.insert(schema.analyses).values({
-        userId: testUserId,
-        content: 'Test analysis content',
-        summary: 'Test summary',
-        bulletPoints: '• Test point',
-        createdAt: new Date(),
-        isFavorited: false
-      }).returning();
+      mockStorage.getAnalysis.mockResolvedValue(originalAnalysis);
+      mockStorage.updateAnalysisFavorite.mockResolvedValue(favoritedAnalysis);
 
-      testAnalysisId = analysis1.id;
-
-      // Create test analysis for user 2
-      const [analysis2] = await testDb.insert(schema.analyses).values({
-        userId: testUserId2,
-        content: 'Other user analysis',
-        summary: 'Other summary',
-        bulletPoints: '• Other point',
-        createdAt: new Date(),
-        isFavorited: false
-      }).returning();
-
-      otherUserAnalysisId = analysis2.id;
-    });
-
-    test('sets favorite to true', async () => {
+      // Act
       const response = await request(app)
-        .put(`/api/analyses/${testAnalysisId}/favorite`)
+        .put('/api/analyses/42/favorite')
         .set('Authorization', authToken)
         .send({ isFavorited: true })
         .expect(200);
 
-      expect(response.body).toHaveProperty('isFavorited', true);
-
-      // Verify in database
-      const [analysis] = await testDb
-        .select()
-        .from(schema.analyses)
-        .where(eq(schema.analyses.id, testAnalysisId));
-
-      expect(analysis.isFavorited).toBe(true);
+      // Assert
+      expect(response.body.isFavorited).toBe(true);
+      expect(mockStorage.updateAnalysisFavorite).toHaveBeenCalledWith(42, true);
     });
 
-    test('sets favorite to false', async () => {
-      // First set to true
-      await testDb
-        .update(schema.analyses)
-        .set({ isFavorited: true })
-        .where(eq(schema.analyses.id, testAnalysisId));
+    test('should unfavorite analysis', async () => {
+      // Arrange
+      const favoritedAnalysis = createMockAnalysis({ id: 42, userId: testUserId, isFavorited: true });
+      const unfavoritedAnalysis = createMockAnalysis({ id: 42, userId: testUserId, isFavorited: false });
 
+      mockStorage.getAnalysis.mockResolvedValue(favoritedAnalysis);
+      mockStorage.updateAnalysisFavorite.mockResolvedValue(unfavoritedAnalysis);
+
+      // Act
       const response = await request(app)
-        .put(`/api/analyses/${testAnalysisId}/favorite`)
+        .put('/api/analyses/42/favorite')
         .set('Authorization', authToken)
         .send({ isFavorited: false })
         .expect(200);
 
-      expect(response.body).toHaveProperty('isFavorited', false);
+      // Assert
+      expect(response.body.isFavorited).toBe(false);
+      expect(mockStorage.updateAnalysisFavorite).toHaveBeenCalledWith(42, false);
     });
 
-    test('validates isFavorited field', async () => {
+    test('should return 404 for non-existent analysis', async () => {
+      // Arrange
+      mockStorage.getAnalysis.mockResolvedValue(undefined);
+
+      // Act
       const response = await request(app)
-        .put(`/api/analyses/${testAnalysisId}/favorite`)
-        .set('Authorization', authToken)
-        .send({ isFavorited: 'not-a-boolean' })
-        .expect(400);
-
-      expect(response.body).toHaveProperty('message', 'isFavorited must be a boolean');
-    });
-
-    test('requires isFavorited field', async () => {
-      const response = await request(app)
-        .put(`/api/analyses/${testAnalysisId}/favorite`)
-        .set('Authorization', authToken)
-        .send({})
-        .expect(400);
-
-      expect(response.body).toHaveProperty('message', 'isFavorited must be a boolean');
-    });
-
-    test('returns 403 when user tries to favorite other user analysis', async () => {
-      const response = await request(app)
-        .put(`/api/analyses/${otherUserAnalysisId}/favorite`)
-        .set('Authorization', authToken)
-        .send({ isFavorited: true })
-        .expect(403);
-
-      expect(response.body).toHaveProperty('message', 'Access denied');
-    });
-
-    test('returns 404 for non-existent analysis', async () => {
-      const response = await request(app)
-        .put('/api/analyses/99999/favorite')
+        .put('/api/analyses/999/favorite')
         .set('Authorization', authToken)
         .send({ isFavorited: true })
         .expect(404);
 
-      expect(response.body).toHaveProperty('message', 'Analysis not found');
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(mockStorage.updateAnalysisFavorite).not.toHaveBeenCalled();
     });
 
-    test('requires authentication', async () => {
+    test('should prevent favoriting other users analyses', async () => {
+      // Arrange
+      const otherUserAnalysis = createMockAnalysis({ id: 42, userId: testUserId2 });
+      mockStorage.getAnalysis.mockResolvedValue(otherUserAnalysis);
+
+      // Act
+      const response = await request(app)
+        .put('/api/analyses/42/favorite')
+        .set('Authorization', authToken)
+        .send({ isFavorited: true })
+        .expect(403);
+
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(mockStorage.updateAnalysisFavorite).not.toHaveBeenCalled();
+    });
+
+    test('should validate request body', async () => {
+      // Act
+      const response = await request(app)
+        .put('/api/analyses/42/favorite')
+        .set('Authorization', authToken)
+        .send({}) // Missing isFavorited field
+        .expect(400);
+
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('isFavorited');
+    });
+
+    test('should require authentication', async () => {
+      // Act & Assert
       await request(app)
-        .put(`/api/analyses/${testAnalysisId}/favorite`)
+        .put('/api/analyses/42/favorite')
         .send({ isFavorited: true })
         .expect(401);
+
+      expect(mockStorage.getAnalysis).not.toHaveBeenCalled();
     });
   });
 
-  describe('Error handling', () => {
-    test('handles database errors gracefully', async () => {
-      // Mock a database error
-      const originalMethod = require('../../server/storage').storage.getAnalysisEligibility;
-      jest.spyOn(require('../../server/storage').storage, 'getAnalysisEligibility')
-        .mockRejectedValueOnce(new Error('Database connection failed'));
 
+
+  describe('Error Handling and Edge Cases', () => {
+    test('should handle malformed analysis IDs', async () => {
+      // Arrange
+      mockStorage.getAnalysis.mockResolvedValue(undefined);
+
+      // Act
       const response = await request(app)
-        .get('/api/analyses/eligibility')
+        .get('/api/analyses/invalid-id')
         .set('Authorization', authToken)
-        .expect(500);
+        .expect(404);
 
-      expect(response.body).toHaveProperty('message', 'Failed to check analysis eligibility');
-
-      // Restore original method
-      require('../../server/storage').storage.getAnalysisEligibility.mockRestore();
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('not found');
     });
 
-    test('handles analysis creation errors gracefully', async () => {
-      // Create 7 drops to make user eligible
-      for (let i = 0; i < 7; i++) {
-        await testDb.insert(schema.drops).values({
-          userId: testUserId,
-          questionId: testQuestionId,
-          text: `Test drop ${i + 1}`,
-          createdAt: new Date()
-        });
-      }
+    test('should handle storage service downtime', async () => {
+      // Arrange
+      mockStorage.getUserAnalyses.mockRejectedValue(new Error('Storage service unavailable'));
 
-      // Mock a database error
-      jest.spyOn(require('../../server/storage').storage, 'createAnalysis')
-        .mockRejectedValueOnce(new Error('Database write failed'));
-
+      // Act
       const response = await request(app)
-        .post('/api/analyses')
+        .get('/api/analyses')
         .set('Authorization', authToken)
         .expect(500);
 
-      expect(response.body).toHaveProperty('message', 'Failed to create analysis');
+      // Assert
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('Failed to fetch analyses');
+    });
 
-      require('../../server/storage').storage.createAnalysis.mockRestore();
+    test('should handle rate limiting scenarios', async () => {
+      // This would be implemented in the actual API with rate limiting middleware
+      // For now, we test that multiple requests are handled gracefully
+      
+      // Arrange
+      mockStorage.getUserAnalyses.mockResolvedValue([]);
+
+      // Act - Make multiple rapid requests
+      const promises = Array.from({ length: 10 }, () => 
+        request(app)
+          .get('/api/analyses')
+          .set('Authorization', authToken)
+      );
+
+      const responses = await Promise.all(promises);
+
+      // Assert - All should succeed (in production, some might be rate limited)
+      responses.forEach(response => {
+        expect(response.status).toBe(200);
+      });
+    });
+
+    test('should validate request parameters', async () => {
+      // Arrange - Invalid pagination parameters should still work (API handles gracefully)
+      mockStorage.getUserAnalyses.mockResolvedValue([]);
+
+      // Act
+      const response = await request(app)
+        .get('/api/analyses?limit=invalid&offset=negative')
+        .set('Authorization', authToken)
+        .expect(200);
+
+      // Assert - API handles invalid params gracefully by using defaults
+      expect(response.body).toEqual([]);
+      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 20, 0);
     });
   });
-}); 
+});

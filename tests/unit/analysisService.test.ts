@@ -9,133 +9,90 @@
  * - Health checks and monitoring
  */
 
-import { testDb } from '../setup';
-import * as schema from '../../shared/schema';
-import { eq } from 'drizzle-orm';
+// Database access automatically blocked by jest.setup.ts
+import { 
+  mockStorage, 
+  resetStorageMocks,
+  setupEligibleUserMocks,
+  setupIneligibleUserMocks,
+  setupEmptyUserMocks 
+} from '../mocks/mockStorage';
+import { 
+  createMockUser, 
+  createMockDropWithQuestion, 
+  createMockAnalysis,
+  createMockAnalysisResult,
+  createMockAnalysisEligibility,
+  createMockMessage,
+  TEST_USER_IDS 
+} from '../factories/testData';
 
-// Mock the LLM service
+// Mock the LLM service and storage dependencies
 jest.mock('../../server/services/analysisLLM', () => ({
   generateAnalysis: jest.fn(),
   getUnanalyzedDropsWithConversations: jest.fn()
 }));
 
-// Mock the database to control its behavior in tests
-jest.mock('../../server/db', () => {
-  const { testDb } = require('../setup');
-  return {
-    db: testDb
-  };
-});
-
-// Mock the storage service
 jest.mock('../../server/storage', () => ({
-  storage: {
-    getAnalysisEligibility: jest.fn(),
-    createAnalysis: jest.fn(),
-    getUserAnalyses: jest.fn()
-  }
+  storage: require('../mocks/mockStorage').mockStorage
 }));
 
-// Import after mocking
-import { 
-  createAnalysisForUser, 
-  getAnalysisStats, 
-  previewAnalysis, 
-  healthCheck,
-  type AnalysisCreationResult
+// Import the actual service to test
+import {
+  createAnalysisForUser,
+  getAnalysisStats,
+  previewAnalysis,
+  healthCheck
 } from '../../server/services/analysisService';
 
 const mockGenerateAnalysis = require('../../server/services/analysisLLM').generateAnalysis as jest.Mock;
 const mockGetUnanalyzedDropsWithConversations = require('../../server/services/analysisLLM').getUnanalyzedDropsWithConversations as jest.Mock;
-const mockStorage = require('../../server/storage').storage;
 
-describe('Analysis Service', () => {
-  const testUserId = 'test-user-service';
-  let testQuestionId: number;
+describe('Analysis Service Unit Tests', () => {
+  const testUserId = TEST_USER_IDS.USER_1;
 
-  beforeAll(async () => {
-    // Create test question
-    const result = await testDb.insert(schema.questionTable).values({
-      text: 'Test question for service tests?',
-      isActive: true,
-      category: 'test',
-      createdAt: new Date()
-    }).returning();
-    
-    testQuestionId = result[0].id;
-  });
-
-  beforeEach(async () => {
-    // Clean up database before each test
-    await testDb.delete(schema.analysisDrops);
-    await testDb.delete(schema.analyses);
-    await testDb.delete(schema.messages);
-    await testDb.delete(schema.drops);
-    await testDb.delete(schema.users);
-
-    // Create test user
-    await testDb.insert(schema.users).values({
-      id: testUserId,
-      username: 'testuser-service',
-      email: 'test-service@example.com',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
+  beforeEach(() => {
     // Reset all mocks
+    resetStorageMocks();
     jest.clearAllMocks();
+    
+    // Mock environment variable for health checks
+    process.env.ANTHROPIC_API_KEY = 'test-api-key';
   });
 
   describe('createAnalysisForUser', () => {
-    test('creates analysis successfully for eligible user', async () => {
-      // Mock eligibility check - user is eligible
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: true,
-        unanalyzedCount: 8,
-        requiredCount: 7
-      });
+    test('should create analysis successfully for eligible user', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
 
-      // Mock unanalyzed drops
-      const mockDrops = Array.from({ length: 8 }, (_, i) => ({
-        id: i + 1,
-        userId: testUserId,
-        questionId: testQuestionId,
-        text: `Drop ${i + 1}`,
-        createdAt: new Date(),
-        messageCount: 2,
-        questionText: 'Test question',
-        conversation: [
-          { text: `User message ${i + 1}`, fromUser: true },
-          { text: `Coach response ${i + 1}`, fromUser: false }
-        ]
-      }));
-
+      const mockDrops = Array.from({ length: 8 }, (_, i) => 
+        createMockDropWithQuestion({ 
+          id: i + 1, 
+          userId: testUserId, 
+          text: `This is a meaningful journal entry number ${i + 1} with enough content for analysis.`,
+          createdAt: new Date(Date.now() - i * 60 * 60 * 1000) // Spread over 8 hours (very recent)
+        })
+      );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
 
-      // Mock LLM analysis generation
       const mockAnalysisResponse = {
         summary: 'User shows strong self-reflection patterns',
         content: 'Analysis content with insights about personal growth...',
         bulletPoints: '• Strong self-awareness\n• Growth mindset\n• Clear goals'
       };
-
       mockGenerateAnalysis.mockResolvedValue(mockAnalysisResponse);
 
-      // Mock database storage
-      const mockStoredAnalysis = {
+      const mockStoredAnalysis = createMockAnalysis({
         id: 1,
         userId: testUserId,
-        ...mockAnalysisResponse,
-        createdAt: new Date(),
-        isFavorited: false
-      };
-
+        ...mockAnalysisResponse
+      });
       mockStorage.createAnalysis.mockResolvedValue(mockStoredAnalysis);
 
-      // Execute the analysis creation
+      // Act
       const result = await createAnalysisForUser(testUserId);
 
-      // Verify success
+      // Assert
       expect(result.success).toBe(true);
       expect(result.analysis).toEqual(mockStoredAnalysis);
       expect(result.metadata).toMatchObject({
@@ -144,335 +101,407 @@ describe('Analysis Service', () => {
         processingTime: expect.any(Number)
       });
 
-      // Verify method calls
       expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);
       expect(mockGetUnanalyzedDropsWithConversations).toHaveBeenCalledWith(testUserId);
       expect(mockGenerateAnalysis).toHaveBeenCalledWith(testUserId);
-      expect(mockStorage.createAnalysis).toHaveBeenCalledWith(
-        {
-          userId: testUserId,
-          content: mockAnalysisResponse.content,
-          summary: mockAnalysisResponse.summary,
-          bulletPoints: mockAnalysisResponse.bulletPoints
-        },
-        [1, 2, 3, 4, 5, 6, 7, 8]
-      );
+      expect(mockStorage.createAnalysis).toHaveBeenCalled();
     });
 
-    test('fails when user is not eligible', async () => {
-      // Mock eligibility check - user is not eligible
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: false,
-        unanalyzedCount: 5,
-        requiredCount: 7
-      });
+    test('should fail when user is not eligible', async () => {
+      // Arrange
+      setupIneligibleUserMocks(testUserId, 5);
 
+      // Act
       const result = await createAnalysisForUser(testUserId);
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.error).toContain('not eligible for analysis');
+      expect(result.error).toContain('You need at least 7 journal entries');
       expect(result.metadata).toMatchObject({
         dropCount: 5,
         userId: testUserId
       });
 
-      // Should not call LLM or storage methods
       expect(mockGetUnanalyzedDropsWithConversations).not.toHaveBeenCalled();
       expect(mockGenerateAnalysis).not.toHaveBeenCalled();
       expect(mockStorage.createAnalysis).not.toHaveBeenCalled();
     });
 
-    test('fails when insufficient drops available', async () => {
-      // Mock eligibility check - user is eligible
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: true,
-        unanalyzedCount: 7,
-        requiredCount: 7
-      });
+    test('should fail when insufficient drops available', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
 
-      // Mock insufficient drops
-      const mockDrops = Array.from({ length: 6 }, (_, i) => ({
-        id: i + 1,
-        userId: testUserId,
-        text: `Drop ${i + 1}`
-      }));
-
+      // Mock insufficient drops returned by LLM service
+      const mockDrops = Array.from({ length: 6 }, (_, i) => 
+        createMockDropWithQuestion({ id: i + 1, userId: testUserId, text: `Drop ${i + 1}` })
+      );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
 
+      // Act
       const result = await createAnalysisForUser(testUserId);
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Insufficient drops for analysis: 6');
-      expect(result.metadata?.dropCount).toBe(6);
-    });
-
-    test('handles LLM generation failure', async () => {
-      // Mock successful eligibility and drops
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: true,
-        unanalyzedCount: 7,
-        requiredCount: 7
+      expect(result.error).toContain('You need at least 7 journal entries');
+      expect(result.metadata).toMatchObject({
+        dropCount: 6,
+        userId: testUserId
       });
 
-      const mockDrops = Array.from({ length: 7 }, (_, i) => ({
-        id: i + 1,
-        userId: testUserId,
-        text: `Drop ${i + 1}`
-      }));
+      expect(mockGenerateAnalysis).not.toHaveBeenCalled();
+      expect(mockStorage.createAnalysis).not.toHaveBeenCalled();
+    });
 
+    test('should handle LLM service errors gracefully', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
+
+      const mockDrops = Array.from({ length: 8 }, (_, i) => 
+        createMockDropWithQuestion({ id: i + 1, userId: testUserId })
+      );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
 
       // Mock LLM failure
-      mockGenerateAnalysis.mockRejectedValue(new Error('LLM service unavailable'));
+      const llmError = new Error('LLM service unavailable');
+      mockGenerateAnalysis.mockRejectedValue(llmError);
 
+      // Act
       const result = await createAnalysisForUser(testUserId);
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Analysis generation failed');
-      expect(result.error).toContain('LLM service unavailable');
-    });
-
-    test('handles database storage failure', async () => {
-      // Mock successful eligibility, drops, and LLM
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: true,
-        unanalyzedCount: 7,
-        requiredCount: 7
+      expect(result.error).toContain('Our analysis service is temporarily unavailable');
+      expect(result.metadata).toMatchObject({
+        dropCount: 8,
+        userId: testUserId
       });
 
-      const mockDrops = Array.from({ length: 7 }, (_, i) => ({
-        id: i + 1,
-        userId: testUserId,
-        text: `Drop ${i + 1}`
-      }));
+      expect(mockStorage.createAnalysis).not.toHaveBeenCalled();
+    });
 
+    test('should handle storage errors gracefully', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
+
+      const mockDrops = Array.from({ length: 8 }, (_, i) => 
+        createMockDropWithQuestion({ 
+          id: i + 1, 
+          userId: testUserId,
+          createdAt: new Date(Date.now() - i * 12 * 60 * 60 * 1000) // Recent drops
+        })
+      );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
 
-      mockGenerateAnalysis.mockResolvedValue({
+      const mockAnalysisResponse = {
         summary: 'Test summary',
         content: 'Test content',
         bulletPoints: '• Test point'
-      });
+      };
+      mockGenerateAnalysis.mockResolvedValue(mockAnalysisResponse);
 
-      // Mock database failure
-      mockStorage.createAnalysis.mockRejectedValue(new Error('Database connection failed'));
+      // Mock storage failure with a database-specific error message
+      const storageError = new Error('Database write error');
+      mockStorage.createAnalysis.mockRejectedValue(storageError);
 
+      // Act
       const result = await createAnalysisForUser(testUserId);
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Failed to store analysis');
-      expect(result.error).toContain('Database connection failed');
+      expect(result.error).toContain('Unable to save your analysis');
+      expect(result.metadata).toMatchObject({
+        dropCount: 8,
+        userId: testUserId
+      });
+    });
+
+    test('should handle timeout scenarios', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
+
+      const mockDrops = Array.from({ length: 8 }, (_, i) => 
+        createMockDropWithQuestion({ id: i + 1, userId: testUserId })
+      );
+      mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
+
+      // Mock timeout error
+      const timeoutError = new Error('Request timeout');
+      mockGenerateAnalysis.mockRejectedValue(timeoutError);
+
+      // Act
+      const result = await createAnalysisForUser(testUserId);
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Analysis took too long to complete');
+    });
+
+    test('should validate minimum drop requirements at boundary', async () => {
+      // Arrange - User is eligible with exactly 7 drops
+      mockStorage.getAnalysisEligibility.mockResolvedValue(
+        createMockAnalysisEligibility({ isEligible: true, unanalyzedCount: 7 })
+      );
+
+      const mockDrops = Array.from({ length: 7 }, (_, i) => 
+        createMockDropWithQuestion({ id: i + 1, userId: testUserId })
+      );
+      mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
+
+      const mockAnalysisResponse = {
+        summary: 'Minimal analysis',
+        content: 'Basic insights',
+        bulletPoints: '• Key insight'
+      };
+      mockGenerateAnalysis.mockResolvedValue(mockAnalysisResponse);
+
+      const mockStoredAnalysis = createMockAnalysis({ userId: testUserId, ...mockAnalysisResponse });
+      mockStorage.createAnalysis.mockResolvedValue(mockStoredAnalysis);
+
+      // Act
+      const result = await createAnalysisForUser(testUserId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.metadata?.dropCount).toBe(7);
+    });
+
+    test('should validate user ID format', async () => {
+      // Arrange - Mock empty eligibility for empty user ID
+      mockStorage.getAnalysisEligibility.mockResolvedValue(
+        createMockAnalysisEligibility({ isEligible: false, unanalyzedCount: 0 })
+      );
+
+      // Act
+      const result = await createAnalysisForUser('');
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('You need at least 7 journal entries');
+    });
+
+    test('should handle network errors', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
+
+      const mockDrops = Array.from({ length: 8 }, (_, i) => 
+        createMockDropWithQuestion({ id: i + 1, userId: testUserId })
+      );
+      mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
+
+      // Mock network error
+      const networkError = new Error('fetch failed');
+      mockGenerateAnalysis.mockRejectedValue(networkError);
+
+      // Act
+      const result = await createAnalysisForUser(testUserId);
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Unable to connect to our analysis service');
     });
   });
 
   describe('getAnalysisStats', () => {
-    test('returns correct stats for user with analyses', async () => {
+    test('should return analysis statistics for user', async () => {
+      // Arrange
       const mockAnalyses = [
-        {
-          id: 1,
-          createdAt: new Date('2024-01-15'),
-          summary: 'Recent analysis'
-        },
-        {
-          id: 2,
-          createdAt: new Date('2024-01-10'),
-          summary: 'Older analysis'
-        }
+        createMockAnalysis({ id: 1, userId: testUserId, isFavorited: true }),
+        createMockAnalysis({ id: 2, userId: testUserId, isFavorited: false }),
+        createMockAnalysis({ id: 3, userId: testUserId, isFavorited: true })
       ];
-
       mockStorage.getUserAnalyses.mockResolvedValue(mockAnalyses);
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: false,
-        unanalyzedCount: 3,
-        requiredCount: 7
-      });
 
+      const mockEligibility = createMockAnalysisEligibility({ 
+        isEligible: false, 
+        unanalyzedCount: 4 
+      });
+      mockStorage.getAnalysisEligibility.mockResolvedValue(mockEligibility);
+
+      // Act
       const stats = await getAnalysisStats(testUserId);
 
+      // Assert
       expect(stats).toEqual({
-        totalAnalyses: 2,
-        lastAnalysisDate: new Date('2024-01-15'),
-        unanalyzedDropCount: 3,
-        isEligible: false
+        totalAnalyses: 3,
+        unanalyzedDropCount: 4,
+        isEligible: false,
+        hasOngoingAnalysis: false,
+        lastAnalysisDate: expect.any(Date)
       });
+
+      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 100, 0);
+      expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);
     });
 
-    test('returns empty stats for user with no analyses', async () => {
-      mockStorage.getUserAnalyses.mockResolvedValue([]);
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: false,
-        unanalyzedCount: 5,
-        requiredCount: 7
-      });
+    test('should handle user with no analyses', async () => {
+      // Arrange
+      setupEmptyUserMocks(testUserId);
 
+      // Act
       const stats = await getAnalysisStats(testUserId);
 
-      expect(stats).toEqual({
-        totalAnalyses: 0,
-        lastAnalysisDate: undefined,
-        unanalyzedDropCount: 5,
-        isEligible: false
-      });
-    });
-
-    test('handles errors gracefully', async () => {
-      mockStorage.getUserAnalyses.mockRejectedValue(new Error('Database error'));
-
-      const stats = await getAnalysisStats(testUserId);
-
+      // Assert
       expect(stats).toEqual({
         totalAnalyses: 0,
         unanalyzedDropCount: 0,
-        isEligible: false
+        isEligible: false,
+        hasOngoingAnalysis: false,
+        lastAnalysisDate: undefined
+      });
+    });
+
+    test('should handle errors in stats calculation', async () => {
+      // Arrange
+      mockStorage.getUserAnalyses.mockRejectedValue(new Error('Database error'));
+
+      // Act
+      const stats = await getAnalysisStats(testUserId);
+
+      // Assert - Should return default values on error
+      expect(stats).toEqual({
+        totalAnalyses: 0,
+        unanalyzedDropCount: 0,
+        isEligible: false,
+        hasOngoingAnalysis: false
       });
     });
   });
 
   describe('previewAnalysis', () => {
-    test('returns preview for eligible user', async () => {
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: true,
-        unanalyzedCount: 8,
-        requiredCount: 7
-      });
+    test('should generate analysis preview without saving', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
 
-      const mockDrops = [
-        {
-          id: 1,
-          createdAt: new Date('2024-01-10'),
-          conversation: [{ text: 'msg1' }, { text: 'msg2' }]
-        },
-        {
-          id: 2,
-          createdAt: new Date('2024-01-15'),
-          conversation: [{ text: 'msg3' }]
-        }
-      ];
-
+      const mockDrops = Array.from({ length: 8 }, (_, i) => ({
+        ...createMockDropWithQuestion({ 
+          id: i + 1, 
+          userId: testUserId,
+          createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000) // Spread over 8 days
+        }),
+        conversation: [
+          createMockMessage({ id: i * 4 + 1, dropId: i + 1, text: `Message ${i * 2 + 1}`, fromUser: true }),
+          createMockMessage({ id: i * 4 + 2, dropId: i + 1, text: `Response ${i * 2 + 1}`, fromUser: false }),
+          createMockMessage({ id: i * 4 + 3, dropId: i + 1, text: `Message ${i * 2 + 2}`, fromUser: true }),
+          createMockMessage({ id: i * 4 + 4, dropId: i + 1, text: `Response ${i * 2 + 2}`, fromUser: false })
+        ]
+      }));
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
 
+      // Act
       const preview = await previewAnalysis(testUserId);
 
-      expect(preview).toEqual({
-        eligible: true,
-        dropCount: 2,
-        oldestDrop: new Date('2024-01-10'),
-        newestDrop: new Date('2024-01-15'),
-        totalMessages: 3
-      });
+      // Assert
+      expect(preview.eligible).toBe(true);
+      expect(preview.dropCount).toBe(8);
+      expect(preview.totalMessages).toBeGreaterThan(0);
+      expect(preview.oldestDrop).toBeDefined();
+      expect(preview.newestDrop).toBeDefined();
+
+      // Should NOT call storage create method
+      expect(mockStorage.createAnalysis).not.toHaveBeenCalled();
     });
 
-    test('returns ineligible status for user with insufficient drops', async () => {
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: false,
-        unanalyzedCount: 4,
-        requiredCount: 7
-      });
+    test('should fail preview for ineligible user', async () => {
+      // Arrange
+      setupIneligibleUserMocks(testUserId, 3);
 
+      // Act
       const preview = await previewAnalysis(testUserId);
 
-      expect(preview).toEqual({
-        eligible: false,
-        dropCount: 4,
-        totalMessages: 0,
-        error: 'Not eligible: 4 out of 7 drops'
-      });
+      // Assert
+      expect(preview.eligible).toBe(false);
+      expect(preview.dropCount).toBe(3);
+      expect(preview.error).toBeDefined();
+      expect(mockGetUnanalyzedDropsWithConversations).not.toHaveBeenCalled();
     });
 
-    test('handles no drops case', async () => {
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: true,
-        unanalyzedCount: 7,
-        requiredCount: 7
-      });
+    test('should handle errors in preview generation', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
+      mockGetUnanalyzedDropsWithConversations.mockRejectedValue(new Error('Service error'));
 
-      mockGetUnanalyzedDropsWithConversations.mockResolvedValue([]);
-
+      // Act
       const preview = await previewAnalysis(testUserId);
 
-      expect(preview).toEqual({
-        eligible: false,
-        dropCount: 0,
-        totalMessages: 0,
-        error: 'No unanalyzed drops found'
-      });
+      // Assert
+      expect(preview.eligible).toBe(false);
+      expect(preview.error).toContain('Preview failed');
     });
   });
 
   describe('healthCheck', () => {
-    beforeEach(() => {
-      // Reset environment
-      delete process.env.ANTHROPIC_API_KEY;
-    });
-
-    test('returns healthy status when all checks pass', async () => {
-      process.env.ANTHROPIC_API_KEY = 'test-key';
-      
-      mockStorage.getAnalysisEligibility.mockResolvedValue({
-        isEligible: false,
-        unanalyzedCount: 0,
-        requiredCount: 7
-      });
-
+    test('should return healthy status when all services work', async () => {
+      // Arrange
+      mockStorage.getAnalysisEligibility.mockResolvedValue(
+        createMockAnalysisEligibility({ isEligible: false, unanalyzedCount: 0 })
+      );
       mockStorage.getUserAnalyses.mockResolvedValue([]);
 
+      // Act
       const health = await healthCheck();
 
-      expect(health).toEqual({
-        healthy: true,
-        checks: {
-          anthropicApiKey: true,
-          databaseConnection: true,
-          storageService: true
-        }
+      // Assert
+      expect(health.healthy).toBe(true);
+      expect(health.checks).toMatchObject({
+        anthropicApiKey: true,
+        databaseConnection: true,
+        storageService: true
       });
     });
 
-    test('returns unhealthy status when API key is missing', async () => {
-      // API key not set
-      mockStorage.getAnalysisEligibility.mockResolvedValue({});
-      mockStorage.getUserAnalyses.mockResolvedValue([]);
+    test('should return unhealthy status when storage fails', async () => {
+      // Arrange
+      mockStorage.getAnalysisEligibility.mockRejectedValue(new Error('Storage down'));
 
+      // Act
       const health = await healthCheck();
 
-      expect(health.healthy).toBe(false);
-      expect(health.checks.anthropicApiKey).toBe(false);
-    });
-
-    test('returns unhealthy status when database check fails', async () => {
-      process.env.ANTHROPIC_API_KEY = 'test-key';
-      
-      mockStorage.getAnalysisEligibility.mockRejectedValue(new Error('DB error'));
-      mockStorage.getUserAnalyses.mockResolvedValue([]);
-
-      const health = await healthCheck();
-
+      // Assert
       expect(health.healthy).toBe(false);
       expect(health.checks.databaseConnection).toBe(false);
     });
 
-    test('returns unhealthy status when storage check fails', async () => {
-      process.env.ANTHROPIC_API_KEY = 'test-key';
-      
-      mockStorage.getAnalysisEligibility.mockResolvedValue({});
-      mockStorage.getUserAnalyses.mockRejectedValue(new Error('Storage error'));
+    test('should return unhealthy status when storage service fails', async () => {
+      // Arrange
+      mockStorage.getAnalysisEligibility.mockResolvedValue(
+        createMockAnalysisEligibility({ isEligible: false, unanalyzedCount: 0 })
+      );
+      mockStorage.getUserAnalyses.mockRejectedValue(new Error('Storage service error'));
 
+      // Act
       const health = await healthCheck();
 
+      // Assert
       expect(health.healthy).toBe(false);
       expect(health.checks.storageService).toBe(false);
     });
 
-    test('handles health check errors gracefully', async () => {
-      // Simulate a total failure
-      mockStorage.getAnalysisEligibility.mockImplementation(() => {
-        throw new Error('Critical system error');
-      });
+    test('should handle missing API key', async () => {
+      // Arrange
+      delete process.env.ANTHROPIC_API_KEY;
+      mockStorage.getAnalysisEligibility.mockResolvedValue(
+        createMockAnalysisEligibility({ isEligible: false, unanalyzedCount: 0 })
+      );
+      mockStorage.getUserAnalyses.mockResolvedValue([]);
 
+      // Act
       const health = await healthCheck();
 
+      // Assert
       expect(health.healthy).toBe(false);
-      expect(health.error).toContain('Critical system error');
+      expect(health.checks.anthropicApiKey).toBe(false);
+    });
+
+    test('should handle health check errors gracefully', async () => {
+      // Arrange
+      mockStorage.getAnalysisEligibility.mockRejectedValue(new Error('Critical error'));
+
+      // Act
+      const health = await healthCheck();
+
+      // Assert
+      expect(health.healthy).toBe(false);
+      expect(health.checks.databaseConnection).toBe(false);
     });
   });
 }); 

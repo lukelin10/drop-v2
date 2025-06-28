@@ -21,7 +21,11 @@ const config: Config = {
       useESM: true,
     }],
   },
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  // Setup files run in order: first jest.setup.ts (global protection), then setup-server.ts (server test utilities)
+  setupFilesAfterEnv: [
+    '<rootDir>/tests/jest.setup.ts',
+    '<rootDir>/tests/setup-server.ts'
+  ],
   testTimeout: 15000,
   // Run tests sequentially to avoid database race conditions
   maxWorkers: 1,

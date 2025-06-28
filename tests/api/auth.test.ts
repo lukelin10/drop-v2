@@ -1,24 +1,31 @@
+import { enableMocksForAPITests, getTestApp, TEST_USER_ID, TEST_USERNAME } from '../setup-server';
+
+// Enable mocks before any other imports
+enableMocksForAPITests();
+
 import request from 'supertest';
-import { getTestApp } from '../testServer';
-import { TEST_USER_ID, TEST_USERNAME, cleanDatabase } from '../setup';
-import { storage } from '../../server/storage';
+import { mockStorage } from '../mocks/mockStorage';
+import { createMockUser } from '../factories/testData';
 
 describe('Authentication API', () => {
   let app: any;
 
   beforeAll(async () => {
     app = await getTestApp();
-    
-    // Create a test user in the database
-    await storage.upsertUser({
-      id: TEST_USER_ID,
-      username: TEST_USERNAME,
-      email: 'test@example.com',
-    });
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    jest.clearAllMocks();
+    
+    // Setup mock user for auth tests
+    const mockUser = createMockUser({
+      id: TEST_USER_ID,
+      username: TEST_USERNAME,
+      email: 'test@example.com'
+    });
+    
+    mockStorage.getUser.mockResolvedValue(mockUser);
+    mockStorage.getUserByUsername.mockResolvedValue(mockUser);
   });
 
   test('GET /api/auth/user returns user data for authenticated user', async () => {

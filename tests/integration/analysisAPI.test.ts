@@ -13,9 +13,9 @@
  */
 
 import request from 'supertest';
-import { testDb, cleanDatabase, TEST_USER_ID } from '../setup';
+import { testDb, cleanDatabase, TEST_USER_ID } from '../setup-server';
 import * as schema from '../../shared/schema';
-import { getTestApp } from '../testServer';
+import { getTestApp } from '../setup-server';
 import { storage } from '../../server/storage';
 
 // SAFETY CHECK: Ensure we're in test environment

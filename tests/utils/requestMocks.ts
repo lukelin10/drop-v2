@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { TEST_USER_ID } from '../setup';
+import { TEST_USER_ID } from '../setup-server';
 
 /**
  * Creates a mock Express request object with authentication data

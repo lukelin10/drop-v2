@@ -1,38 +1,38 @@
+import { enableMocksForAPITests, getTestApp, getMockStorage, TEST_USER_ID } from '../setup-server';
+
+// Enable mocks before any other imports
+enableMocksForAPITests();
+
 import request from 'supertest';
-import { getTestApp } from '../testServer';
-import { TEST_USER_ID, cleanDatabase } from '../setup';
-import { storage } from '../../server/storage';
+import { createMockUser, createMockQuestion } from '../factories/testData';
 
 describe('Questions API', () => {
   let app: any;
 
   beforeAll(async () => {
     app = await getTestApp();
-    
-    // Create a test user
-    await storage.upsertUser({
-      id: TEST_USER_ID,
-      username: 'testuser',
-      email: 'test@example.com',
-    });
-    
-    // Create some test questions
-    await storage.createQuestion({
-      text: 'Test question 1?',
-      isActive: true,
-      category: 'test'
-    });
-    
-    await storage.createQuestion({
-      text: 'Test question 2?',
-      isActive: true,
-      category: 'test'
-    });
   });
 
-  beforeEach(async () => {
-    // We don't need to clean questions between tests
-    // They'll be reused
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // Set up mock questions
+    const mockStorage = getMockStorage();
+    const mockQuestions = [
+      createMockQuestion({ 
+        text: 'Test question 1?', 
+        isActive: true, 
+        category: 'test' 
+      }),
+      createMockQuestion({ 
+        text: 'Test question 2?', 
+        isActive: true, 
+        category: 'test' 
+      })
+    ];
+    
+    mockStorage.getQuestions.mockResolvedValue(mockQuestions);
+    mockStorage.getDailyQuestion.mockResolvedValue('Test question 1?'); // Returns string, not object
   });
 
   test('GET /api/daily-question returns a question', async () => {
