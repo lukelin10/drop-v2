@@ -24,12 +24,18 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0];
+    if (typeof url !== 'string') {
+      throw new Error('Query key must start with a URL string');
+    }
+    
+    const res = await fetch(url, {
       credentials: "include",
     });
 

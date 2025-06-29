@@ -235,7 +235,11 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   // Token has expired, attempt to refresh it
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
-    // No refresh token available, redirect to login
+    // No refresh token available
+    // For API requests, return 401; for browser requests, redirect
+    if (req.path.startsWith('/api/')) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     return res.redirect("/api/login");
   }
 
@@ -246,7 +250,11 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     updateUserSession(user, tokenResponse);
     return next(); // Proceed to the route with the new token
   } catch (error) {
-    // Refresh token failed, redirect to login
+    // Refresh token failed
+    // For API requests, return 401; for browser requests, redirect
+    if (req.path.startsWith('/api/')) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     return res.redirect("/api/login");
   }
 };
