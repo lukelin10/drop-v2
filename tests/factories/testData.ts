@@ -195,6 +195,28 @@ export const createMockAnalysisEligibility = (overrides: Partial<{
 });
 
 /**
+ * Creates a mock question for daily question scenarios
+ */
+export const createMockDailyQuestion = (overrides: Partial<Question> = {}): Question => ({
+  id: 1,
+  text: 'How are you feeling today?',
+  isActive: true,
+  createdAt: TEST_DATES.PAST,
+  lastUsedAt: TEST_DATES.RECENT,
+  usageCount: 5,
+  category: 'daily',
+  ...overrides
+});
+
+/**
+ * Creates a mock drop with today's date for daily question testing
+ */
+export const createMockDropWithToday = (overrides: Partial<Drop> = {}): Drop => ({
+  ...createMockDrop(overrides),
+  createdAt: new Date(), // Today's date
+});
+
+/**
  * Creates mock analysis creation result
  */
 export const createMockAnalysisResult = (success: boolean = true, overrides: any = {}) => ({

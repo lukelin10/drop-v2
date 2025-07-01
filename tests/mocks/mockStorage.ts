@@ -171,4 +171,82 @@ export const resetStorageMocks = () => {
  */
 export const setupStorageErrorMocks = (methodName: keyof IStorage, error: Error) => {
   (mockStorage[methodName] as jest.Mock).mockRejectedValue(error);
+};
+
+/**
+ * Sets up storage mocks for daily question scenarios
+ */
+export const setupDailyQuestionMocks = (testUserId: string = 'test-user-1') => {
+  // Set up user with today's question not answered yet
+  mockStorage.getDailyQuestion.mockResolvedValue('How are you feeling today?');
+  mockStorage.getUser.mockResolvedValue(createMockUser({ id: testUserId }));
+  mockStorage.getUserDrops.mockResolvedValue([]);
+};
+
+/**
+ * Sets up storage mocks for user who already answered today
+ */
+export const setupAnsweredTodayMocks = (testUserId: string = 'test-user-1') => {
+  // Set up user who already answered today
+  const todaysDrop = createMockDropWithQuestion({ 
+    userId: testUserId, 
+    createdAt: new Date(),
+    questionText: 'How are you feeling today?'
+  });
+  mockStorage.getDailyQuestion.mockResolvedValue('How are you feeling today?');
+  mockStorage.getUserDrops.mockResolvedValue([todaysDrop]);
+};
+
+/**
+ * Sets up storage mocks for message and conversation scenarios
+ */
+export const setupMessageConversationMocks = (testUserId: string = 'test-user-1', testDropId: number = 1) => {
+  // Set up user and drop
+  mockStorage.getUser.mockResolvedValue(createMockUser({ id: testUserId }));
+  mockStorage.getDrop.mockResolvedValue(createMockDropWithQuestion({ 
+    id: testDropId, 
+    userId: testUserId 
+  }));
+  
+  // Set up empty messages initially
+  mockStorage.getMessages.mockResolvedValue([]);
+  
+  // Set up message creation to return created message
+  mockStorage.createMessage.mockImplementation(async (messageData) => {
+    return createMockMessage({
+      id: Math.floor(Math.random() * 1000),
+      ...messageData
+    });
+  });
+};
+
+/**
+ * Sets up storage mocks for conversation with messages
+ */
+export const setupConversationWithMessagesMocks = (testUserId: string = 'test-user-1', testDropId: number = 1, messageCount: number = 4) => {
+  // Set up user and drop
+  mockStorage.getUser.mockResolvedValue(createMockUser({ id: testUserId }));
+  mockStorage.getDrop.mockResolvedValue(createMockDropWithQuestion({ 
+    id: testDropId, 
+    userId: testUserId 
+  }));
+  
+  // Set up messages for the conversation
+  const messages = Array.from({ length: messageCount }, (_, i) => 
+    createMockMessage({
+      id: i + 1,
+      dropId: testDropId,
+      text: `${i % 2 === 0 ? 'User' : 'AI'} message ${i + 1}`,
+      fromUser: i % 2 === 0
+    })
+  );
+  mockStorage.getMessages.mockResolvedValue(messages);
+  
+  // Set up message creation
+  mockStorage.createMessage.mockImplementation(async (messageData) => {
+    return createMockMessage({
+      id: Math.floor(Math.random() * 1000),
+      ...messageData
+    });
+  });
 }; 

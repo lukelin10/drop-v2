@@ -25,49 +25,72 @@ Mock-Based Test Suite
 
 ## 🚀 Quick Start for Junior Developers
 
-### **Step 1: Choose Your Test Type**
+### **Step 1: Create Your Test File**
 ```typescript
-// Unit Test - Testing individual functions/components
-setupUnitTestMocks(); // ← ALWAYS start with this
+/**
+ * My Feature Business Logic Unit Tests
+ * 
+ * Tests my feature logic that interacts with the storage layer.
+ * Uses mocked storage to ensure no database connections in unit tests.
+ */
 
-// API Test - Testing endpoints
-setupUnitTestMocks(); // ← Same setup
+// Database access automatically blocked by jest.setup.ts
+import { 
+  mockStorage, 
+  resetStorageMocks,
+  setupEligibleUserMocks,
+  setupIneligibleUserMocks,
+  setupEmptyUserMocks 
+} from '../mocks/mockStorage';
+import { 
+  createMockUser, 
+  createMockDrop, 
+  createMockAnalysis,
+  TEST_USER_IDS 
+} from '../factories/testData';
 
-// Integration Test - Testing workflows  
-setupIntegrationMocks(); // ← Different setup for integration
-```
+describe('My Feature Business Logic Unit Tests', () => {
+  const testUserId = TEST_USER_IDS.USER_1;
 
-### **Step 2: Use Pre-Built Mock Data**
-```typescript
-import { createMockUser, createMockDrop, createMockAnalysis } from '../factories/testData';
+  beforeEach(() => {
+    resetStorageMocks();
+  });
 
-// Create realistic test data instantly
-const user = createMockUser({ id: 'test-123', email: 'test@example.com' });
-const drop = createMockDrop({ userId: 'test-123', text: 'My test drop' });
-const analysis = createMockAnalysis({ userId: 'test-123' });
-```
-
-### **Step 3: Write Your Test**
-```typescript
-import { setupUnitTestMocks } from '../mocks/setupMocks';
-import { mockStorage } from '../mocks/mockStorage';
-
-// REQUIRED: This prevents database access
-setupUnitTestMocks();
-
-describe('My Feature', () => {
-  test('should work correctly', async () => {
-    // Set up what the mock should return
-    mockStorage.getUser.mockResolvedValue(createMockUser());
-    
-    // Test your code
-    const result = await myFunction('test-user');
-    
-    // Verify it worked
-    expect(result).toBe('expected-value');
-    expect(mockStorage.getUser).toHaveBeenCalledWith('test-user');
+  describe('Core Functionality', () => {
+    test('should work correctly', async () => {
+      // Set up mock scenario
+      const mockUser = createMockUser({ id: testUserId });
+      mockStorage.getUser.mockResolvedValue(mockUser);
+      
+      // Test your code
+      const result = await myFunction(testUserId);
+      
+      // Verify it worked
+      expect(result).toBe('expected-value');
+      expect(mockStorage.getUser).toHaveBeenCalledWith(testUserId);
+    });
   });
 });
+```
+
+### **Step 2: Use Pre-Built Mock Scenarios**
+```typescript
+// For users who can perform actions
+setupEligibleUserMocks(testUserId);
+
+// For users who don't have enough data
+setupIneligibleUserMocks(testUserId, 5);
+
+// For new users with no data
+setupEmptyUserMocks(testUserId);
+
+// For testing error scenarios
+setupStorageErrorMocks();
+```
+
+### **Step 3: Run Your Test**
+```bash
+npm test tests/unit/myFeature.test.ts
 ```
 
 ---
@@ -75,23 +98,47 @@ describe('My Feature', () => {
 ## 📋 Test Types & When to Use Them
 
 ### 1. Unit Tests (80% of your tests)
-**Use for**: Individual functions, React components, utility functions
+**Use for**: Business logic, service functions, component logic
 
 ```typescript
-// tests/unit/myComponent.test.tsx
-import { setupUnitTestMocks } from '../mocks/setupMocks';
-import { render, screen } from '@testing-library/react';
-import { MyComponent } from '../../src/components/MyComponent';
+// tests/unit/myFeature.test.ts
+/**
+ * My Feature Business Logic Unit Tests
+ * 
+ * Tests my feature logic that interacts with the storage layer.
+ * Uses mocked storage to ensure no database connections in unit tests.
+ */
 
-setupUnitTestMocks(); // ← ALWAYS REQUIRED
+// Database access automatically blocked by jest.setup.ts
+import { 
+  mockStorage, 
+  resetStorageMocks,
+  setupEligibleUserMocks
+} from '../mocks/mockStorage';
+import { 
+  createMockUser,
+  TEST_USER_IDS 
+} from '../factories/testData';
 
-describe('MyComponent', () => {
-  test('should display user name', () => {
-    const user = createMockUser({ name: 'John Doe' });
-    
-    render(<MyComponent user={user} />);
-    
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+describe('My Feature Business Logic Unit Tests', () => {
+  const testUserId = TEST_USER_IDS.USER_1;
+
+  beforeEach(() => {
+    resetStorageMocks();
+  });
+
+  describe('Feature Logic', () => {
+    test('should process user correctly', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
+      
+      // Act
+      const result = await myFeature.processUser(testUserId);
+      
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockStorage.getUser).toHaveBeenCalledWith(testUserId);
+    });
   });
 });
 ```
@@ -101,12 +148,13 @@ describe('MyComponent', () => {
 
 ```typescript
 // tests/api/myEndpoint.test.ts
-import request from 'supertest';
-import { setupUnitTestMocks } from '../mocks/setupMocks';
-import { mockStorage, setupEligibleUserMocks } from '../mocks/mockStorage';
-import { getTestApp } from '../testServer';
+import { enableMocksForAPITests, getTestApp } from '../setup-server';
 
-setupUnitTestMocks(); // ← ALWAYS REQUIRED
+// Enable mocks before any other imports
+enableMocksForAPITests();
+
+import request from 'supertest';
+import { mockStorage, setupEligibleUserMocks } from '../mocks/mockStorage';
 
 describe('My API Endpoint', () => {
   let app: Express;
@@ -231,13 +279,19 @@ verifyErrorResponse(response, 400);
 
 ### **If You See This Error:**
 ```
-Error: Direct database access not allowed in tests. Use setupUnitTestMocks() instead.
+Error: Direct database access not allowed in tests. Use mocked repositories.
 ```
 
-**Fix**: Add this to the top of your test file:
+**This means**: The automatic database protection is working correctly! 
+
+**Fix**: Use `mockStorage` instead of direct database calls:
 ```typescript
-import { setupUnitTestMocks } from '../mocks/setupMocks';
-setupUnitTestMocks(); // ← Add this line
+// ❌ Don't do this - blocked for safety
+const user = await DatabaseStorage.getUser('test-123');
+
+// ✅ Do this instead - use mocks
+mockStorage.getUser.mockResolvedValue(createMockUser({ id: 'test-123' }));
+const user = await mockStorage.getUser('test-123');
 ```
 
 ---
@@ -247,40 +301,29 @@ setupUnitTestMocks(); // ← Add this line
 ### **Current Structure**
 ```
 tests/
-├── unit/                     # Individual function/component tests
-│   ├── databaseStorage.test.ts
-│   ├── analysis.test.ts
-│   ├── analysisService.test.ts
-│   └── ...
-├── api/                      # API endpoint tests
-│   ├── analyses.test.ts
-│   ├── messages.test.ts
-│   ├── drops.test.ts
-│   └── ...
-├── integration/              # Service integration tests
-│   ├── INTEGRATION_STRATEGY.md
-│   ├── README.md
-│   ├── mocks/integrationMocks.ts
-│   ├── contracts/apiContracts.ts
-│   └── analysisWorkflow.mock.test.ts
+├── unit/                     # Business logic and component tests
+│   ├── analysisService.test.ts        # Service orchestration tests
+│   ├── analysis.test.ts               # Analysis business logic tests
+│   ├── databaseStorage.test.ts        # Storage business logic tests
+│   ├── errorHandling.test.ts          # Error scenario tests
+│   ├── analysisComponents.test.ts     # Component logic tests
+│   └── [feature].test.ts              # Your new feature tests
 ├── factories/                # Test data generators
-│   ├── testData.ts
-│   └── testFactories.test.ts
+│   └── testData.ts                    # Mock data factories
 ├── mocks/                    # Mock infrastructure
-│   ├── mockStorage.ts
-│   ├── setupMocks.ts
-│   └── README.md
-├── utils/                    # Test utilities
-│   └── dbHelpers.ts
-├── setup.ts                  # Global test setup
-├── jest.setup.ts             # Database protection
-└── verify-database-blocking.test.ts
+│   ├── mockStorage.ts                 # Storage mock scenarios
+│   └── README.md                      # Mock usage guide
+├── setup-server.ts           # API test setup
+├── setup-react.ts            # React test setup  
+├── jest.setup.ts             # Global database protection
+└── TESTING_GUIDE.md          # Complete testing documentation
 ```
 
 ### **Where to Put New Tests**
-- **Testing a function?** → `tests/unit/`
-- **Testing an API endpoint?** → `tests/api/`
-- **Testing multiple services together?** → `tests/integration/`
+- **Testing business logic or services?** → `tests/unit/[feature].test.ts`
+- **Testing component logic?** → `tests/unit/[feature]Components.test.ts`
+- **Testing error scenarios?** → `tests/unit/[feature]ErrorHandling.test.ts`
+- **Testing React components with rendering?** → `client/src/components/__tests__/`
 
 ---
 
@@ -321,30 +364,58 @@ npm test -- --watch
 1. **Create the test file**:
    ```typescript
    // tests/unit/myFeature.test.ts
-   import { setupUnitTestMocks } from '../mocks/setupMocks';
-   import { mockStorage } from '../mocks/mockStorage';
-   import { createMockUser } from '../factories/testData';
+   /**
+    * My Feature Business Logic Unit Tests
+    * 
+    * Tests my feature logic that interacts with the storage layer.
+    * Uses mocked storage to ensure no database connections in unit tests.
+    */
 
-   // STEP 1: Always start with this
-   setupUnitTestMocks();
+   // Database access automatically blocked by jest.setup.ts
+   import { 
+     mockStorage, 
+     resetStorageMocks,
+     setupEligibleUserMocks,
+     setupIneligibleUserMocks,
+     setupEmptyUserMocks 
+   } from '../mocks/mockStorage';
+   import { 
+     createMockUser, 
+     createMockDrop,
+     TEST_USER_IDS 
+   } from '../factories/testData';
 
-   describe('My Feature', () => {
-     // STEP 2: Clear mocks between tests
+   describe('My Feature Business Logic Unit Tests', () => {
+     const testUserId = TEST_USER_IDS.USER_1;
+
      beforeEach(() => {
-       jest.clearAllMocks();
+       resetStorageMocks();
      });
 
-     test('should do something', async () => {
-       // STEP 3: Set up mock data
-       const mockUser = createMockUser({ id: 'test-123' });
-       mockStorage.getUser.mockResolvedValue(mockUser);
+     describe('Core Logic', () => {
+       test('should process eligible user correctly', async () => {
+         // Arrange
+         setupEligibleUserMocks(testUserId);
 
-       // STEP 4: Test your function
-       const result = await myFeature('test-123');
+         // Act
+         const result = await myFeature.processUser(testUserId);
 
-       // STEP 5: Verify results
-       expect(result).toBe('expected-value');
-       expect(mockStorage.getUser).toHaveBeenCalledWith('test-123');
+         // Assert
+         expect(result.success).toBe(true);
+         expect(mockStorage.getUser).toHaveBeenCalledWith(testUserId);
+       });
+
+       test('should handle ineligible user', async () => {
+         // Arrange
+         setupIneligibleUserMocks(testUserId, 5);
+
+         // Act
+         const result = await myFeature.processUser(testUserId);
+
+         // Assert
+         expect(result.success).toBe(false);
+         expect(result.error).toContain('insufficient data');
+       });
      });
    });
    ```
@@ -399,36 +470,50 @@ npm test -- --watch
 ## ✅ Best Practices for Junior Developers
 
 ### **DO:**
-- ✅ **Always start with `setupUnitTestMocks()`** - This is required for safety
+- ✅ **Start with detailed file header comment** - Explain what your tests cover
+- ✅ **Use `resetStorageMocks()` in `beforeEach()`** - This ensures clean test state
 - ✅ **Use factory functions** - `createMockUser()` instead of manual objects
 - ✅ **Use pre-configured scenarios** - `setupEligibleUserMocks()` saves time
-- ✅ **Clear mocks between tests** - `jest.clearAllMocks()` in `beforeEach`
-- ✅ **Test business logic** - Focus on what your code does, not how storage works
+- ✅ **Test business logic** - Focus on what your code does, not implementation
 - ✅ **Write descriptive test names** - "should create analysis when user is eligible"
+- ✅ **Use TEST_USER_IDS constants** - For consistent test user identification
+- ✅ **Group tests with nested describe blocks** - Organize by functionality
 
 ### **DON'T:**
-- ❌ **Never access real database** - It's blocked for safety
+- ❌ **Never access real database** - It's automatically blocked for safety
 - ❌ **Don't create manual mock objects** - Use factories instead
 - ❌ **Don't test implementation details** - Test behavior, not internals
-- ❌ **Don't write complex setup** - Use pre-built scenarios
-- ❌ **Don't skip the mock setup** - Tests will fail without it
+- ❌ **Don't use jest.clearAllMocks()** - Use `resetStorageMocks()` instead
+- ❌ **Don't skip error scenario tests** - Always test both success and failure paths
 
 ### **Common Patterns**
 
 ```typescript
-// ✅ Good: Use factories and scenarios
-const user = createMockUser({ id: 'test-123' });
-setupEligibleUserMocks('test-123');
+// ✅ Good: Use TEST_USER_IDS and scenarios
+const testUserId = TEST_USER_IDS.USER_1;
+setupEligibleUserMocks(testUserId);
 
-// ❌ Bad: Manual mock objects
-const user = { id: 'test-123', email: 'test@example.com', ... };
+// ❌ Bad: Hardcoded user IDs
+const testUserId = 'test-123';
 
-// ✅ Good: Test behavior
+// ✅ Good: Use resetStorageMocks() in beforeEach
+beforeEach(() => {
+  resetStorageMocks();
+});
+
+// ❌ Bad: Use jest.clearAllMocks()
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+// ✅ Good: Test behavior and outcomes
 expect(result.success).toBe(true);
+expect(result.error).toContain('insufficient data');
 expect(mockStorage.createAnalysis).toHaveBeenCalled();
 
-// ❌ Bad: Test implementation
+// ❌ Bad: Test specific implementation details
 expect(result.analysis.id).toBe(1);
+expect(mockStorage.getUser.mock.calls[0][0]).toBe('test-123');
 ```
 
 ---
@@ -437,31 +522,35 @@ expect(result.analysis.id).toBe(1);
 
 ### **Common Issues**
 
-1. **"Database access not allowed" error**
+1. **"Direct database access not allowed" error**
    ```typescript
-   // Fix: Add mock setup
-   import { setupUnitTestMocks } from '../mocks/setupMocks';
-   setupUnitTestMocks();
+   // Fix: Check that jest.setup.ts is properly configured
+   // Database access is automatically blocked - no action needed
+   // Use mockStorage instead of real database calls
    ```
 
-2. **Mock not working**
+2. **Mock not returning expected data**
    ```typescript
-   // Fix: Clear mocks between tests
+   // Fix: Use resetStorageMocks() in beforeEach
    beforeEach(() => {
-     jest.clearAllMocks();
+     resetStorageMocks();
    });
    ```
 
-3. **Test data not realistic**
+3. **Test scenarios not working as expected**
    ```typescript
-   // Fix: Use factories instead of manual objects
-   const user = createMockUser({ id: 'custom-id' });
+   // Fix: Use pre-built scenarios correctly
+   setupEligibleUserMocks(testUserId, 8);    // 8 drops
+   setupIneligibleUserMocks(testUserId, 5);  // 5 drops (insufficient)
+   setupEmptyUserMocks(testUserId);          // no drops
    ```
 
-4. **API test failing**
+4. **Tests passing but not testing the right thing**
    ```typescript
-   // Fix: Set up proper scenario
-   setupEligibleUserMocks('test-user');
+   // Fix: Use proper assertion patterns
+   expect(result.success).toBe(true);              // Test outcome
+   expect(result.error).toContain('expected text'); // Test error messages
+   expect(mockStorage.method).toHaveBeenCalledWith(expectedParams); // Test calls
    ```
 
 ### **Getting Help**
@@ -493,15 +582,16 @@ expect(result.analysis.id).toBe(1);
 ## 🎉 Summary
 
 The Drop application now has a **complete mock-based testing framework** that is:
-- **🔒 Safe**: Zero risk to production data
-- **⚡ Fast**: 10x faster than before
-- **🎯 Reliable**: No flaky tests
-- **🔧 Easy**: Pre-built tools for common scenarios
+- **🔒 Safe**: Zero risk to production data (automatically blocked)
+- **⚡ Fast**: 10x faster than before  
+- **🎯 Reliable**: No flaky tests due to database state
+- **🔧 Easy**: Pre-built scenarios and factories for common use cases
 
 **For new tests, just remember**:
-1. Start with `setupUnitTestMocks()`
-2. Use factory functions for test data
-3. Focus on testing your business logic
-4. Let the mock system handle the rest!
+1. Start with detailed file header comment
+2. Import mocks and factories in the correct order
+3. Use `resetStorageMocks()` in `beforeEach()`
+4. Use pre-built scenarios like `setupEligibleUserMocks()`
+5. Test business logic and outcomes, not implementation details
 
-**Happy testing!** 🚀 
+**Follow the existing patterns and your tests will be fast, reliable, and safe!** 🚀 

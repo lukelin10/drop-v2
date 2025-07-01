@@ -50,6 +50,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /**
+   * USER PROFILE ROUTES
+   */
+  
+  /**
+   * Get user profile data for settings screen
+   * GET /api/user/profile
+   */
+  app.get('/api/user/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      // Extract user ID from the authenticated request
+      const userId = req.user.claims.sub;
+      
+      // Import the user query functions
+      const { getUserProfile } = await import('../lib/database/user-queries');
+      
+      // Get user profile data
+      const profile = await getUserProfile(userId);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "User profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      res.status(500).json({ message: "Failed to fetch user profile" });
+    }
+  });
+
+  /**
+   * Update user name in profile
+   * PUT /api/user/update-name
+   */
+  app.put('/api/user/update-name', isAuthenticated, async (req: any, res) => {
+    try {
+      // Extract user ID from the authenticated request
+      const userId = req.user.claims.sub;
+      
+      // Validate request body
+      const { name } = req.body;
+      if (!name || typeof name !== 'string' || name.trim().length === 0) {
+        return res.status(400).json({ message: "Name is required and must be a non-empty string" });
+      }
+      
+      // Import the user query functions
+      const { updateUserName } = await import('../lib/database/user-queries');
+      
+      // Update user name
+      const updatedUser = await updateUserName(userId, name);
+      
+      res.json({
+        message: "Name updated successfully",
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error("Error updating user name:", error);
+      
+      // Handle specific error messages from the user query function
+      if (error instanceof Error) {
+        if (error.message === 'Name cannot be empty') {
+          return res.status(400).json({ message: error.message });
+        }
+        if (error.message === 'User not found') {
+          return res.status(404).json({ message: error.message });
+        }
+      }
+      
+      res.status(500).json({ message: "Failed to update user name" });
+    }
+  });
+
+  /**
    * QUESTION ROUTES
    */
   

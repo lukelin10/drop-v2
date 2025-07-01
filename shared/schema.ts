@@ -46,6 +46,7 @@ export const users = pgTable("sessions_users", {
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  name: varchar("name"),                          // Display name for settings screen
   bio: text("bio"),
   profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -53,6 +54,7 @@ export const users = pgTable("sessions_users", {
   lastAnalysisDate: timestamp("last_analysis_date"),  // When user last ran an analysis (for eligibility tracking)
 }, (table) => [
   index("users_last_analysis_date_idx").on(table.lastAnalysisDate),
+  index("users_name_idx").on(table.name),
 ]);
 
 /**

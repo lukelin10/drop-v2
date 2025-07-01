@@ -31,7 +31,8 @@ console.log('🛡️  Jest Setup: Activating database access protection...');
 const BLOCKED_DATABASE_MODULES = [
   'server/db',
   'server/DatabaseStorage', 
-  'server/storage'
+  'server/storage',
+  'lib/database/user-queries'  // Block our new user query functions
 ];
 
 // Block each dangerous module with helpful error messages

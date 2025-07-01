@@ -1,263 +1,325 @@
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { useToast } from "@/hooks/use-toast";
-import { useAppContext } from "@/context/AppContext";
-import { cn } from "@/lib/utils";
+/**
+ * Settings Page Component
+ * 
+ * Account management settings screen following the PRD requirements.
+ * Features:
+ * - Profile Information Card with email display and editable name field
+ * - Account Actions Card with logout functionality
+ * - Header with back navigation
+ * - Form state management with validation
+ * - Loading states and error handling
+ */
 
-type ThemeType = "light" | "dark" | "auto";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
+import dropLogo from "../assets/drop-logo-final.svg";
+import type { UserProfile, UserProfileFormData } from "../../../types/user";
 
 function Settings() {
+  const [, navigate] = useLocation();
   const { toast } = useToast();
-  const { setLoading } = useAppContext();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   
-  const [theme, setTheme] = useState<ThemeType>("dark");
-  const [fontSize, setFontSize] = useState<number[]>([3]);
-  const [notifications, setNotifications] = useState({
-    dailyReminders: true,
-    newAnalyses: true,
-    emailUpdates: false
+  // Form state
+  const [formData, setFormData] = useState<UserProfileFormData>({
+    name: '',
+    email: ''
   });
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [errors, setErrors] = useState<{name?: string; general?: string}>({});
 
-  function handleLogout() {
-    setLoading(true);
-    
-    setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  // Fetch user profile data
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      fetchUserProfile();
+    }
+  }, [user, isAuthenticated]);
+
+  /**
+   * Fetch user profile data from API
+   */
+  async function fetchUserProfile() {
+    try {
+      setIsLoadingProfile(true);
+      const response = await fetch('/api/user/profile');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+      
+      const profile: UserProfile = await response.json();
+      
+      setFormData({
+        name: profile.name || '',
+        email: profile.email || user?.email || ''
       });
-    }, 1000);
+      setHasChanges(false);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      // Use user data from auth as fallback
+      setFormData({
+        name: '',
+        email: user?.email || ''
+      });
+      toast({
+        title: "Profile Load Error",
+        description: "Could not load profile data. You can still edit your name.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingProfile(false);
+    }
   }
 
-  function handleMenuItemClick() {
-    toast({
-      title: "Coming Soon",
-      description: "This feature is not yet implemented.",
-    });
+  /**
+   * Handle name field changes
+   */
+  function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const newName = e.target.value;
+    setFormData((prev: UserProfileFormData) => ({ ...prev, name: newName }));
+    setHasChanges(true);
+    
+    // Clear name error when user starts typing
+    if (errors.name) {
+      setErrors(prev => ({ ...prev, name: undefined }));
+    }
+  }
+
+  /**
+   * Validate form data
+   */
+  function validateForm(): boolean {
+    const newErrors: {name?: string; general?: string} = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  /**
+   * Handle save changes
+   */
+  async function handleSave() {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setErrors({});
+
+      const response = await fetch('/api/user/update-name', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: formData.name.trim() }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Failed to save changes' }));
+        throw new Error(error.message || 'Failed to save changes');
+      }
+
+      setHasChanges(false);
+      toast({
+        title: "Changes Saved",
+        description: "Your profile has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      setErrors({
+        general: error instanceof Error ? error.message : 'Failed to save changes. Please try again.'
+      });
+      toast({
+        title: "Save Error",
+        description: "Could not save your changes. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  /**
+   * Handle logout
+   */
+  function handleLogout() {
+    window.location.href = "/api/logout";
+  }
+
+  /**
+   * Handle back navigation
+   */
+  function handleBack() {
+    navigate("/");
+  }
+
+  // Show loading state while authenticating
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-foreground">
+        <div className="text-center">
+          <i className="ri-loader-4-line text-2xl animate-spin mb-2"></i>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
-    <section className="flex flex-col min-h-[calc(100vh-120px)] py-4">
-      {/* User Profile */}
-      <div className="px-4 mb-6">
-        <div className="card">
-          <CardContent className="p-5">
-            <div className="flex items-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
-                <i className="ri-user-3-line text-primary text-2xl"></i>
-              </div>
-              <div className="ml-4">
-                <h3 className="font-medium text-foreground">Jamie Smith</h3>
-                <p className="text-sm text-muted-foreground">jamie.smith@example.com</p>
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <button 
-                className="flex items-center justify-between w-full py-3 text-left rounded-lg px-2 hover:bg-muted text-foreground"
-                onClick={handleMenuItemClick}
-              >
-                <span className="flex items-center">
-                  <i className="ri-user-settings-line mr-3 text-primary"></i>
-                  <span>Edit Profile</span>
-                </span>
-                <i className="ri-arrow-right-s-line text-muted-foreground"></i>
-              </button>
-              
-              <button 
-                className="flex items-center justify-between w-full py-3 text-left rounded-lg px-2 hover:bg-muted text-foreground"
-                onClick={handleMenuItemClick}
-              >
-                <span className="flex items-center">
-                  <i className="ri-lock-line mr-3 text-primary"></i>
-                  <span>Change Password</span>
-                </span>
-                <i className="ri-arrow-right-s-line text-muted-foreground"></i>
-              </button>
-            </div>
-          </CardContent>
+    <section className="flex flex-col min-h-screen bg-background">
+      {/* Header with Back Button and Title */}
+      <div className="px-4 py-4 bg-background border-b border-border">
+        <div className="max-w-lg mx-auto w-full flex items-center">
+          {/* Back button */}
+          <button 
+            className="flex items-center text-foreground hover:text-primary transition-colors mr-4"
+            onClick={handleBack}
+            aria-label="Go back"
+          >
+            <i className="ri-arrow-left-s-line text-2xl"></i>
+          </button>
+          
+          {/* App logo and title */}
+          <div className="flex items-center">
+            <img src={dropLogo} alt="Drop logo" className="w-6 h-6 mr-3" />
+            <h1 className="font-serif text-xl font-medium text-foreground">Settings</h1>
+          </div>
         </div>
       </div>
-      
-      {/* Notifications */}
-      <div className="px-4 mb-6">
+
+      {/* Main Content */}
+      <div className="flex-1 max-w-lg mx-auto w-full px-4 py-6 space-y-6">
+        
+        {/* Profile Information Card */}
         <div className="card">
-          <CardContent className="p-5">
-            <h3 className="font-medium text-foreground mb-4">Notifications</h3>
+          <CardContent className="p-6">
+            <h2 className="font-serif text-lg font-medium text-foreground mb-6">Profile Information</h2>
             
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <i className="ri-notification-3-line mr-3 text-primary"></i>
-                  <span className="text-foreground">Daily Question Reminders</span>
+            {isLoadingProfile ? (
+              // Skeleton loader for profile data
+              <div className="space-y-4">
+                <div>
+                  <div className="h-4 w-16 bg-muted rounded mb-2 animate-pulse"></div>
+                  <div className="h-10 w-full bg-muted rounded animate-pulse"></div>
                 </div>
-                <Switch
-                  checked={notifications.dailyReminders}
-                  onCheckedChange={(checked) => setNotifications({...notifications, dailyReminders: checked})}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <i className="ri-chat-1-line mr-3 text-primary"></i>
-                  <span className="text-foreground">New Analyses</span>
+                <div>
+                  <div className="h-4 w-12 bg-muted rounded mb-2 animate-pulse"></div>
+                  <div className="h-10 w-full bg-muted rounded animate-pulse"></div>
                 </div>
-                <Switch
-                  checked={notifications.newAnalyses}
-                  onCheckedChange={(checked) => setNotifications({...notifications, newAnalyses: checked})}
-                />
               </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <i className="ri-mail-line mr-3 text-primary"></i>
-                  <span className="text-foreground">Email Updates</span>
-                </div>
-                <Switch
-                  checked={notifications.emailUpdates}
-                  onCheckedChange={(checked) => setNotifications({...notifications, emailUpdates: checked})}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </div>
-      </div>
-      
-      {/* Appearance */}
-      <div className="px-4 mb-6">
-        <div className="card">
-          <CardContent className="p-5">
-            <h3 className="font-medium text-foreground mb-4">Appearance</h3>
-            
-            <div className="mb-5">
-              <label className="block text-sm text-foreground mb-3">Theme</label>
-              <div className="grid grid-cols-3 gap-2">
-                <div 
-                  className={cn(
-                    "rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer border",
-                    theme === 'light' 
-                      ? "bg-primary bg-opacity-10 border-primary" 
-                      : "bg-muted border-border"
-                  )}
-                  onClick={() => setTheme('light')}
-                >
-                  <div className="rounded-full bg-accent w-8 h-8 mb-2 flex items-center justify-center">
-                    <i className="ri-sun-line text-foreground"></i>
+            ) : (
+              <div className="space-y-4">
+                {/* Email Field (Read-only) */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Email
+                  </label>
+                  <div className="flex h-10 w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    {formData.email || 'No email available'}
                   </div>
-                  <span className="text-xs font-medium text-foreground">Light</span>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your email is provided by your login provider and cannot be changed here.
+                  </p>
                 </div>
-                <div 
-                  className={cn(
-                    "rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer border",
-                    theme === 'dark' 
-                      ? "bg-primary bg-opacity-10 border-primary" 
-                      : "bg-muted border-border"
+
+                {/* Name Field (Editable) */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Name
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.name}
+                    onChange={handleNameChange}
+                    placeholder="Enter your name"
+                    className={cn(
+                      "transition-colors",
+                      errors.name && "border-destructive focus-visible:ring-destructive"
+                    )}
+                    disabled={isSaving}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-destructive mt-1">{errors.name}</p>
                   )}
-                  onClick={() => setTheme('dark')}
-                >
-                  <div className="rounded-full bg-background w-8 h-8 mb-2 flex items-center justify-center">
-                    <i className="ri-moon-line text-accent"></i>
-                  </div>
-                  <span className="text-xs font-medium text-foreground">Dark</span>
                 </div>
-                <div 
-                  className={cn(
-                    "rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer border",
-                    theme === 'auto' 
-                      ? "bg-primary bg-opacity-10 border-primary" 
-                      : "bg-muted border-border"
-                  )}
-                  onClick={() => setTheme('auto')}
-                >
-                  <div className="bg-gradient-to-r from-accent to-background rounded-full w-8 h-8 mb-2 flex items-center justify-center">
-                    <i className="ri-contrast-line text-foreground"></i>
+
+                {/* General Error Message */}
+                {errors.general && (
+                  <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 text-sm">
+                    {errors.general}
                   </div>
-                  <span className="text-xs font-medium text-foreground">Auto</span>
+                )}
+
+                {/* Save Changes Button */}
+                <div className="pt-2">
+                  <Button
+                    onClick={handleSave}
+                    disabled={!hasChanges || isSaving}
+                    className={cn(
+                      "w-full rounded-full py-2.5",
+                      "bg-primary text-primary-foreground hover:bg-primary/90",
+                      "disabled:opacity-50 disabled:cursor-not-allowed"
+                    )}
+                  >
+                    {isSaving ? (
+                      <>
+                        <i className="ri-loader-4-line mr-2 animate-spin"></i>
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </Button>
                 </div>
               </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm text-foreground mb-3">Text Size</label>
-              <div className="flex items-center">
-                <span className="text-xs text-foreground mr-2">A</span>
-                <Slider 
-                  value={fontSize} 
-                  onValueChange={setFontSize} 
-                  min={1} 
-                  max={5} 
-                  step={1} 
-                  className="w-full"
-                />
-                <span className="text-lg text-foreground ml-2">A</span>
-              </div>
-            </div>
+            )}
           </CardContent>
         </div>
-      </div>
-      
-      {/* Support & About */}
-      <div className="px-4 mb-6">
+
+        {/* Account Actions Card */}
         <div className="card">
-          <CardContent className="p-5">
-            <h3 className="font-medium text-foreground mb-4">Support & About</h3>
+          <CardContent className="p-6">
+            <h2 className="font-serif text-lg font-medium text-foreground mb-6">Account Actions</h2>
             
-            <div className="space-y-1">
-              <button 
-                className="flex items-center justify-between w-full py-3 text-left rounded-lg px-2 hover:bg-muted text-foreground"
-                onClick={handleMenuItemClick}
-              >
-                <span className="flex items-center">
-                  <i className="ri-question-line mr-3 text-primary"></i>
-                  <span>Help Center</span>
-                </span>
-                <i className="ri-arrow-right-s-line text-muted-foreground"></i>
-              </button>
-              
-              <button 
-                className="flex items-center justify-between w-full py-3 text-left rounded-lg px-2 hover:bg-muted text-foreground"
-                onClick={handleMenuItemClick}
-              >
-                <span className="flex items-center">
-                  <i className="ri-shield-check-line mr-3 text-primary"></i>
-                  <span>Privacy Policy</span>
-                </span>
-                <i className="ri-arrow-right-s-line text-muted-foreground"></i>
-              </button>
-              
-              <button 
-                className="flex items-center justify-between w-full py-3 text-left rounded-lg px-2 hover:bg-muted text-foreground"
-                onClick={handleMenuItemClick}
-              >
-                <span className="flex items-center">
-                  <i className="ri-file-text-line mr-3 text-primary"></i>
-                  <span>Terms of Service</span>
-                </span>
-                <i className="ri-arrow-right-s-line text-muted-foreground"></i>
-              </button>
-              
-              <div className="pt-4 border-t border-border mt-4">
-                <p className="text-xs text-muted-foreground text-center">Drop v1.0.0</p>
-                <p className="text-xs text-muted-foreground text-center mt-1">©2023 Drop Reflections</p>
-              </div>
-            </div>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className={cn(
+                "w-full rounded-full py-2.5",
+                "border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground",
+                "transition-colors"
+              )}
+            >
+              <i className="ri-logout-box-line mr-2"></i>
+              Log Out
+            </Button>
           </CardContent>
         </div>
-      </div>
-      
-      {/* Logout Button */}
-      <div className="px-4 mb-6">
-        <Button 
-          variant="outline" 
-          className="w-full py-3 border border-primary text-primary rounded-lg font-medium hover:bg-primary hover:text-primary-foreground transition-all"
-          onClick={handleLogout}
-        >
-          Log Out
-        </Button>
       </div>
     </section>
   );
