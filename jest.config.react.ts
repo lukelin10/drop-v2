@@ -26,6 +26,10 @@ const config: Config = {
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup-react.ts'],
   testTimeout: 10000,
+  // Transform ES modules from node_modules
+  transformIgnorePatterns: [
+    'node_modules/(?!(wouter|regexparam)/)',
+  ],
   // For React tests, we can run in parallel
   maxWorkers: '50%',
   collectCoverageFrom: [

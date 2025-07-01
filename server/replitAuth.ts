@@ -83,7 +83,7 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true, // Prevents client-side JavaScript from accessing cookies
-      secure: true,   // Require HTTPS
+      secure: process.env.NODE_ENV === 'production', // Only require HTTPS in production
       maxAge: sessionTtl,
     },
   });
@@ -157,13 +157,24 @@ export async function setupAuth(app: Express) {
 
   // Set up authentication strategies for each of our domains
   // This handles multi-domain deployments on Replit
-  for (const domain of process.env.REPLIT_DOMAINS!.split(",")) {
+  const domains = process.env.REPLIT_DOMAINS!.split(",");
+  
+  // In development, also add localhost support
+  if (process.env.NODE_ENV === 'development') {
+    domains.push('localhost');
+  }
+  
+  for (const domain of domains) {
+    // Use http for localhost in development, https for production domains
+    const protocol = (domain === 'localhost') ? 'http' : 'https';
+    const port = (domain === 'localhost') ? ':5000' : '';
+    
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,        // Unique name for this domain's strategy
         config,                             // OIDC configuration
         scope: "openid email profile offline_access", // Requested permissions
-        callbackURL: `https://${domain}/api/callback`, // Where to redirect after auth
+        callbackURL: `${protocol}://${domain}${port}/api/callback`, // Where to redirect after auth
       },
       verify,
     );
