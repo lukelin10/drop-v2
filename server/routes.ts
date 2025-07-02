@@ -28,11 +28,11 @@ if (!process.env.ANTHROPIC_API_KEY) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize authentication (Replit Auth)
   await setupAuth(app);
-  
+
   /**
    * AUTHENTICATION ROUTES
    */
-  
+
   /**
    * Get the current authenticated user
    * GET /api/auth/user
@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   /**
    * USER PROFILE ROUTES
    */
-  
+
   /**
    * Get user profile data for settings screen
    * GET /api/user/profile
@@ -61,17 +61,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Extract user ID from the authenticated request
       const userId = req.user.claims.sub;
-      
+
       // Import the user query functions
       const { getUserProfile } = await import('../lib/database/user-queries');
-      
+
       // Get user profile data
       const profile = await getUserProfile(userId);
-      
+
       if (!profile) {
         return res.status(404).json({ message: "User profile not found" });
       }
-      
+
       res.json(profile);
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -87,26 +87,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Extract user ID from the authenticated request
       const userId = req.user.claims.sub;
-      
+
       // Validate request body
       const { name } = req.body;
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
         return res.status(400).json({ message: "Name is required and must be a non-empty string" });
       }
-      
+
       // Import the user query functions
       const { updateUserName } = await import('../lib/database/user-queries');
-      
+
       // Update user name
       const updatedUser = await updateUserName(userId, name);
-      
+
       res.json({
         message: "Name updated successfully",
         user: updatedUser
       });
     } catch (error) {
       console.error("Error updating user name:", error);
-      
+
       // Handle specific error messages from the user query function
       if (error instanceof Error) {
         if (error.message === 'Name cannot be empty') {
@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: error.message });
         }
       }
-      
+
       res.status(500).json({ message: "Failed to update user name" });
     }
   });
@@ -124,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   /**
    * QUESTION ROUTES
    */
-  
+
   /**
    * Get the daily journal prompt question
    * GET /api/daily-question
@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch daily question" });
     }
   });
-  
+
   /**
    * Get all available questions
    * GET /api/questions
@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   /**
    * DROP/JOURNAL ENTRY ROUTES
    */
-  
+
   /**
    * Get all drops for the authenticated user
    * GET /api/drops
@@ -180,17 +180,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id, 10);
       const userId = req.user.claims.sub;
       const drop = await storage.getDrop(id);
-      
+
       // Handle drop not found
       if (!drop) {
         return res.status(404).json({ message: "Drop not found" });
       }
-      
+
       // Security check: ensure the drop belongs to the authenticated user
       if (drop.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       res.json(drop);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch drop" });
@@ -209,20 +209,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!parseResult.success) {
         return res.status(400).json({ message: "Invalid drop data", errors: parseResult.error.format() });
       }
-      
+
       // Validate that the question exists
       const questions = await storage.getQuestions();
       const questionExists = questions.some(q => q.id === parseResult.data.questionId);
       if (!questionExists) {
         return res.status(404).json({ message: "Question not found" });
       }
-      
+
       // Add user ID to the drop data
       const dropData = {
         ...parseResult.data,
         userId: req.user.claims.sub
       };
-      
+
       // Create the drop in the database
       const drop = await storage.createDrop(dropData);
       res.status(201).json(drop);
@@ -240,32 +240,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id, 10);
       const userId = req.user.claims.sub;
-      
+
       // Define validation schema for updates
       const updateSchema = z.object({
         text: z.string().optional()
       });
-      
+
       // Check if the drop exists and belongs to the user
       const existingDrop = await storage.getDrop(id);
       if (!existingDrop) {
         return res.status(404).json({ message: "Drop not found" });
       }
-      
+
       // Security check: ensure the drop belongs to the authenticated user
       if (existingDrop.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       // Validate the update data
       const parseResult = updateSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ message: "Invalid update data", errors: parseResult.error.format() });
       }
-      
+
       // Update the drop in the database
       const updatedDrop = await storage.updateDrop(id, parseResult.data);
-      
+
       res.json(updatedDrop);
     } catch (error) {
       console.error("Error updating drop:", error);
@@ -276,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   /**
    * MESSAGE ROUTES
    */
-  
+
   /**
    * Get all messages for a specific drop
    * GET /api/drops/:id/messages
@@ -286,18 +286,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const dropId = parseInt(req.params.id, 10);
       const userId = req.user.claims.sub;
-      
+
       // Check if the drop exists and belongs to the user
       const drop = await storage.getDrop(dropId);
       if (!drop) {
         return res.status(404).json({ message: "Drop not found" });
       }
-      
+
       // Security check: ensure the drop belongs to the authenticated user
       if (drop.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       // Get messages for the drop
       const messages = await storage.getMessages(dropId);
       res.json(messages);
@@ -319,24 +319,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!parseResult.success) {
         return res.status(400).json({ message: "Invalid message data", errors: parseResult.error.format() });
       }
-      
+
       const userId = req.user.claims.sub;
       const dropId = parseResult.data.dropId;
-      
+
       // Check if the drop exists and belongs to the user
       const drop = await storage.getDrop(dropId);
       if (!drop) {
         return res.status(404).json({ message: "Drop not found" });
       }
-      
+
       // Security check: ensure the drop belongs to the authenticated user
       if (drop.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       // Save the user's message
       const message = await storage.createMessage(parseResult.data);
-      
+
       // Asynchronously generate and save an AI response
       // We use setTimeout to make this non-blocking so we can return the user's message immediately
       setTimeout(async () => {
@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`Drop ${parseResult.data.dropId} no longer exists, skipping AI response generation`);
             return;
           }
-          
+
           if (!process.env.ANTHROPIC_API_KEY) {
             // If no API key is provided, use a fallback response
             const botResponse = "I'm sorry, I can't generate a thoughtful response right now. Please try again later.";
@@ -362,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               parseResult.data.text,
               parseResult.data.dropId
             );
-            
+
             // Save the AI response to the database
             await storage.createMessage({
               dropId: parseResult.data.dropId,
@@ -387,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }, 1500); // Small delay to simulate thinking
-      
+
       // Return the user's message immediately
       res.status(201).json(message);
     } catch (error) {
@@ -399,7 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   /**
    * ANALYSIS ROUTES
    */
-  
+
   /**
    * Check if user is eligible for analysis
    * GET /api/analyses/eligibility
@@ -422,20 +422,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/analyses", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      
+
       // Import the analysis service
       const { createAnalysisForUser } = await import('./services/analysisService');
-      
+
       // Create analysis using the orchestration service
       const result = await createAnalysisForUser(userId);
-      
+
       if (!result.success) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: result.error,
           metadata: result.metadata
         });
       }
-      
+
       res.status(201).json(result.analysis);
     } catch (error) {
       console.error("Error creating analysis:", error);
@@ -450,11 +450,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analyses", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const limit = parseInt(req.query.limit as string) || 20;
-      const offset = parseInt(req.query.offset as string) || 0;
-      
-      const analyses = await storage.getUserAnalyses(userId, limit, offset);
-      res.json(analyses);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = (page - 1) * limit;
+
+      // Fetch one extra to check if there are more results
+      const analyses = await storage.getUserAnalyses(userId, limit + 1, offset);
+
+      // Check if there are more results
+      const hasMore = analyses.length > limit;
+
+      // Remove the extra item if we got more than requested
+      const analysesToReturn = hasMore ? analyses.slice(0, limit) : analyses;
+
+      res.json({
+        analyses: analysesToReturn,
+        hasMore: hasMore
+      });
     } catch (error) {
       console.error("Error fetching user analyses:", error);
       res.status(500).json({ message: "Failed to fetch analyses" });
@@ -470,16 +482,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id, 10);
       const userId = req.user.claims.sub;
       const analysis = await storage.getAnalysis(id);
-      
+
       if (!analysis) {
         return res.status(404).json({ message: "Analysis not found" });
       }
-      
+
       // Security check: ensure the analysis belongs to the authenticated user
       if (analysis.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       res.json(analysis);
     } catch (error) {
       console.error("Error fetching analysis:", error);
@@ -496,24 +508,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id, 10);
       const userId = req.user.claims.sub;
       const { isFavorited } = req.body;
-      
+
       if (typeof isFavorited !== 'boolean') {
         return res.status(400).json({ message: "isFavorited must be a boolean" });
       }
-      
+
       // Check if analysis exists and belongs to user
       const existingAnalysis = await storage.getAnalysis(id);
       if (!existingAnalysis) {
         return res.status(404).json({ message: "Analysis not found" });
       }
-      
+
       if (existingAnalysis.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       // Update favorite status
       const updatedAnalysis = await storage.updateAnalysisFavorite(id, isFavorited);
-      
+
       res.json(updatedAnalysis);
     } catch (error) {
       console.error("Error updating analysis favorite status:", error);
@@ -529,12 +541,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { healthCheck } = await import('./services/analysisService');
       const health = await healthCheck();
-      
+
       const statusCode = health.healthy ? 200 : 503;
       res.status(statusCode).json(health);
     } catch (error) {
       console.error("Analysis health check failed:", error);
-      res.status(503).json({ 
+      res.status(503).json({
         healthy: false,
         error: "Health check service unavailable"
       });
@@ -566,7 +578,7 @@ function generateBotResponse(userMessage: string): string {
     "Thank you for being vulnerable. How might this understanding change how you approach similar situations?",
     "That's a deep insight. How has your thinking evolved on this topic over time?"
   ];
-  
+
   // Select a random response
   const randomIndex = Math.floor(Math.random() * responses.length);
   return responses[randomIndex];

@@ -16,19 +16,19 @@ enableMocksForAPITests();
 import request from 'supertest';
 import express from 'express';
 import type { Express } from 'express';
-import { 
-  mockStorage, 
+import {
+  mockStorage,
   resetStorageMocks,
   setupEligibleUserMocks,
   setupIneligibleUserMocks,
-  setupEmptyUserMocks 
+  setupEmptyUserMocks
 } from '../mocks/mockStorage';
-import { 
-  createMockUser, 
+import {
+  createMockUser,
   createMockAnalysis,
   createMockAnalysisEligibility,
   createMockDropWithQuestion,
-  TEST_USER_IDS 
+  TEST_USER_IDS
 } from '../factories/testData';
 
 // Additional mocks specific to this test
@@ -284,7 +284,7 @@ describe('Analysis API Endpoint Tests', () => {
       });
 
       // Act - Make concurrent requests
-      const promises = Array.from({ length: 3 }, () => 
+      const promises = Array.from({ length: 3 }, () =>
         request(app)
           .post('/api/analyses')
           .set('Authorization', authToken)
@@ -305,17 +305,17 @@ describe('Analysis API Endpoint Tests', () => {
     test('should return user analyses', async () => {
       // Arrange
       const mockAnalyses = [
-        createMockAnalysis({ 
-          id: 1, 
-          userId: testUserId, 
+        createMockAnalysis({
+          id: 1,
+          userId: testUserId,
           summary: 'Recent analysis',
-          isFavorited: true 
+          isFavorited: true
         }),
-        createMockAnalysis({ 
-          id: 2, 
-          userId: testUserId, 
+        createMockAnalysis({
+          id: 2,
+          userId: testUserId,
           summary: 'Older analysis',
-          isFavorited: false 
+          isFavorited: false
         })
       ];
 
@@ -328,15 +328,18 @@ describe('Analysis API Endpoint Tests', () => {
         .expect(200);
 
       // Assert
-      expect(response.body).toHaveLength(2);
-      expect(response.body[0]).toMatchObject({
+      expect(response.body).toHaveProperty('analyses');
+      expect(response.body).toHaveProperty('hasMore');
+      expect(response.body.analyses).toHaveLength(2);
+      expect(response.body.analyses[0]).toMatchObject({
         id: 1,
         userId: testUserId,
         summary: 'Recent analysis',
         isFavorited: true
       });
+      expect(response.body.hasMore).toBe(false);
 
-      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 20, 0);
+      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 11, 0);
     });
 
     test('should return empty array for user with no analyses', async () => {
@@ -350,8 +353,8 @@ describe('Analysis API Endpoint Tests', () => {
         .expect(200);
 
       // Assert
-      expect(response.body).toEqual([]);
-      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 20, 0);
+      expect(response.body).toEqual({ analyses: [], hasMore: false });
+      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 11, 0);
     });
 
     test('should support pagination', async () => {
@@ -365,13 +368,16 @@ describe('Analysis API Endpoint Tests', () => {
 
       // Act
       const response = await request(app)
-        .get('/api/analyses?limit=2&offset=0')
+        .get('/api/analyses?page=1&limit=2')
         .set('Authorization', authToken)
         .expect(200);
 
       // Assert
-      expect(response.body).toHaveLength(2);
-      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 2, 0);
+      expect(response.body).toHaveProperty('analyses');
+      expect(response.body).toHaveProperty('hasMore');
+      expect(response.body.analyses).toHaveLength(2);
+      expect(response.body.hasMore).toBe(false);
+      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 3, 0);
     });
 
     test('should require authentication', async () => {
@@ -406,19 +412,19 @@ describe('Analysis API Endpoint Tests', () => {
         .expect(200);
 
       // Assert
-      expect(response1.body).toHaveLength(1);
-      expect(response1.body[0].userId).toBe(testUserId);
-      
-      expect(response2.body).toHaveLength(1);
-      expect(response2.body[0].userId).toBe(testUserId2);
+      expect(response1.body.analyses).toHaveLength(1);
+      expect(response1.body.analyses[0].userId).toBe(testUserId);
+
+      expect(response2.body.analyses).toHaveLength(1);
+      expect(response2.body.analyses[0].userId).toBe(testUserId2);
     });
   });
 
   describe('GET /api/analyses/:id', () => {
     test('should return specific analysis', async () => {
       // Arrange
-      const mockAnalysis = createMockAnalysis({ 
-        id: 42, 
+      const mockAnalysis = createMockAnalysis({
+        id: 42,
         userId: testUserId,
         content: 'Detailed analysis content...'
       });
@@ -458,8 +464,8 @@ describe('Analysis API Endpoint Tests', () => {
 
     test('should prevent access to other users analyses', async () => {
       // Arrange
-      const otherUserAnalysis = createMockAnalysis({ 
-        id: 42, 
+      const otherUserAnalysis = createMockAnalysis({
+        id: 42,
         userId: testUserId2  // Different user
       });
 
@@ -620,12 +626,12 @@ describe('Analysis API Endpoint Tests', () => {
     test('should handle rate limiting scenarios', async () => {
       // This would be implemented in the actual API with rate limiting middleware
       // For now, we test that multiple requests are handled gracefully
-      
+
       // Arrange
       mockStorage.getUserAnalyses.mockResolvedValue([]);
 
       // Act - Make multiple rapid requests
-      const promises = Array.from({ length: 10 }, () => 
+      const promises = Array.from({ length: 10 }, () =>
         request(app)
           .get('/api/analyses')
           .set('Authorization', authToken)
@@ -650,8 +656,8 @@ describe('Analysis API Endpoint Tests', () => {
         .expect(200);
 
       // Assert - API handles invalid params gracefully by using defaults
-      expect(response.body).toEqual([]);
-      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 20, 0);
+      expect(response.body).toEqual({ analyses: [], hasMore: false });
+      expect(mockStorage.getUserAnalyses).toHaveBeenCalledWith(testUserId, 11, 0);
     });
   });
 });
