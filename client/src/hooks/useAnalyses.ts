@@ -144,7 +144,9 @@ async function toggleAnalysisFavorite({ analysisId, isFavorited }: FavoriteAnaly
 }
 
 export function useAnalyses() {
+  const [allAnalyses, setAllAnalyses] = useState<Analysis[]>([]);
   const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const queryClient = useQueryClient();
   const { makeRequest, isOnline, isSlowConnection } = useNetworkAwareRequest();
   const { toast } = useToast();
@@ -205,6 +207,20 @@ export function useAnalyses() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
+  // Update accumulated analyses when new data arrives
+  useEffect(() => {
+    if (data) {
+      if (page === 1) {
+        // First page - replace all analyses
+        setAllAnalyses(data.analyses);
+      } else {
+        // Subsequent pages - append to existing analyses
+        setAllAnalyses(prev => [...prev, ...data.analyses]);
+      }
+      setHasMore(data.hasMore);
+    }
+  }, [data, page]);
+
   // Create analysis mutation with network awareness
   const createMutation = useMutation({
     mutationFn: () => makeRequest(
@@ -223,17 +239,14 @@ export function useAnalyses() {
       }
     ),
     onSuccess: (newAnalysis) => {
-      // Add new analysis to the beginning of the list
-      queryClient.setQueryData(['analyses', 1], (oldData: any) => {
-        if (!oldData) return { analyses: [newAnalysis], hasMore: false };
-        return {
-          analyses: [newAnalysis, ...oldData.analyses],
-          hasMore: oldData.hasMore
-        };
-      });
+      // Add new analysis to the beginning of the accumulated list
+      setAllAnalyses(prev => [newAnalysis, ...prev]);
       
-      // Invalidate other pages to ensure consistency
+      // Invalidate all cached pages to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['analyses'] });
+      
+      // Reset to page 1 to show the new analysis
+      setPage(1);
       
       toast({
         title: "Analysis Complete",
@@ -269,16 +282,10 @@ export function useAnalyses() {
       }
     ),
     onSuccess: (updatedAnalysis) => {
-      // Update the analysis in all cached pages
-      queryClient.setQueryData(['analyses', page], (oldData: any) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          analyses: oldData.analyses.map((analysis: Analysis) =>
-            analysis.id === updatedAnalysis.id ? updatedAnalysis : analysis
-          ),
-        };
-      });
+      // Update the analysis in the accumulated list
+      setAllAnalyses(prev => prev.map(analysis => 
+        analysis.id === updatedAnalysis.id ? updatedAnalysis : analysis
+      ));
     },
     onError: (error: Error) => {
       console.error('Favorite toggle failed:', error);
@@ -329,7 +336,7 @@ export function useAnalyses() {
   };
 
   const loadMoreAnalyses = () => {
-    if (data?.hasMore && !isLoading && isOnline) {
+    if (hasMore && !isLoading && isOnline) {
       setPage(prev => prev + 1);
     } else if (!isOnline) {
       toast({
@@ -359,10 +366,10 @@ export function useAnalyses() {
   };
 
   return {
-    analyses: data?.analyses || [],
+    analyses: allAnalyses,
     isLoading: isLoading || createMutation.isPending,
     error: queryError?.message || createMutation.error?.message || favoriteMutation.error?.message || null,
-    hasMore: data?.hasMore || false,
+    hasMore: hasMore,
     isCreatingAnalysis: createMutation.isPending,
     isFavoriteLoading: favoriteMutation.isPending,
     createAnalysis: runAnalysis,
