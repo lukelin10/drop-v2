@@ -138,6 +138,7 @@ describe('LLM Service Integration Tests', () => {
       expect(typeof result.bulletPoints).toBe('string');
     });
 
+
     test('handles malformed responses gracefully', async () => {
       const error = new Error('Failed to parse analysis response');
       mockGenerateAnalysis.mockRejectedValue(error);
@@ -164,7 +165,7 @@ describe('LLM Service Integration Tests', () => {
       ];
 
       const results = await Promise.all(promises);
-      
+
       expect(results).toHaveLength(3);
       results.forEach(result => {
         expect(result.summary).toBe('Concurrent analysis response');

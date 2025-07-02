@@ -174,7 +174,7 @@ function AnalysisDetail() {
           >
             <i className="ri-arrow-left-line text-lg" />
           </Button>
-          
+
           <button
             className={cn(
               "p-2 rounded-full transition-all duration-200",
@@ -185,11 +185,11 @@ function AnalysisDetail() {
             disabled={isFavoriteLoading}
             aria-label={analysis.isFavorited ? "Remove from favorites" : "Add to favorites"}
           >
-            <i 
+            <i
               className={cn(
                 "text-xl transition-colors duration-200",
-                analysis.isFavorited 
-                  ? "ri-heart-fill text-primary" 
+                analysis.isFavorited
+                  ? "ri-heart-fill text-primary"
                   : "ri-heart-line text-muted-foreground hover:text-primary"
               )}
             />
@@ -207,15 +207,6 @@ function AnalysisDetail() {
               <i className="ri-time-line mr-1" />
               <span>{formatDate(analysis.createdAt)}</span>
             </div>
-          </div>
-
-          {/* Main content */}
-          <div className="prose prose-sm max-w-none">
-            {analysis.content.split('\n\n').map((paragraph, index) => (
-              <p key={index} className="text-base text-foreground leading-relaxed mb-4 last:mb-0">
-                {paragraph}
-              </p>
-            ))}
           </div>
 
           {/* Key insights */}
@@ -237,6 +228,15 @@ function AnalysisDetail() {
               </ul>
             </div>
           )}
+
+          {/* Main content */}
+          <div className="prose prose-sm max-w-none border-t border-border pt-6">
+            {analysis.content.split('\n\n').map((paragraph, index) => (
+              <p key={index} className="text-base text-foreground leading-relaxed mb-4 last:mb-0">
+                {paragraph}
+              </p>
+            ))}
+          </div>
         </div>
       </div>
     </section>

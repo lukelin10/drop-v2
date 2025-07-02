@@ -80,7 +80,7 @@ export async function getUnanalyzedDropsWithConversations(userId: string): Promi
 
     // Use epoch if never analyzed, otherwise use last analysis date
     const lastAnalysisDate = user.lastAnalysisDate || new Date(0);
-    
+
     // Get unanalyzed drops with their questions
     const unanalyzedDrops = await db
       .select({
@@ -102,7 +102,7 @@ export async function getUnanalyzedDropsWithConversations(userId: string): Promi
 
     // Fetch conversation messages for each drop
     const dropsWithConversations: DropWithConversation[] = [];
-    
+
     for (const drop of unanalyzedDrops) {
       const conversationMessages = await db
         .select()
@@ -122,7 +122,7 @@ export async function getUnanalyzedDropsWithConversations(userId: string): Promi
 
     console.log(`Retrieved ${dropsWithConversations.length} unanalyzed drops for user ${userId}`);
     return dropsWithConversations;
-    
+
   } catch (error) {
     console.error('Error fetching unanalyzed drops with conversations:', error);
     throw new Error('Failed to compile drop data for analysis');
@@ -139,11 +139,11 @@ function createAnalysisPrompt(drops: DropWithConversation[]): string {
   const compiledEntries = drops.map((drop, index) => {
     const entryNumber = index + 1;
     const date = drop.createdAt.toLocaleDateString();
-    
+
     let entryText = `ENTRY ${entryNumber} (${date}):\n`;
     entryText += `Question: "${drop.questionText}"\n`;
     entryText += `Initial Response: "${drop.text}"\n`;
-    
+
     // Add conversation if it exists
     if (drop.conversation && drop.conversation.length > 0) {
       entryText += "Conversation:\n";
@@ -152,7 +152,7 @@ function createAnalysisPrompt(drops: DropWithConversation[]): string {
         entryText += `${speaker}: "${msg.text}"\n`;
       });
     }
-    
+
     return entryText;
   }).join('\n---\n\n');
 
@@ -209,13 +209,24 @@ function parseAnalysisResponse(rawResponse: string): AnalysisResponse {
     const summary = summaryMatch?.[1]?.trim() || "Personal growth insights identified";
 
     // Extract analysis content (the three paragraphs)
-    const analysisMatch = rawResponse.match(/ANALYSIS:\s*([\s\S]*?)(?:\nINSIGHTS:|$)/i);
-    const content = analysisMatch?.[1]?.trim() || "Analysis content unavailable";
+    // First, try to match content between ANALYSIS: and any insights section marker
+    const analysisMatch = rawResponse.match(/ANALYSIS:\s*([\s\S]*?)(?:\n(?:##\s*)?(?:KEY\s+)?INSIGHTS|$)/i);
+    let content = analysisMatch?.[1]?.trim() || "Analysis content unavailable";
+
+    // Remove any insights sections that might have been included in the content
+    // Split content by insights markers and take only the part before any insights
+    content = content
+      .split(/^##\s*(?:KEY\s+)?INSIGHTS.*$/im)[0] // Split at ##INSIGHTS or ##KEY INSIGHTS
+      .split(/^#\s*(?:KEY\s+)?INSIGHTS.*$/im)[0]  // Split at #INSIGHTS or #KEY INSIGHTS  
+      .split(/^(?:KEY\s+)?INSIGHTS\s*:.*$/im)[0]  // Split at INSIGHTS: or KEY INSIGHTS:
+      .split(/^\*\*(?:KEY\s+)?INSIGHTS\*\*.*$/im)[0] // Split at **INSIGHTS** or **KEY INSIGHTS**
+      .replace(/\n\n\n+/g, '\n\n') // Clean up excessive line breaks
+      .trim();
 
     // Extract bullet points
     const insightsMatch = rawResponse.match(/INSIGHTS:\s*([\s\S]*?)$/i);
     let bulletPoints = "";
-    
+
     if (insightsMatch) {
       // Clean up and format bullet points
       const insights = insightsMatch[1]
@@ -224,7 +235,7 @@ function parseAnalysisResponse(rawResponse: string): AnalysisResponse {
         .map(line => line.trim())
         .slice(0, 5) // Max 5 bullet points
         .join('\n');
-      
+
       bulletPoints = insights || "• Key insights will be identified in future analyses";
     } else {
       bulletPoints = "• Key insights will be identified in future analyses";
@@ -235,10 +246,10 @@ function parseAnalysisResponse(rawResponse: string): AnalysisResponse {
       content,
       bulletPoints
     };
-    
+
   } catch (error) {
     console.error('Error parsing analysis response:', error);
-    
+
     // Return fallback structured response
     return {
       summary: "Analysis completed with valuable insights",
@@ -255,29 +266,29 @@ function parseAnalysisResponse(rawResponse: string): AnalysisResponse {
  * @returns Promise with retry logic
  */
 async function withRetry<T>(
-  fn: () => Promise<T>, 
+  fn: () => Promise<T>,
   maxRetries: number = ANALYSIS_CONFIG.maxRetries
 ): Promise<T> {
   let lastError: Error;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt === maxRetries) {
         throw lastError;
       }
-      
+
       // Exponential backoff: 1s, 2s, 4s...
       const delay = 1000 * Math.pow(ANALYSIS_CONFIG.retryMultiplier, attempt);
       console.log(`Analysis attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
-      
+
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError!;
 }
 
@@ -287,13 +298,13 @@ async function withRetry<T>(
 async function enforceRateLimit(): Promise<void> {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
-  
+
   if (timeSinceLastRequest < ANALYSIS_CONFIG.rateLimitDelay) {
     const delay = ANALYSIS_CONFIG.rateLimitDelay - timeSinceLastRequest;
     console.log(`Rate limiting: waiting ${delay}ms before next request`);
     await new Promise(resolve => setTimeout(resolve, delay));
   }
-  
+
   lastRequestTime = Date.now();
 }
 
@@ -312,7 +323,7 @@ export async function generateAnalysis(userId: string): Promise<AnalysisResponse
 
   try {
     console.log(`Starting analysis generation for user: ${userId}`);
-    
+
     // Check if API key is available
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error('Anthropic API key not configured');
@@ -323,7 +334,7 @@ export async function generateAnalysis(userId: string): Promise<AnalysisResponse
 
     // Get unanalyzed drops with conversations
     const drops = await getUnanalyzedDropsWithConversations(userId);
-    
+
     if (drops.length < 7) {
       throw new Error(`Insufficient drops for analysis: ${drops.length} (minimum 7 required)`);
     }
@@ -347,7 +358,7 @@ export async function generateAnalysis(userId: string): Promise<AnalysisResponse
           temperature: ANALYSIS_CONFIG.temperature,
           messages: [{ role: "user", content: prompt }],
         }),
-        new Promise((_, reject) => 
+        new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Analysis request timeout')), ANALYSIS_CONFIG.baseTimeout)
         )
       ]) as any;
@@ -381,7 +392,7 @@ export async function generateAnalysis(userId: string): Promise<AnalysisResponse
   } catch (error) {
     const duration = Date.now() - requestMetadata.startTime.getTime();
     console.error(`Analysis failed for user ${userId} after ${duration}ms:`, error);
-    
+
     // Log detailed error information
     console.error('Analysis request metadata:', {
       userId: requestMetadata.userId,
