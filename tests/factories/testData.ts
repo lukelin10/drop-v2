@@ -6,14 +6,14 @@
  * customization through overrides.
  */
 
-import type { 
-  User, 
-  Drop, 
-  Message, 
-  Question, 
-  Analysis, 
+import type {
+  User,
+  Drop,
+  Message,
+  Question,
+  Analysis,
   AnalysisDrop,
-  DropWithQuestion 
+  DropWithQuestion
 } from '../../shared/schema';
 
 // Test constants for consistent data
@@ -37,6 +37,7 @@ export const createMockUser = (overrides: Partial<User> = {}): User => ({
   username: 'testuser',
   email: 'test@example.com',
   firstName: 'Test',
+  name: 'Test User',
   lastName: 'User',
   bio: 'Test user bio',
   profileImageUrl: null,
@@ -122,9 +123,9 @@ export const createMockAnalysisDrop = (overrides: Partial<AnalysisDrop> = {}): A
 /**
  * Creates multiple mock users with different characteristics
  */
-export const createMockUsers = (count: number): User[] => 
-  Array.from({ length: count }, (_, i) => 
-    createMockUser({ 
+export const createMockUsers = (count: number): User[] =>
+  Array.from({ length: count }, (_, i) =>
+    createMockUser({
       id: `test-user-${i + 1}`,
       username: `testuser${i + 1}`,
       email: `test${i + 1}@example.com`,
@@ -135,9 +136,9 @@ export const createMockUsers = (count: number): User[] =>
 /**
  * Creates multiple mock drops with varying dates
  */
-export const createMockDrops = (count: number, userId: string = TEST_USER_IDS.USER_1): Drop[] => 
-  Array.from({ length: count }, (_, i) => 
-    createMockDrop({ 
+export const createMockDrops = (count: number, userId: string = TEST_USER_IDS.USER_1): Drop[] =>
+  Array.from({ length: count }, (_, i) =>
+    createMockDrop({
       id: i + 1,
       questionId: (i % 3) + 1, // Rotate through 3 questions
       text: `Journal entry ${i + 1}: Reflecting on today's experiences and growth.`,
@@ -162,7 +163,7 @@ export const createMockMessages = (dropId: number, count: number = 2): Message[]
     text: 'That sounds wonderful! What made it feel so meaningful to you?',
     fromUser: false,
   }),
-  ...Array.from({ length: count - 2 }, (_, i) => 
+  ...Array.from({ length: count - 2 }, (_, i) =>
     createMockMessage({
       id: i + 3,
       dropId,
