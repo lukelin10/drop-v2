@@ -1,0 +1,618 @@
+# Comprehensive Testing Strategy
+
+You are implementing tests for an application with a **mock-based testing framework** that prioritizes safety, speed, and maintainability. This application uses a Replit-hosted database, so **ALL tests must use mocks** to prevent data corruption.
+
+## 🚀 **Quick Start for Junior Developers**
+
+**For new tests, follow these 3 simple steps:**
+
+1. **Copy the template**: Use the unit test template from the "Required File Structure" section
+2. **Import the right tools**: Use `mockStorage` and `createMockUser` from the examples
+3. **Use pre-built scenarios**: Call `setupEligibleUserMocks()` instead of complex setup
+
+**That's it!** The framework handles all database safety automatically. Your tests will be fast, safe, and reliable.
+
+## 🔒 CRITICAL SAFETY RULE: NEVER Access Real Database in Tests
+
+**Database access is automatically blocked by the testing framework.** Always use mocks - direct database access will throw errors and is forbidden.
+
+## 🏗️ Repository Pattern (Required Architecture)
+
+All database operations must go through repository interfaces that can be easily mocked:
+
+```typescript
+// src/repositories/interfaces/user.repository.interface.ts
+export interface IUserRepository {
+  findById(id: string): Promise<User | null>;
+  findByEmail(email: string): Promise<User | null>;
+  create(data: CreateUserDto): Promise<User>;
+  update(id: string, data: UpdateUserDto): Promise<User>;
+  delete(id: string): Promise<void>;
+  findAll(): Promise<User[]>;
+}
+
+// Service Layer with Dependency Injection
+export class UserService {
+  constructor(private userRepository: IUserRepository) {}
+
+  async createUser(userData: CreateUserDto): Promise<User> {
+    const existingUser = await this.userRepository.findByEmail(userData.email);
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
+    return await this.userRepository.create(userData);
+  }
+}
+```
+
+## 📋 Test Types & When to Use Them
+
+### 1. Unit Tests (80% of your tests)
+**Use for**: Business logic, service functions, individual components
+**Location**: `tests/unit/[feature].test.ts`
+**Environment**: Node.js
+
+```typescript
+// tests/unit/myFeature.test.ts
+/**
+ * My Feature Business Logic Unit Tests
+ * 
+ * Tests my feature logic that interacts with the storage layer.
+ * Uses mocked storage to ensure no database connections in unit tests.
+ */
+
+// Database access automatically blocked by jest.setup.ts
+import { 
+  mockStorage, 
+  resetStorageMocks,
+  setupEligibleUserMocks,
+  setupIneligibleUserMocks,
+  setupEmptyUserMocks 
+} from '../mocks/mockStorage';
+import { 
+  createMockUser, 
+  createMockDrop, 
+  createMockAnalysis,
+  TEST_USER_IDS 
+} from '../factories/testData';
+
+describe('My Feature Business Logic Unit Tests', () => {
+  const testUserId = TEST_USER_IDS.USER_1;
+
+  beforeEach(() => {
+    resetStorageMocks();
+  });
+
+  describe('Core Functionality', () => {
+    test('should work correctly when user is eligible', async () => {
+      // Arrange: Set up mock scenario
+      setupEligibleUserMocks(testUserId);
+      
+      // Act: Test your code
+      const result = await myFeature.processUser(testUserId);
+      
+      // Assert: Verify it worked
+      expect(result.success).toBe(true);
+      expect(mockStorage.getUser).toHaveBeenCalledWith(testUserId);
+    });
+
+    test('should handle ineligible user correctly', async () => {
+      // Arrange: Set up mock scenario
+      setupIneligibleUserMocks(testUserId, 5);
+      
+      // Act: Test your code
+      const result = await myFeature.processUser(testUserId);
+      
+      // Assert: Verify error handling
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('insufficient data');
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle storage errors gracefully', async () => {
+      // Arrange: Set up error scenario
+      mockStorage.getUser.mockRejectedValue(new Error('Storage error'));
+      
+      // Act & Assert
+      await expect(myFeature.processUser(testUserId))
+        .rejects.toThrow('Storage error');
+    });
+  });
+});
+```
+
+### 2. API Tests (15% of your tests)
+**Use for**: Testing API endpoints and request/response handling
+**Location**: `tests/api/[endpoint].test.ts`
+**Environment**: Node.js with Express
+
+```typescript
+// tests/api/myEndpoint.test.ts
+import { enableMocksForAPITests, getTestApp } from '../setup-server';
+
+// Enable mocks before any other imports
+enableMocksForAPITests();
+
+import request from 'supertest';
+import { 
+  mockStorage, 
+  setupEligibleUserMocks,
+  resetStorageMocks 
+} from '../mocks/mockStorage';
+import { 
+  verifyAnalysisAPIContract,
+  verifyErrorResponse 
+} from '../contracts/apiContracts';
+
+describe('My API Endpoint', () => {
+  let app: Express;
+
+  beforeAll(async () => {
+    app = await getTestApp();
+  });
+
+  beforeEach(() => {
+    resetStorageMocks();
+  });
+
+  describe('POST /api/my-endpoint', () => {
+    test('should create resource successfully', async () => {
+      // Arrange
+      setupEligibleUserMocks('test-user-123');
+      
+      // Act
+      const response = await request(app)
+        .post('/api/my-endpoint')
+        .send({ data: 'test-data' })
+        .expect(201);
+
+      // Assert
+      expect(response.body).toMatchObject({
+        id: expect.any(Number),
+        data: 'test-data',
+        success: true
+      });
+      verifyAnalysisAPIContract(response.body);
+    });
+
+    test('should handle validation errors', async () => {
+      // Act
+      const response = await request(app)
+        .post('/api/my-endpoint')
+        .send({ invalid: 'data' })
+        .expect(400);
+
+      // Assert
+      verifyErrorResponse(response, 400);
+      expect(response.body.error).toContain('validation');
+    });
+  });
+});
+```
+
+### 3. React Component Tests (10% of your tests)
+**Use for**: Testing React components and UI interactions
+**Location**: `client/src/components/__tests__/[Component].test.tsx`
+**Environment**: jsdom
+
+```typescript
+// client/src/components/__tests__/MyComponent.test.tsx
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MyComponent } from '../MyComponent';
+
+// Mock fetch for API calls
+global.fetch = jest.fn();
+
+describe('MyComponent', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: [] })
+    });
+  });
+
+  test('should render and handle user interaction', async () => {
+    // Arrange
+    render(<MyComponent userId="test-123" />);
+    
+    // Act
+    const button = screen.getByRole('button', { name: /submit/i });
+    await userEvent.click(button);
+    
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText('Success!')).toBeInTheDocument();
+    });
+    expect(global.fetch).toHaveBeenCalledWith('/api/users/test-123');
+  });
+
+  test('should handle error states', async () => {
+    // Arrange
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+    render(<MyComponent userId="test-123" />);
+    
+    // Act
+    const button = screen.getByRole('button', { name: /submit/i });
+    await userEvent.click(button);
+    
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText('Error occurred')).toBeInTheDocument();
+    });
+  });
+});
+```
+
+## 🛠️ Required Tools & Patterns
+
+### Essential Imports for Unit Tests
+```typescript
+// Always start with this setup
+import { 
+  mockStorage, 
+  resetStorageMocks,
+  setupEligibleUserMocks,
+  setupIneligibleUserMocks,
+  setupEmptyUserMocks 
+} from '../mocks/mockStorage';
+import { 
+  createMockUser, 
+  createMockDrop, 
+  createMockAnalysis,
+  TEST_USER_IDS 
+} from '../factories/testData';
+```
+
+### Essential Imports for API Tests
+```typescript
+// Enable mocks BEFORE other imports
+import { enableMocksForAPITests, getTestApp } from '../setup-server';
+enableMocksForAPITests();
+
+import request from 'supertest';
+import { mockStorage, setupEligibleUserMocks } from '../mocks/mockStorage';
+```
+
+### Integration Test Setup
+```typescript
+// tests/integration/myWorkflow.test.ts
+import { setupIntegrationMocks, createTestScenario } from './mocks/integrationMocks';
+import { verifyAnalysisAPIContract } from './contracts/apiContracts';
+
+setupIntegrationMocks();
+
+describe('My Workflow Integration', () => {
+  beforeEach(() => {
+    createTestScenario('eligible-user', 'test-user-integration');
+  });
+
+  test('complete workflow should work end-to-end', async () => {
+    const { myWorkflowService } = require('../../server/services/myWorkflow');
+    const result = await myWorkflowService.execute('test-user-integration');
+    
+    expect(result.success).toBe(true);
+    expect(result.steps).toHaveLength(3);
+    verifyAnalysisAPIContract(result.data);
+  });
+});
+```
+
+### Pre-Built Mock Scenarios
+```typescript
+// Use these pre-configured scenarios instead of manual setup
+setupEligibleUserMocks(userId);      // User with 8+ drops (can create analysis)
+setupIneligibleUserMocks(userId, 5); // User with 5 drops (cannot create analysis)
+setupEmptyUserMocks(userId);         // User with no data
+setupStorageErrorMocks();            // Test error handling
+```
+
+### Test Data Factories
+```typescript
+// Use factories instead of manual objects
+const user = createMockUser({ id: 'custom-123', email: 'test@example.com' });
+const drop = createMockDrop({ userId: 'test-123', questionText: 'Custom question' });
+const analysis = createMockAnalysis({ userId: 'test-123' });
+
+// Generate bulk data
+const users = createMockUsers(10);
+const drops = createMockDrops(5, 'user-123');
+```
+
+## 📝 Required File Structure
+
+### Unit Test Template
+```typescript
+// tests/unit/[feature].test.ts
+/**
+ * [Feature Name] Business Logic Unit Tests
+ * 
+ * Tests [feature] logic that interacts with the storage layer.
+ * Uses mocked storage to ensure no database connections in unit tests.
+ */
+
+// Database access automatically blocked by jest.setup.ts
+import { 
+  mockStorage, 
+  resetStorageMocks,
+  setupEligibleUserMocks 
+} from '../mocks/mockStorage';
+import { 
+  createMockUser,
+  TEST_USER_IDS 
+} from '../factories/testData';
+
+describe('[Feature Name] Business Logic Unit Tests', () => {
+  const testUserId = TEST_USER_IDS.USER_1;
+
+  beforeEach(() => {
+    resetStorageMocks();
+  });
+
+  describe('Core Functionality', () => {
+    test('should [describe expected behavior]', async () => {
+      // Arrange
+      setupEligibleUserMocks(testUserId);
+      
+      // Act
+      const result = await myFeature.method(testUserId);
+      
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockStorage.method).toHaveBeenCalledWith(testUserId);
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle [specific error case]', async () => {
+      // Arrange
+      mockStorage.method.mockRejectedValue(new Error('Test error'));
+      
+      // Act & Assert
+      await expect(myFeature.method(testUserId))
+        .rejects.toThrow('Test error');
+    });
+  });
+});
+```
+
+## ✅ Best Practices (MUST FOLLOW)
+
+### DO:
+- ✅ **Always start with detailed file header comment** explaining what the tests cover
+- ✅ **Use `resetStorageMocks()` in `beforeEach()`** for clean test state
+- ✅ **Use factory functions** (`createMockUser()`) instead of manual objects
+- ✅ **Use pre-configured scenarios** (`setupEligibleUserMocks()`) to save time
+- ✅ **Use `TEST_USER_IDS` constants** for consistent test user identification
+- ✅ **Test both success and failure paths** - don't skip error scenarios
+- ✅ **Write descriptive test names** that explain expected behavior
+- ✅ **Group related tests** with nested `describe` blocks
+- ✅ **Use proper assertion patterns** to test behavior, not implementation
+
+### DON'T:
+- ❌ **Never access real database** - it's automatically blocked for safety
+- ❌ **Don't create manual mock objects** - use factories instead
+- ❌ **Don't test implementation details** - focus on behavior and outcomes
+- ❌ **Don't use `jest.clearAllMocks()`** - use `resetStorageMocks()` instead
+- ❌ **Don't skip error scenario tests** - always test failure paths
+- ❌ **Don't use hardcoded IDs** - use `TEST_USER_IDS` constants
+- ❌ **Don't write complex test setup** - use pre-built scenarios
+
+## 🚀 Performance Expectations
+
+### Target Performance
+- **Unit Tests**: < 10ms per test
+- **API Tests**: < 100ms per test
+- **Integration Tests**: < 500ms per test
+- **Full Test Suite**: < 10 seconds total
+
+## 🔒 Safety System
+
+### What's Automatically Blocked
+- Real database connections (`testDb`, `db`)
+- DatabaseStorage class usage
+- Production database access
+- Any actual database I/O
+
+### Error Messages You Might See
+```
+Error: Direct database access not allowed in tests. Use mocked repositories.
+```
+**This is good!** The safety system is working. Use `mockStorage` instead.
+
+### Global Protection System
+- `jest.setup.ts` - Blocks database access globally
+- `setup-server.ts` - Enables safe mocking for API tests
+- `mocks/mockStorage.ts` - Provides safe mock implementations
+
+### If Tests Are Slow
+1. Check if you're accidentally hitting real database (should be blocked)
+2. Verify you're using `resetStorageMocks()` not `jest.clearAllMocks()`
+3. Ensure you're using pre-built scenarios instead of complex setup
+4. Make sure tests are truly isolated and don't depend on each other
+
+## 🎯 Test Commands
+
+### Running Tests
+```bash
+# All server tests (Node.js environment)
+npm test
+
+# All React tests (jsdom environment)
+npm run test:react
+
+# Specific test types
+npm test -- --testPathPattern="unit"        # Unit tests only
+npm test -- --testPathPattern="api"         # API tests only
+npm test -- --testPathPattern="integration" # Integration tests only
+
+# Specific file
+npm test tests/unit/myFeature.test.ts
+
+# Watch mode for development
+npm test -- --watch
+
+# With coverage reports
+npm test -- --coverage
+```
+
+## 🚨 Common Mistakes to Avoid
+
+### 1. Wrong Import Order
+```typescript
+// ❌ BAD: Imports before enabling mocks
+import { myService } from '../../services/myService';
+import { enableMocksForAPITests } from '../setup-server';
+
+// ✅ GOOD: Enable mocks first
+import { enableMocksForAPITests } from '../setup-server';
+enableMocksForAPITests();
+import { myService } from '../../services/myService';
+```
+
+### 2. Manual Mock Objects
+```typescript
+// ❌ BAD: Manual objects
+const user = { id: 'test-123', email: 'test@example.com', name: 'Test User' };
+
+// ✅ GOOD: Use factories
+const user = createMockUser({ id: 'test-123', email: 'test@example.com' });
+```
+
+### 3. Missing Mock Reset
+```typescript
+// ❌ BAD: No cleanup between tests
+describe('My Tests', () => {
+  test('first test', () => { /* ... */ });
+  test('second test', () => { /* ... */ }); // May be affected by first test
+});
+
+// ✅ GOOD: Clean state between tests
+describe('My Tests', () => {
+  beforeEach(() => {
+    resetStorageMocks();
+  });
+  
+  test('first test', () => { /* ... */ });
+  test('second test', () => { /* ... */ }); // Clean state
+});
+```
+
+### 4. Testing Implementation Details
+```typescript
+// ❌ BAD: Testing implementation
+expect(mockStorage.getUser.mock.calls[0][0]).toBe('test-123');
+
+// ✅ GOOD: Testing behavior
+expect(mockStorage.getUser).toHaveBeenCalledWith('test-123');
+expect(result.success).toBe(true);
+```
+
+## 📚 Quick Reference
+
+### Essential Commands
+```bash
+npm test                    # Run all server tests
+npm run test:react          # Run all React tests
+npm test -- --watch        # Watch mode
+npm test myFile.test.ts     # Run specific file
+```
+
+### Essential Patterns
+```typescript
+// Unit test setup
+resetStorageMocks();
+setupEligibleUserMocks(TEST_USER_IDS.USER_1);
+
+// API test setup
+enableMocksForAPITests();
+const app = await getTestApp();
+
+// React test setup
+global.fetch = jest.fn();
+render(<MyComponent />);
+```
+
+**Remember**: The testing framework handles all the complexity. Focus on writing clear, behavioral tests that verify your business logic works correctly! 🚀
+
+## 🔧 Common Test Patterns
+
+### Testing Success Scenarios
+```typescript
+test('should process user successfully', async () => {
+  // Arrange
+  setupEligibleUserMocks(testUserId);
+  
+  // Act
+  const result = await service.processUser(testUserId);
+  
+  // Assert
+  expect(result.success).toBe(true);
+  expect(result.data).toBeDefined();
+  expect(mockStorage.getUser).toHaveBeenCalledWith(testUserId);
+});
+```
+
+### Testing Error Scenarios
+```typescript
+test('should handle insufficient data error', async () => {
+  // Arrange
+  setupIneligibleUserMocks(testUserId, 5);
+  
+  // Act
+  const result = await service.processUser(testUserId);
+  
+  // Assert
+  expect(result.success).toBe(false);
+  expect(result.error).toContain('insufficient data');
+});
+```
+
+### Testing Async Operations
+```typescript
+test('should handle async operations', async () => {
+  // For promises
+  mockStorage.method.mockResolvedValue(mockData);
+  
+  // For errors
+  mockStorage.method.mockRejectedValue(new Error('Test error'));
+  
+  // For delayed responses
+  mockStorage.method.mockImplementation(() => 
+    new Promise(resolve => setTimeout(() => resolve(mockData), 100))
+  );
+});
+```
+
+## 📊 API Contract Validation
+
+### Verify Response Structure
+```typescript
+import { 
+  verifyAnalysisAPIContract,
+  verifyDropAPIContract,
+  verifyErrorResponse 
+} from '../contracts/apiContracts';
+
+// Use in API tests
+verifyAnalysisAPIContract(response.body);
+verifyErrorResponse(response, 400);
+
+// Verify response structure
+expect(response.body).toMatchObject({
+  success: expect.any(Boolean),
+  data: expect.any(Object),
+  timestamp: expect.any(String)
+});
+```
+
+## 🏆 Success Criteria
+
+Your tests should be:
+- **🔒 Safe**: No database access, impossible to corrupt data
+- **⚡ Fast**: Run in milliseconds, full suite under 10 seconds
+- **🎯 Reliable**: Consistent results, no flaky tests
+- **🔧 Maintainable**: Clear patterns, easy to understand and modify
+- **📊 Comprehensive**: Cover success paths, error paths, and edge cases
