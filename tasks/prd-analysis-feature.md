@@ -10,7 +10,7 @@ The Analysis feature provides users with AI-powered insights about their persona
 
 ## Goals
 
-1. **Enable AI-powered self-reflection** by analyzing 7+ journal entries to identify patterns and insights
+1. **Enable AI-powered self-reflection** by analyzing 3+ journal entries to identify patterns and insights
 2. **Increase user engagement** by providing valuable, personalized insights that encourage continued journaling
 3. **Improve self-awareness** by surfacing blind spots and growth opportunities users may not recognize
 4. **Create a persistent knowledge base** of personal insights that users can reference over time
@@ -20,7 +20,7 @@ The Analysis feature provides users with AI-powered insights about their persona
 
 1. **As a drop user**, I want to see how many entries I need before I can get an analysis, so I know when I'll be able to gain insights about my patterns.
 
-2. **As a drop user**, I want to trigger an analysis when I have 7+ unanalyzed entries, so I can get personalized insights about my growth and patterns.
+2. **As a drop user**, I want to trigger an analysis when I have 3+ unanalyzed entries, so I can get personalized insights about my growth and patterns.
 
 3. **As a drop user**, I want to see a loading screen while my analysis is being generated, so I know the system is working on my insights.
 
@@ -38,14 +38,14 @@ The Analysis feature provides users with AI-powered insights about their persona
 
 ### 1. Analysis Eligibility System
 - The system must track unanalyzed drops since the last analysis
-- The system must display a progress counter (e.g., "4 out of 7") when user has fewer than 7 unanalyzed drops
-- The system must show a "Run Analysis" button when user has 7 or more unanalyzed drops
+- The system must display a progress counter (e.g., "2 out of 3") when user has fewer than 3 unanalyzed drops
+- The system must show a "Run Analysis" button when user has 3 or more unanalyzed drops
 - The counter must reset to 0 after each analysis is completed
-- Users can only generate 1 analysis at a time when they have 7+ unanalyzed drops
+- Users can only generate 1 analysis at a time when they have 3+ unanalyzed drops
 
 ### 2. Analysis Trigger & Processing
 - Users must manually trigger analysis initiation
-- The system must include all drops since the last analysis (minimum 7, can be more)
+- The system must include all drops since the last analysis (minimum 3, can be more)
 - The system must send the complete chat history (question, answer, and entire conversation) to the LLM
 - The system must use the specified LLM prompt for consistent analysis generation
 - The system must display a loading screen during analysis generation
@@ -80,9 +80,9 @@ The Analysis feature provides users with AI-powered insights about their persona
 - The system must log analysis failures for debugging purposes
 
 ### 7. Progress Tracking UI
-- The progress counter must show current unanalyzed drops (e.g., "4 out of 7")
-- The progress bar must visually fill up as the user approaches 7 drops
-- The subtitle must display "Drop deeper with an analysis after 7 entries"
+- The progress counter must show current unanalyzed drops (e.g., "2 out of 3")
+- The progress bar must visually fill up as the user approaches 3 drops
+- The subtitle must display "Drop deeper with an analysis after 3 entries"
 - The UI must clearly distinguish between progress state and ready-to-analyze state
 
 ## Non-Goals (Out of Scope)
@@ -104,7 +104,7 @@ The Analysis feature provides users with AI-powered insights about their persona
 ## Design Considerations
 
 ### UI/UX Requirements
-- **Progress Indicator**: Use a visual progress bar that fills up as users approach 7 drops
+- **Progress Indicator**: Use a visual progress bar that fills up as users approach 3 drops
 - **Analysis Cards**: Design cards that show analysis preview with clear call-to-action
 - **Loading State**: Implement an engaging loading screen with progress indication
 - **Heart Feature**: Use a heart icon that can be toggled on/off for favoriting
@@ -153,7 +153,7 @@ The Analysis feature provides users with AI-powered insights about their persona
 
 ## Success Metrics
 
-1. **User Engagement**: 60% of eligible users (7+ drops) trigger an analysis within 7 days
+1. **User Engagement**: 60% of eligible users (3+ drops) trigger an analysis within 7 days
 2. **Analysis Quality**: 80% of users heart at least one analysis within 30 days
 3. **Retention Impact**: Users who receive analyses show 20% higher 30-day retention
 4. **Feature Adoption**: 40% of active users generate at least one analysis per month

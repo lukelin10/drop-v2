@@ -9,17 +9,17 @@
  */
 
 // Database access automatically blocked by jest.setup.ts
-import { 
-  mockStorage, 
+import {
+  mockStorage,
   resetStorageMocks,
   setupEligibleUserMocks,
   setupIneligibleUserMocks,
   setupEmptyUserMocks,
   setupStorageErrorMocks
 } from '../mocks/mockStorage';
-import { 
-  createMockUser, 
-  createMockDrop, 
+import {
+  createMockUser,
+  createMockDrop,
   createMockDropWithQuestion,
   createMockAnalysis,
   createMockAnalysisDrop,
@@ -48,14 +48,14 @@ describe('Analysis Business Logic Unit Tests', () => {
       expect(eligibility).toEqual({
         isEligible: false,
         unanalyzedCount: 0,
-        requiredCount: 7
+        requiredCount: 3
       });
       expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);
     });
 
-    test('should return not eligible with fewer than 7 drops', async () => {
+    test('should return not eligible with fewer than 3 drops', async () => {
       // Arrange
-      setupIneligibleUserMocks(testUserId, 5);
+      setupIneligibleUserMocks(testUserId, 2);
 
       // Act
       const eligibility = await mockStorage.getAnalysisEligibility(testUserId);
@@ -63,12 +63,12 @@ describe('Analysis Business Logic Unit Tests', () => {
       // Assert
       expect(eligibility).toEqual({
         isEligible: false,
-        unanalyzedCount: 5,
-        requiredCount: 7
+        unanalyzedCount: 2,
+        requiredCount: 3
       });
     });
 
-    test('should return eligible with 7 or more drops', async () => {
+    test('should return eligible with 3 or more drops', async () => {
       // Arrange
       setupEligibleUserMocks(testUserId);
 
@@ -78,8 +78,8 @@ describe('Analysis Business Logic Unit Tests', () => {
       // Assert
       expect(eligibility).toEqual({
         isEligible: true,
-        unanalyzedCount: 8,
-        requiredCount: 7
+        unanalyzedCount: 5,
+        requiredCount: 3
       });
     });
 
@@ -87,8 +87,8 @@ describe('Analysis Business Logic Unit Tests', () => {
       // Arrange
       const eligibility = createMockAnalysisEligibility({
         isEligible: false,
-        unanalyzedCount: 5,
-        requiredCount: 7
+        unanalyzedCount: 2,
+        requiredCount: 3
       });
       mockStorage.getAnalysisEligibility.mockResolvedValue(eligibility);
 
@@ -96,7 +96,7 @@ describe('Analysis Business Logic Unit Tests', () => {
       const result = await mockStorage.getAnalysisEligibility(testUserId);
 
       // Assert
-      expect(result.unanalyzedCount).toBe(5); // Only counts drops after last analysis
+      expect(result.unanalyzedCount).toBe(2); // Only counts drops after last analysis
       expect(result.isEligible).toBe(false);
     });
 
@@ -105,7 +105,7 @@ describe('Analysis Business Logic Unit Tests', () => {
       const eligibility = createMockAnalysisEligibility({
         isEligible: false,
         unanalyzedCount: 0,
-        requiredCount: 7
+        requiredCount: 3
       });
       mockStorage.getAnalysisEligibility.mockResolvedValue(eligibility);
 
@@ -116,7 +116,7 @@ describe('Analysis Business Logic Unit Tests', () => {
       expect(result).toEqual({
         isEligible: false,
         unanalyzedCount: 0,
-        requiredCount: 7
+        requiredCount: 3
       });
     });
   });
@@ -173,15 +173,15 @@ describe('Analysis Business Logic Unit Tests', () => {
     test('should return drops with question text included', async () => {
       // Arrange
       const dropsWithQuestions = [
-        createMockDropWithQuestion({ 
-          id: 1, 
-          userId: testUserId, 
-          questionText: 'How are you feeling today?' 
+        createMockDropWithQuestion({
+          id: 1,
+          userId: testUserId,
+          questionText: 'How are you feeling today?'
         }),
-        createMockDropWithQuestion({ 
-          id: 2, 
-          userId: testUserId, 
-          questionText: 'What made you smile today?' 
+        createMockDropWithQuestion({
+          id: 2,
+          userId: testUserId,
+          questionText: 'What made you smile today?'
         })
       ];
       mockStorage.getUnanalyzedDrops.mockResolvedValue(dropsWithQuestions);
@@ -205,7 +205,7 @@ describe('Analysis Business Logic Unit Tests', () => {
         summary: 'Generally positive outlook with some areas for growth',
         bulletPoints: '• Increased self-awareness\n• Better emotional regulation\n• Strong social connections'
       };
-      const dropIds = [1, 2, 3, 4, 5, 6, 7];
+      const dropIds = [1, 2, 3];
       const expectedAnalysis = createMockAnalysis({ ...analysisData, id: 123 });
 
       mockStorage.createAnalysis.mockResolvedValue(expectedAnalysis);
@@ -246,9 +246,9 @@ describe('Analysis Business Logic Unit Tests', () => {
         summary: 'Test summary',
         bulletPoints: '• Test point'
       };
-      const expectedAnalysis = createMockAnalysis({ 
-        ...analysisData, 
-        createdAt: TEST_DATES.RECENT 
+      const expectedAnalysis = createMockAnalysis({
+        ...analysisData,
+        createdAt: TEST_DATES.RECENT
       });
       mockStorage.createAnalysis.mockResolvedValue(expectedAnalysis);
 
@@ -264,18 +264,18 @@ describe('Analysis Business Logic Unit Tests', () => {
     test('should get user analyses ordered by creation date', async () => {
       // Arrange
       const analyses = [
-        createMockAnalysis({ 
-          id: 1, 
-          userId: testUserId, 
+        createMockAnalysis({
+          id: 1,
+          userId: testUserId,
           createdAt: TEST_DATES.RECENT,
-          summary: 'Recent analysis' 
+          summary: 'Recent analysis'
         }),
-                 createMockAnalysis({ 
-           id: 2, 
-           userId: testUserId, 
-           createdAt: TEST_DATES.PAST,
-           summary: 'Older analysis' 
-         })
+        createMockAnalysis({
+          id: 2,
+          userId: testUserId,
+          createdAt: TEST_DATES.PAST,
+          summary: 'Older analysis'
+        })
       ];
       mockStorage.getUserAnalyses.mockResolvedValue(analyses);
 
@@ -445,20 +445,20 @@ describe('Analysis Business Logic Unit Tests', () => {
       // Arrange
       mockStorage.getAnalysisEligibility.mockImplementation((userId) => {
         if (userId === testUserId) {
-          return Promise.resolve(createMockAnalysisEligibility({ 
-            isEligible: true, 
-            unanalyzedCount: 8 
+          return Promise.resolve(createMockAnalysisEligibility({
+            isEligible: true,
+            unanalyzedCount: 5
           }));
         }
         if (userId === testUserId2) {
-          return Promise.resolve(createMockAnalysisEligibility({ 
-            isEligible: false, 
-            unanalyzedCount: 3 
+          return Promise.resolve(createMockAnalysisEligibility({
+            isEligible: false,
+            unanalyzedCount: 2
           }));
         }
-        return Promise.resolve(createMockAnalysisEligibility({ 
-          isEligible: false, 
-          unanalyzedCount: 0 
+        return Promise.resolve(createMockAnalysisEligibility({
+          isEligible: false,
+          unanalyzedCount: 0
         }));
       });
 
@@ -469,8 +469,8 @@ describe('Analysis Business Logic Unit Tests', () => {
       // Assert
       expect(user1Eligibility.isEligible).toBe(true);
       expect(user2Eligibility.isEligible).toBe(false);
-      expect(user1Eligibility.unanalyzedCount).toBe(8);
-      expect(user2Eligibility.unanalyzedCount).toBe(3);
+      expect(user1Eligibility.unanalyzedCount).toBe(5);
+      expect(user2Eligibility.unanalyzedCount).toBe(2);
     });
   });
 
@@ -487,7 +487,7 @@ describe('Analysis Business Logic Unit Tests', () => {
         summary: 'Test',
         bulletPoints: 'Test'
       };
-      
+
       await expect(
         mockStorage.createAnalysis(analysisData, [1, 2, 3])
       ).rejects.toThrow('Database connection failed');
@@ -519,7 +519,7 @@ describe('Analysis Business Logic Unit Tests', () => {
     test('should handle complete analysis workflow', async () => {
       // Arrange - Setup eligible user
       setupEligibleUserMocks(testUserId);
-      
+
       const analysisData = {
         userId: testUserId,
         content: 'Complete workflow test',
@@ -531,7 +531,7 @@ describe('Analysis Business Logic Unit Tests', () => {
 
       // Act - Check eligibility, create analysis
       const eligibility = await mockStorage.getAnalysisEligibility(testUserId);
-      const analysis = await mockStorage.createAnalysis(analysisData, [1, 2, 3, 4, 5, 6, 7]);
+      const analysis = await mockStorage.createAnalysis(analysisData, [1, 2, 3]);
 
       // Assert
       expect(eligibility.isEligible).toBe(true);
@@ -541,15 +541,15 @@ describe('Analysis Business Logic Unit Tests', () => {
 
     test('should prevent analysis creation for ineligible users', async () => {
       // Arrange
-      setupIneligibleUserMocks(testUserId, 3);
+      setupIneligibleUserMocks(testUserId, 2);
 
       // Act
       const eligibility = await mockStorage.getAnalysisEligibility(testUserId);
 
       // Assert
       expect(eligibility.isEligible).toBe(false);
-      expect(eligibility.unanalyzedCount).toBe(3);
-      
+      expect(eligibility.unanalyzedCount).toBe(2);
+
       // Business logic should prevent creation when ineligible
       // This would be handled by the service layer, not storage
     });
@@ -566,7 +566,7 @@ describe('Analysis Business Logic Unit Tests', () => {
       mockStorage.createAnalysis.mockResolvedValue(expectedAnalysis);
 
       // Act
-      const result = await mockStorage.createAnalysis(analysisData, [1, 2, 3, 4, 5, 6, 7]);
+      const result = await mockStorage.createAnalysis(analysisData, [1, 2, 3]);
 
       // Assert
       expect(result).toMatchObject(analysisData);
@@ -578,8 +578,8 @@ describe('Analysis Business Logic Unit Tests', () => {
       // Arrange
       const progressEligibility = createMockAnalysisEligibility({
         isEligible: false,
-        unanalyzedCount: 5,
-        requiredCount: 7
+        unanalyzedCount: 2,
+        requiredCount: 3
       });
       mockStorage.getAnalysisEligibility.mockResolvedValue(progressEligibility);
 
@@ -587,20 +587,20 @@ describe('Analysis Business Logic Unit Tests', () => {
       const result = await mockStorage.getAnalysisEligibility(testUserId);
 
       // Assert
-      expect(result.unanalyzedCount).toBe(5);
-      expect(result.requiredCount).toBe(7);
-      
-      // Business logic can calculate: 5/7 = 71% progress
+      expect(result.unanalyzedCount).toBe(2);
+      expect(result.requiredCount).toBe(3);
+
+      // Business logic can calculate: 2/3 = 67% progress
       const progressPercentage = (result.unanalyzedCount / result.requiredCount) * 100;
-      expect(progressPercentage).toBeCloseTo(71.4, 1);
+      expect(progressPercentage).toBeCloseTo(66.7, 1);
     });
 
     test('should indicate when user is close to eligibility', async () => {
       // Arrange
       const closeEligibility = createMockAnalysisEligibility({
         isEligible: false,
-        unanalyzedCount: 6,
-        requiredCount: 7
+        unanalyzedCount: 2,
+        requiredCount: 3
       });
       mockStorage.getAnalysisEligibility.mockResolvedValue(closeEligibility);
 
@@ -608,9 +608,9 @@ describe('Analysis Business Logic Unit Tests', () => {
       const result = await mockStorage.getAnalysisEligibility(testUserId);
 
       // Assert
-      expect(result.unanalyzedCount).toBe(6);
-      expect(result.requiredCount).toBe(7);
-      
+      expect(result.unanalyzedCount).toBe(2);
+      expect(result.requiredCount).toBe(3);
+
       // Business logic: User needs only 1 more drop
       const remaining = result.requiredCount - result.unanalyzedCount;
       expect(remaining).toBe(1);

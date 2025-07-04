@@ -6,8 +6,8 @@
  */
 
 // Database access automatically blocked by jest.setup.ts
-import { 
-  mockStorage, 
+import {
+  mockStorage,
   resetStorageMocks,
   setupEligibleUserMocks,
   setupIneligibleUserMocks,
@@ -17,9 +17,9 @@ import {
   setupMessageConversationMocks,
   setupConversationWithMessagesMocks
 } from '../mocks/mockStorage';
-import { 
-  createMockUser, 
-  createMockDrop, 
+import {
+  createMockUser,
+  createMockDrop,
   createMockDropWithQuestion,
   createMockQuestion,
   createMockMessage,
@@ -52,7 +52,7 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
     // Reset all mocks
     resetStorageMocks();
     jest.clearAllMocks();
-    
+
     // Mock environment variable for AI service
     process.env.ANTHROPIC_API_KEY = 'test-api-key';
   });
@@ -209,13 +209,13 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
     });
 
     test('should handle conversation limits correctly', async () => {
-      // Arrange - Create conversation with exactly 5 exchanges (10 messages)
-      const messages = Array.from({ length: 10 }, (_, i) => 
-        createMockMessage({ 
-          id: i + 1, 
-          dropId: testDropId, 
-          text: `Message ${i + 1}`, 
-          fromUser: i % 2 === 0 
+      // Arrange - Create conversation with exactly 7 exchanges (14 messages)
+      const messages = Array.from({ length: 14 }, (_, i) =>
+        createMockMessage({
+          id: i + 1,
+          dropId: testDropId,
+          text: `Message ${i + 1}`,
+          fromUser: i % 2 === 0
         })
       );
 
@@ -224,9 +224,9 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
       // Act
       const result = await mockStorage.getMessages(testDropId);
 
-      // Assert - Should have 10 messages (5 complete exchanges)
-      expect(result).toHaveLength(10);
-      
+      // Assert - Should have 14 messages (7 complete exchanges)
+      expect(result).toHaveLength(14);
+
       // Calculate exchanges (back-and-forth count)
       let exchanges = 0;
       let lastRole = '';
@@ -238,7 +238,7 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
         }
       });
       const exchangeCount = Math.floor(exchanges / 2);
-      expect(exchangeCount).toBe(5); // Should hit the limit
+      expect(exchangeCount).toBe(7); // Should hit the limit
     });
 
     test('should track message counts accurately', async () => {
@@ -251,10 +251,10 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
 
       // Assert
       expect(result).toHaveLength(8);
-      
+
       const userMessages = result.filter(msg => msg.fromUser);
       const aiMessages = result.filter(msg => !msg.fromUser);
-      
+
       expect(userMessages).toHaveLength(4);
       expect(aiMessages).toHaveLength(4);
     });
@@ -278,7 +278,7 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
       // Assert - Calculate exchanges using the same logic as useMessages hook
       let backAndForthCount = 0;
       let lastRole = '';
-      
+
       result.forEach(message => {
         const currentRole = message.fromUser ? 'user' : 'assistant';
         if (currentRole !== lastRole) {
@@ -286,7 +286,7 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
           lastRole = currentRole;
         }
       });
-      
+
       const exchangeCount = Math.floor(backAndForthCount / 2);
       expect(exchangeCount).toBe(3); // 3 complete exchanges
     });
@@ -348,7 +348,7 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
       // Arrange
       delete process.env.ANTHROPIC_API_KEY;
       const fallbackResponse = 'I\'m sorry, I need an API key to provide thoughtful responses.';
-      
+
       mockGenerateResponse.mockResolvedValue(fallbackResponse);
 
       // Act
@@ -360,11 +360,11 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
     });
 
     test('should respect conversation limits in AI responses', async () => {
-      // Arrange - Set up conversation at limit (5 exchanges)
-      const messages = Array.from({ length: 10 }, (_, i) => 
-        createMockMessage({ 
-          id: i + 1, 
-          dropId: testDropId, 
+      // Arrange - Set up conversation at limit (7 exchanges)
+      const messages = Array.from({ length: 14 }, (_, i) =>
+        createMockMessage({
+          id: i + 1,
+          dropId: testDropId,
           fromUser: i % 2 === 0,
           text: `Message ${i + 1}`
         })
@@ -383,7 +383,7 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
       const result = await mockGenerateResponse('One more question', testDropId);
 
       // Assert
-      expect(history).toHaveLength(10);
+      expect(history).toHaveLength(14);
       expect(result).toContain('close');
       expect(mockGetConversationHistory).toHaveBeenCalledWith(testDropId);
     });
@@ -391,7 +391,7 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
     test('should provide session closure appropriately', async () => {
       // Arrange - Simulate final message in conversation
       const closureMessage = 'Thank you for this meaningful conversation. I\'ve really enjoyed our discussion about your personal growth. Please feel free to come back anytime you want to chat again!';
-      
+
       mockGenerateResponse.mockResolvedValue(closureMessage);
 
       // Act
@@ -427,14 +427,14 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
       // Arrange
       const userMessage = 'Test message';
       const aiResponse = 'Test AI response';
-      
+
       mockGenerateResponse.mockResolvedValue(aiResponse);
       mockStorage.createMessage.mockRejectedValueOnce(new Error('Database error'));
 
       // Act & Assert
       const response = await mockGenerateResponse(userMessage, testDropId);
       expect(response).toBe(aiResponse);
-      
+
       // Should still handle the message creation error gracefully
       await expect(mockStorage.createMessage({
         dropId: testDropId,
@@ -466,7 +466,7 @@ describe('Message and Conversation Business Logic Unit Tests', () => {
         { dropId: testDropId, text: 'Message 3', fromUser: true }
       ];
 
-      mockStorage.createMessage.mockImplementation((msg) => 
+      mockStorage.createMessage.mockImplementation((msg) =>
         Promise.resolve(createMockMessage({
           id: Math.floor(Math.random() * 1000),
           ...msg

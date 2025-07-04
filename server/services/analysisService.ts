@@ -51,23 +51,23 @@ interface ValidationResult {
  * Enhanced error messages for different failure scenarios
  */
 const ERROR_MESSAGES = {
-  INSUFFICIENT_DROPS: (count: number) => 
-    `You need at least 7 journal entries to create an analysis. You currently have ${count} unanalyzed entries.`,
-  
+  INSUFFICIENT_DROPS: (count: number) =>
+    `You need at least 3 journal entries to create an analysis. You currently have ${count} unanalyzed entries.`,
+
   DUPLICATE_ANALYSIS: 'An analysis is already being processed. Please wait for it to complete before creating another.',
-  
+
   NETWORK_ERROR: 'Unable to connect to our analysis service. Please check your internet connection and try again.',
-  
+
   LLM_SERVICE_ERROR: 'Our analysis service is temporarily unavailable. Please try again in a few minutes.',
-  
+
   DATABASE_ERROR: 'Unable to save your analysis. Please try again or contact support if the problem persists.',
-  
+
   INTEGRITY_ERROR: 'Analysis data validation failed. Please try again or contact support.',
-  
+
   RATE_LIMIT_ERROR: 'You\'ve reached the analysis limit. Please wait before creating another analysis.',
-  
+
   TIMEOUT_ERROR: 'Analysis took too long to complete. Please try again with fewer entries.',
-  
+
   GENERIC_ERROR: 'Something went wrong while creating your analysis. Please try again.'
 };
 
@@ -94,10 +94,10 @@ const ongoingAnalyses = new Set<string>();
 export async function createAnalysisForUser(userId: string): Promise<AnalysisCreationResult> {
   const startTime = Date.now();
   let retryAttempts = 0;
-  
+
   try {
     console.log(`Starting analysis creation workflow for user: ${userId}`);
-    
+
     // Step 1: Check for duplicate analysis requests
     if (ongoingAnalyses.has(userId)) {
       return {
@@ -133,8 +133,8 @@ export async function createAnalysisForUser(userId: string): Promise<AnalysisCre
 
       // Step 3: Get unanalyzed drops with data integrity checks
       const unanalyzedDrops = await getUnanalyzedDropsWithConversations(userId);
-      
-      if (unanalyzedDrops.length < 7) {
+
+      if (unanalyzedDrops.length < 3) {
         return {
           success: false,
           error: ERROR_MESSAGES.INSUFFICIENT_DROPS(unanalyzedDrops.length),
@@ -170,7 +170,7 @@ export async function createAnalysisForUser(userId: string): Promise<AnalysisCre
         llmAnalysis = await generateAnalysis(userId);
       } catch (llmError) {
         console.error('LLM analysis generation failed:', llmError);
-        
+
         const errorMessage = llmError instanceof Error ? llmError.message : 'Unknown LLM error';
         let errorType: string = 'llm';
         let userMessage = ERROR_MESSAGES.LLM_SERVICE_ERROR;
@@ -227,12 +227,12 @@ export async function createAnalysisForUser(userId: string): Promise<AnalysisCre
       // Step 7: Store analysis in database with transaction safety
       const dropIds = unanalyzedDrops.map(drop => drop.id);
       let analysis;
-      
+
       try {
         analysis = await storage.createAnalysis(analysisData, dropIds);
       } catch (dbError) {
         console.error('Database storage failed:', dbError);
-        
+
         const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
         let userMessage = ERROR_MESSAGES.DATABASE_ERROR;
 
@@ -278,10 +278,10 @@ export async function createAnalysisForUser(userId: string): Promise<AnalysisCre
   } catch (error) {
     // Always remove from ongoing analyses on error
     ongoingAnalyses.delete(userId);
-    
+
     const processingTime = Date.now() - startTime;
     console.error(`Analysis creation workflow failed for user ${userId}:`, error);
-    
+
     return {
       success: false,
       error: ERROR_MESSAGES.GENERIC_ERROR,
@@ -315,7 +315,7 @@ const validateAnalysisEligibility = async (userId: string): Promise<ValidationRe
 
     // Check user eligibility status
     const eligibility = await storage.getAnalysisEligibility(userId);
-    
+
     if (!eligibility.isEligible) {
       return {
         isValid: false,
@@ -329,7 +329,7 @@ const validateAnalysisEligibility = async (userId: string): Promise<ValidationRe
     if (user.lastAnalysisDate) {
       const timeSinceLastAnalysis = Date.now() - user.lastAnalysisDate.getTime();
       const minTimeBetweenAnalyses = 30 * 60 * 1000; // 30 minutes
-      
+
       if (timeSinceLastAnalysis < minTimeBetweenAnalyses) {
         const remainingTime = Math.ceil((minTimeBetweenAnalyses - timeSinceLastAnalysis) / (60 * 1000));
         return {
@@ -401,8 +401,8 @@ const performDataIntegrityChecks = async (drops: any[]): Promise<ValidationResul
     // Check for reasonable date range (not older than 1 year)
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    
-    const oldestDrop = drops.reduce((oldest, drop) => 
+
+    const oldestDrop = drops.reduce((oldest, drop) =>
       new Date(drop.createdAt) < new Date(oldest.createdAt) ? drop : oldest
     );
 
@@ -457,13 +457,13 @@ export async function getAnalysisStats(userId: string): Promise<{
   try {
     // Get user's analyses
     const analyses = await storage.getUserAnalyses(userId, 100, 0); // Get up to 100 analyses
-    
+
     // Get eligibility status
     const eligibility = await storage.getAnalysisEligibility(userId);
-    
+
     // Find most recent analysis date
     const lastAnalysisDate = analyses.length > 0 ? analyses[0].createdAt : undefined;
-    
+
     return {
       totalAnalyses: analyses.length,
       lastAnalysisDate,
@@ -471,7 +471,7 @@ export async function getAnalysisStats(userId: string): Promise<{
       isEligible: eligibility.isEligible,
       hasOngoingAnalysis: ongoingAnalyses.has(userId)
     };
-    
+
   } catch (error) {
     console.error('Error getting analysis stats:', error);
     return {
@@ -501,7 +501,7 @@ export async function previewAnalysis(userId: string): Promise<{
   try {
     // Check eligibility
     const eligibility = await storage.getAnalysisEligibility(userId);
-    
+
     if (!eligibility.isEligible) {
       return {
         eligible: false,
@@ -513,7 +513,7 @@ export async function previewAnalysis(userId: string): Promise<{
 
     // Get drops that would be analyzed
     const drops = await getUnanalyzedDropsWithConversations(userId);
-    
+
     if (drops.length === 0) {
       return {
         eligible: false,

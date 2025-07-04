@@ -29,7 +29,7 @@ export function useMessages(dropId: number) {
   // Track if the conversation limit has been reached
   const [isLimitReached, setIsLimitReached] = useState(false);
   // Maximum number of back-and-forth exchanges allowed in a conversation
-  const MESSAGE_LIMIT = 5;
+  const MESSAGE_LIMIT = 7;
 
   /**
    * Query to fetch all messages for the specified journal entry
@@ -40,7 +40,7 @@ export function useMessages(dropId: number) {
     queryKey: [`/api/drops/${dropId}/messages`],
     enabled: !!dropId // Only fetch when we have a valid drop ID
   });
-  
+
   /**
    * Effect to calculate conversation metrics
    * - Counts the number of back-and-forth exchanges
@@ -51,7 +51,7 @@ export function useMessages(dropId: number) {
       // Count the number of role switches (user → AI or AI → user)
       let backAndForthCount = 0;
       let lastRole = '';
-      
+
       messages.forEach((message: Message) => {
         // Determine if the message is from the user or AI
         const currentRole = message.fromUser ? 'user' : 'assistant';
@@ -61,7 +61,7 @@ export function useMessages(dropId: number) {
           lastRole = currentRole;
         }
       });
-      
+
       // Calculate complete exchanges (user message + AI response)
       const exchangeCount = Math.floor(backAndForthCount / 2);
       setMessageCount(exchangeCount);
@@ -89,7 +89,7 @@ export function useMessages(dropId: number) {
     onSuccess: () => {
       // Immediately refresh messages to show the user's message
       queryClient.invalidateQueries({ queryKey: [`/api/drops/${dropId}/messages`] });
-      
+
       // Set a timeout to simulate the AI thinking and typing
       // The actual AI response is generated asynchronously on the server
       setTimeout(() => {

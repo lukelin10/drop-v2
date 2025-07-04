@@ -190,8 +190,8 @@ export const createMockAnalysisEligibility = (overrides: Partial<{
   requiredCount: number;
 }> = {}) => ({
   isEligible: true,
-  unanalyzedCount: 8,
-  requiredCount: 7,
+  unanalyzedCount: 5,
+  requiredCount: 3,
   ...overrides
 });
 

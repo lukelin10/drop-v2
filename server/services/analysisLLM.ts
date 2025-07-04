@@ -335,8 +335,8 @@ export async function generateAnalysis(userId: string): Promise<AnalysisResponse
     // Get unanalyzed drops with conversations
     const drops = await getUnanalyzedDropsWithConversations(userId);
 
-    if (drops.length < 7) {
-      throw new Error(`Insufficient drops for analysis: ${drops.length} (minimum 7 required)`);
+    if (drops.length < 3) {
+      throw new Error(`Insufficient drops for analysis: ${drops.length} (minimum 3 required)`);
     }
 
     requestMetadata.dropCount = drops.length;

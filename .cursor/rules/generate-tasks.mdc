@@ -48,8 +48,7 @@ The generated task list _must_ follow this structure:
 
 - Unit tests should typically be placed alongside the code files they are testing (e.g., `MyComponent.tsx` and `MyComponent.test.tsx` in the same directory).
 - Use `npx jest [optional/path/to/test/file]` to run tests. Running without a path executes all tests found by the Jest configuration.
-- Use [mocking-strategy.mdc](mdc:.cursor/rules/mocking-strategy.mdc) and [TEST-STRATEGY.md](mdc:tasks/TEST-STRATEGY.md) to guide how unit tests are built to ensure consistency across the application
-- Make sure the output file has explicit instructions to follow [mocking-strategy.mdc](mdc:.cursor/rules/mocking-strategy.mdc) and [TEST-STRATEGY.md](mdc:tasks/TEST-STRATEGY.md) when building tests
+- Use [testing-rules.mdc](mdc:.cursor/rules/testing-rules.mdc) tests are built to ensure consistency across the application
 
 ## Tasks
 

@@ -40,7 +40,7 @@ describe('Analysis Workflow Integration Tests', () => {
   beforeAll(async () => {
     // Create test server
     app = await getTestApp();
-    
+
     // Set up test environment
     process.env.ANTHROPIC_API_KEY = 'test-api-key';
   });
@@ -87,14 +87,14 @@ describe('Analysis Workflow Integration Tests', () => {
     test('end-to-end workflow: eligibility → generation → storage → retrieval', async () => {
       // Step 1: Create drops with conversations (setup for eligibility)
       const dropIds: number[] = [];
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 3; i++) {
         const [drop] = await testDb.insert(schema.drops).values({
           userId: testUserId,
           questionId: testQuestionId,
           text: `Integration test drop ${i + 1} with sufficient content for meaningful analysis`,
-          createdAt: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000) // Spread over 7 days
+          createdAt: new Date(Date.now() - (2 - i) * 24 * 60 * 60 * 1000) // Spread over 3 days
         }).returning();
-        
+
         dropIds.push(drop.id);
 
         // Add conversation messages for each drop
@@ -117,14 +117,14 @@ describe('Analysis Workflow Integration Tests', () => {
       // Step 2: Check initial eligibility
       const initialEligibility = await storage.getAnalysisEligibility(testUserId);
       expect(initialEligibility.isEligible).toBe(true);
-      expect(initialEligibility.unanalyzedCount).toBe(7);
+      expect(initialEligibility.unanalyzedCount).toBe(3);
 
       // Step 3: Create analysis through service layer
       const analysisResult = await createAnalysisForUser(testUserId);
-      
+
       expect(analysisResult.success).toBe(true);
       expect(analysisResult.analysis).toBeDefined();
-      expect(analysisResult.metadata?.dropCount).toBe(7);
+      expect(analysisResult.metadata?.dropCount).toBe(3);
       expect(analysisResult.metadata?.processingTime).toBeGreaterThan(0);
 
       const analysis = analysisResult.analysis!;
@@ -143,9 +143,9 @@ describe('Analysis Workflow Integration Tests', () => {
         .select()
         .from(schema.analysisDrops)
         .where(eq(schema.analysisDrops.analysisId, analysis.id));
-      
-      expect(analysisDropRelations).toHaveLength(7);
-      
+
+      expect(analysisDropRelations).toHaveLength(3);
+
       const relationDropIds = analysisDropRelations.map(rel => rel.dropId).sort();
       expect(relationDropIds).toEqual(dropIds.sort());
 
@@ -170,7 +170,7 @@ describe('Analysis Workflow Integration Tests', () => {
 
       // Step 10: Get drops included in the analysis
       const analysisDrops = await storage.getAnalysisDrops(analysis.id);
-      expect(analysisDrops).toHaveLength(7);
+      expect(analysisDrops).toHaveLength(3);
       analysisDrops.forEach(drop => {
         expect(dropIds).toContain(drop.id);
         expect(drop.questionText).toBe('Integration test question');
@@ -179,12 +179,12 @@ describe('Analysis Workflow Integration Tests', () => {
 
     test('workflow handles multiple analyses correctly', async () => {
       // Create first batch of drops
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 3; i++) {
         await testDb.insert(schema.drops).values({
           userId: testUserId,
           questionId: testQuestionId,
           text: `First batch drop ${i + 1}`,
-          createdAt: new Date(Date.now() - (14 - i) * 24 * 60 * 60 * 1000) // 14-8 days ago
+          createdAt: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000) // 6-4 days ago
         });
       }
 
@@ -193,12 +193,12 @@ describe('Analysis Workflow Integration Tests', () => {
       expect(firstAnalysis.success).toBe(true);
 
       // Create second batch of drops (after first analysis)
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 5; i++) {
         await testDb.insert(schema.drops).values({
           userId: testUserId,
           questionId: testQuestionId,
           text: `Second batch drop ${i + 1}`,
-          createdAt: new Date(Date.now() - (7 - i) * 24 * 60 * 60 * 1000) // 7-0 days ago
+          createdAt: new Date(Date.now() - (4 - i) * 24 * 60 * 60 * 1000) // 4-0 days ago
         });
       }
 
@@ -212,17 +212,17 @@ describe('Analysis Workflow Integration Tests', () => {
       // Check eligibility for second analysis
       const secondEligibility = await storage.getAnalysisEligibility(testUserId);
       expect(secondEligibility.isEligible).toBe(true);
-      expect(secondEligibility.unanalyzedCount).toBe(8);
+      expect(secondEligibility.unanalyzedCount).toBe(5);
 
       // Create second analysis
       const secondAnalysis = await createAnalysisForUser(testUserId);
       expect(secondAnalysis.success).toBe(true);
-      expect(secondAnalysis.metadata?.dropCount).toBe(8);
+      expect(secondAnalysis.metadata?.dropCount).toBe(5);
 
       // Verify both analyses exist
       const allAnalyses = await storage.getUserAnalyses(testUserId);
       expect(allAnalyses).toHaveLength(2);
-      
+
       // Should be ordered newest first
       expect(allAnalyses[0].id).toBe(secondAnalysis.analysis!.id);
       expect(allAnalyses[1].id).toBe(firstAnalysis.analysis!.id);
@@ -230,10 +230,10 @@ describe('Analysis Workflow Integration Tests', () => {
       // Verify drop relationships are correctly separated
       const firstAnalysisDrops = await storage.getAnalysisDrops(firstAnalysis.analysis!.id);
       const secondAnalysisDrops = await storage.getAnalysisDrops(secondAnalysis.analysis!.id);
-      
-      expect(firstAnalysisDrops).toHaveLength(7);
-      expect(secondAnalysisDrops).toHaveLength(8);
-      
+
+      expect(firstAnalysisDrops).toHaveLength(3);
+      expect(secondAnalysisDrops).toHaveLength(5);
+
       // No overlap in drops between analyses
       const firstDropIds = firstAnalysisDrops.map(d => d.id);
       const secondDropIds = secondAnalysisDrops.map(d => d.id);
@@ -245,7 +245,7 @@ describe('Analysis Workflow Integration Tests', () => {
   describe('API Integration with Database', () => {
     beforeEach(async () => {
       // Create test drops for API tests
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 3; i++) {
         await testDb.insert(schema.drops).values({
           userId: testUserId,
           questionId: testQuestionId,
@@ -327,15 +327,15 @@ describe('Analysis Workflow Integration Tests', () => {
         .expect(200);
 
       expect(response.body.isEligible).toBe(true);
-      expect(response.body.unanalyzedCount).toBe(7);
-      expect(response.body.requiredCount).toBe(7);
+      expect(response.body.unanalyzedCount).toBe(3);
+      expect(response.body.requiredCount).toBe(3);
     });
   });
 
   describe('Error Recovery and Data Integrity', () => {
     test('failed analysis does not leave partial data in database', async () => {
       // Create drops
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 3; i++) {
         await testDb.insert(schema.drops).values({
           userId: testUserId,
           questionId: testQuestionId,
@@ -365,12 +365,12 @@ describe('Analysis Workflow Integration Tests', () => {
       // Verify eligibility is still available
       const eligibility = await storage.getAnalysisEligibility(testUserId);
       expect(eligibility.isEligible).toBe(true);
-      expect(eligibility.unanalyzedCount).toBe(7);
+      expect(eligibility.unanalyzedCount).toBe(3);
     });
 
     test('database transaction rollback on storage failure', async () => {
       // Create drops
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 3; i++) {
         await testDb.insert(schema.drops).values({
           userId: testUserId,
           questionId: testQuestionId,
@@ -404,7 +404,7 @@ describe('Analysis Workflow Integration Tests', () => {
   describe('Performance and Concurrency', () => {
     test('handles concurrent analysis requests correctly', async () => {
       // Create drops
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 3; i++) {
         await testDb.insert(schema.drops).values({
           userId: testUserId,
           questionId: testQuestionId,
@@ -414,8 +414,8 @@ describe('Analysis Workflow Integration Tests', () => {
       }
 
       // Mock LLM with delay to simulate race condition
-      mockGenerateAnalysis.mockImplementation(() => 
-        new Promise(resolve => 
+      mockGenerateAnalysis.mockImplementation(() =>
+        new Promise(resolve =>
           setTimeout(() => resolve({
             summary: 'Concurrent test summary',
             content: 'Concurrent test content',

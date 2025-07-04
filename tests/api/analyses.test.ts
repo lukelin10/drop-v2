@@ -106,15 +106,15 @@ describe('Analysis API Endpoint Tests', () => {
       expect(response.body).toEqual({
         isEligible: false,
         unanalyzedCount: 0,
-        requiredCount: 7
+        requiredCount: 3
       });
 
       expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);
     });
 
-    test('should return not eligible with fewer than 7 drops', async () => {
+    test('should return not eligible with fewer than 3 drops', async () => {
       // Arrange
-      setupIneligibleUserMocks(testUserId, 5);
+      setupIneligibleUserMocks(testUserId, 2);
 
       // Act
       const response = await request(app)
@@ -125,8 +125,8 @@ describe('Analysis API Endpoint Tests', () => {
       // Assert
       expect(response.body).toEqual({
         isEligible: false,
-        unanalyzedCount: 5,
-        requiredCount: 7
+        unanalyzedCount: 2,
+        requiredCount: 3
       });
 
       expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);

@@ -6,7 +6,7 @@
  * and provides the data needed for the progress tracking UI.
  * 
  * Features:
- * - Checks if user is eligible for analysis (has 7+ unanalyzed drops)
+ * - Checks if user is eligible for analysis (has 3+ unanalyzed drops)
  * - Returns current progress count and required count
  * - Provides loading states for UI feedback
  */
@@ -24,18 +24,18 @@ export function useAnalysisEligibility() {
    * Query to check if user is eligible for analysis
    * Returns eligibility status and progress information
    */
-  const { 
-    data: eligibility, 
-    isLoading, 
+  const {
+    data: eligibility,
+    isLoading,
     error,
-    refetch 
+    refetch
   } = useQuery<AnalysisEligibility>({
     queryKey: ["/api/analyses/eligibility"],
     // Default values while loading to prevent UI errors
     placeholderData: {
       isEligible: false,
       unanalyzedCount: 0,
-      requiredCount: 7
+      requiredCount: 3
     }
   });
 
@@ -50,15 +50,15 @@ export function useAnalysisEligibility() {
 
   /**
    * Get formatted progress text for display
-   * @returns String like "4 out of 7" or "Ready!"
+   * @returns String like "2 out of 3" or "Ready!"
    */
   const getProgressText = (): string => {
     if (!eligibility) return "Loading...";
-    
+
     if (eligibility.isEligible) {
       return "Ready for analysis!";
     }
-    
+
     return `${eligibility.unanalyzedCount} out of ${eligibility.requiredCount}`;
   };
 
@@ -83,6 +83,6 @@ export function useAnalysisEligibility() {
     // Convenience accessors
     isEligible: eligibility?.isEligible ?? false,
     unanalyzedCount: eligibility?.unanalyzedCount ?? 0,
-    requiredCount: eligibility?.requiredCount ?? 7
+    requiredCount: eligibility?.requiredCount ?? 3
   };
 } 

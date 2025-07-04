@@ -74,7 +74,7 @@ The Core Flow represents the fundamental user journey in the personal growth and
 - The system must display the original question and user response at the top of the conversation
 - The system must support back-and-forth messaging between user and AI
 - The system must maintain conversation history for context in AI responses
-- The system must limit conversations to 5 exchanges (planning to increase to 7)
+- The system must limit conversations to 7 exchanges
 - The system must display a conversation counter showing current progress toward limit
 - The system must provide visual feedback when the conversation limit is reached
 - The system must generate responses asynchronously to avoid blocking the UI
@@ -223,7 +223,7 @@ The Core Flow represents the fundamental user journey in the personal growth and
 ## Open Questions
 
 1. **Question Rotation Strategy**: Should the system allow for seasonal or thematic question sets, or maintain the current sequential approach?
-2. **Conversation Limit Evolution**: When increasing from 5 to 7 exchanges, should this be gradual or immediate?
+2. **Conversation Engagement**: Should the system provide additional encouragement or prompts to help users reach deeper exchanges in their conversations?
 3. **Feed Interaction**: Should users be able to add notes or reflections to past conversations directly from the feed?
 4. **AI Personality Customization**: Would users benefit from slight variations in AI coaching style based on their preferences?
 5. **Progress Tracking**: Should the system provide more explicit progress indicators across the user's reflection journey?

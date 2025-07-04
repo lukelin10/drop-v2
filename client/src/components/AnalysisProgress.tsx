@@ -6,7 +6,7 @@
  * 
  * Features:
  * - Visual progress bar using the app's design system
- * - Progress counter (e.g., "4 out of 7")
+ * - Progress counter (e.g., "2 out of 3")
  * - "Run Analysis" button when eligible
  * - Encouraging messaging based on progress
  * - Matches the existing app's visual language and color scheme
@@ -27,10 +27,10 @@ interface AnalysisProgressProps {
   onAnalysisComplete?: () => void;
 }
 
-export function AnalysisProgress({ 
-  className, 
-  onAnalysisStart, 
-  onAnalysisComplete 
+export function AnalysisProgress({
+  className,
+  onAnalysisStart,
+  onAnalysisComplete
 }: AnalysisProgressProps) {
   const [isRunningAnalysis, setIsRunningAnalysis] = useState(false);
   const { setLoading } = useAppContext();
@@ -56,7 +56,7 @@ export function AnalysisProgress({
     try {
       // Create the analysis
       const response = await apiRequest("POST", "/api/analyses");
-      
+
       if (!response.ok) {
         throw new Error("Failed to create analysis");
       }
@@ -71,7 +71,7 @@ export function AnalysisProgress({
 
       // Refresh eligibility data to show updated progress
       refetch();
-      
+
       onAnalysisComplete?.();
     } catch (error) {
       console.error("Error creating analysis:", error);
@@ -92,7 +92,7 @@ export function AnalysisProgress({
 
   const getEncouragingMessage = (): string => {
     const remaining = getRemainingDrops();
-    
+
     if (isEligible) {
       return "You're ready for insights!";
     } else if (remaining === 1) {
@@ -102,7 +102,7 @@ export function AnalysisProgress({
     } else if (isCloseToEligible()) {
       return `Keep going! ${remaining} more entries for your analysis.`;
     } else {
-      return "Drop deeper with an analysis after 7 entries";
+      return "Drop deeper with an analysis after 3 entries";
     }
   };
 
@@ -128,13 +128,13 @@ export function AnalysisProgress({
         <div className="flex items-center space-x-3">
           <div className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center",
-            isEligible 
-              ? "bg-secondary/10" 
+            isEligible
+              ? "bg-secondary/10"
               : "bg-primary/10"
           )}>
             <i className={cn(
-              isEligible 
-                ? "ri-check-line text-secondary" 
+              isEligible
+                ? "ri-check-line text-secondary"
                 : "ri-bar-chart-line text-primary"
             )}></i>
           </div>
@@ -147,9 +147,9 @@ export function AnalysisProgress({
             </p>
           </div>
         </div>
-        
+
         {isEligible && (
-          <Button 
+          <Button
             onClick={handleRunAnalysis}
             disabled={isRunningAnalysis}
             size="sm"
@@ -181,9 +181,9 @@ export function AnalysisProgress({
             </span>
           )}
         </div>
-        
-        <Progress 
-          value={getProgressPercentage()} 
+
+        <Progress
+          value={getProgressPercentage()}
           className="h-2"
         />
       </div>

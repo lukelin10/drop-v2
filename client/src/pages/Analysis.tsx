@@ -11,15 +11,15 @@ import { cn } from "@/lib/utils";
 function Analysis() {
   const { setLoading } = useAppContext();
   const { toast } = useToast();
-  const { 
-    analyses, 
-    isLoading, 
-    error, 
-    hasMore, 
+  const {
+    analyses,
+    isLoading,
+    error,
+    hasMore,
     isCreatingAnalysis,
-    createAnalysis, 
-    toggleFavorite, 
-    loadMoreAnalyses 
+    createAnalysis,
+    toggleFavorite,
+    loadMoreAnalyses
   } = useAnalyses();
   const { isEligible, refetch: refetchEligibility } = useAnalysisEligibility();
 
@@ -78,7 +78,7 @@ function Analysis() {
     <section className="flex flex-col min-h-[calc(100vh-120px)] py-4">
       {/* Analysis Progress Section */}
       <div className="px-4 mb-6">
-        <AnalysisProgress 
+        <AnalysisProgress
           onAnalysisComplete={handleAnalysisComplete}
         />
       </div>
@@ -161,13 +161,13 @@ function Analysis() {
               No analyses yet
             </h4>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-              {isEligible 
+              {isEligible
                 ? "You have enough drops to create your first analysis!"
-                : "Keep reflecting! You need 7 drops to generate your first analysis."
+                : "Keep reflecting! You need 3 drops to generate your first analysis."
               }
             </p>
             {isEligible && (
-              <Button 
+              <Button
                 onClick={handleCreateAnalysis}
                 disabled={isCreatingAnalysis}
                 className="min-w-32"

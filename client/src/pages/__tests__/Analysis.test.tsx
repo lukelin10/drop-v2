@@ -55,10 +55,10 @@ jest.mock('@/components/AnalysisProgress', () => ({
 }));
 
 jest.mock('@/components/AnalysisCard', () => ({
-  AnalysisCard: ({ 
-    analysis, 
-    onToggleFavorite 
-  }: { 
+  AnalysisCard: ({
+    analysis,
+    onToggleFavorite
+  }: {
     analysis: AnalysisType;
     onToggleFavorite: (id: number, isFavorited: boolean) => void;
   }) => (
@@ -99,7 +99,7 @@ describe('Analysis Page', () => {
         queries: { retry: false },
       },
     });
-    
+
     return ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={queryClient}>
         <MemoryRouter>
@@ -122,7 +122,7 @@ describe('Analysis Page', () => {
       toggleFavorite: jest.fn(),
       loadMoreAnalyses: jest.fn(),
     });
-    
+
     Object.assign(mockUseAnalysisEligibility, {
       isEligible: false,
       refetch: jest.fn(),
@@ -132,13 +132,13 @@ describe('Analysis Page', () => {
   describe('Rendering', () => {
     it('should render the analysis progress component', () => {
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(screen.getByTestId('analysis-progress')).toBeInTheDocument();
     });
 
     it('should render the page title and empty state when no analyses', () => {
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(screen.getByText('Your Analyses')).toBeInTheDocument();
       expect(screen.getByText('No analyses yet')).toBeInTheDocument();
     });
@@ -147,9 +147,9 @@ describe('Analysis Page', () => {
       Object.assign(mockUseAnalyses, {
         analyses: mockAnalyses,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(screen.getByTestId('analysis-card-1')).toBeInTheDocument();
       expect(screen.getByTestId('analysis-card-2')).toBeInTheDocument();
       expect(screen.getByText('First analysis summary')).toBeInTheDocument();
@@ -161,9 +161,9 @@ describe('Analysis Page', () => {
       Object.assign(mockUseAnalyses, {
         analyses: [mockAnalyses[0]],
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(screen.getByText('1 analysis')).toBeInTheDocument();
     });
   });
@@ -174,9 +174,9 @@ describe('Analysis Page', () => {
         isLoading: true,
         analyses: [],
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       const skeletons = screen.getAllByTestId(/animate-pulse/i);
       expect(skeletons.length).toBeGreaterThan(0);
     });
@@ -185,9 +185,9 @@ describe('Analysis Page', () => {
       Object.assign(mockUseAnalyses, {
         isCreatingAnalysis: true,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(mockSetLoading).toHaveBeenCalledWith(true);
     });
 
@@ -196,9 +196,9 @@ describe('Analysis Page', () => {
         analyses: mockAnalyses,
         hasMore: true,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(screen.getByText('Load More')).toBeInTheDocument();
     });
 
@@ -208,9 +208,9 @@ describe('Analysis Page', () => {
         hasMore: true,
         isLoading: true,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
   });
@@ -220,9 +220,9 @@ describe('Analysis Page', () => {
       Object.assign(mockUseAnalyses, {
         error: 'Failed to fetch analyses',
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Error',
         description: 'Failed to fetch analyses',
@@ -236,9 +236,9 @@ describe('Analysis Page', () => {
       Object.assign(mockUseAnalysisEligibility, {
         isEligible: true,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(screen.getByText('Create Analysis')).toBeInTheDocument();
       expect(screen.getByText('You have enough drops to create your first analysis!')).toBeInTheDocument();
     });
@@ -247,19 +247,19 @@ describe('Analysis Page', () => {
       Object.assign(mockUseAnalysisEligibility, {
         isEligible: false,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
-      expect(screen.getByText('Keep reflecting! You need 7 drops to generate your first analysis.')).toBeInTheDocument();
+
+      expect(screen.getByText('Keep reflecting! You need 3 drops to generate your first analysis.')).toBeInTheDocument();
     });
 
     it('should not show create button when not eligible', () => {
       Object.assign(mockUseAnalysisEligibility, {
         isEligible: false,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       expect(screen.queryByText('Create Analysis')).not.toBeInTheDocument();
     });
   });
@@ -269,12 +269,12 @@ describe('Analysis Page', () => {
       Object.assign(mockUseAnalysisEligibility, {
         isEligible: true,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       const createButton = screen.getByText('Create Analysis');
       fireEvent.click(createButton);
-      
+
       expect(mockUseAnalyses.createAnalysis).toHaveBeenCalled();
     });
 
@@ -282,12 +282,12 @@ describe('Analysis Page', () => {
       Object.assign(mockUseAnalyses, {
         analyses: mockAnalyses,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       const favoriteButton = screen.getAllByText('Toggle Favorite')[0];
       fireEvent.click(favoriteButton);
-      
+
       expect(mockUseAnalyses.toggleFavorite).toHaveBeenCalledWith(1, true);
     });
 
@@ -296,12 +296,12 @@ describe('Analysis Page', () => {
         analyses: mockAnalyses,
         hasMore: true,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       const loadMoreButton = screen.getByText('Load More');
       fireEvent.click(loadMoreButton);
-      
+
       expect(mockUseAnalyses.loadMoreAnalyses).toHaveBeenCalled();
     });
 
@@ -311,12 +311,12 @@ describe('Analysis Page', () => {
         hasMore: true,
         isLoading: true,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       const loadMoreButton = screen.getByText('Loading...');
       fireEvent.click(loadMoreButton);
-      
+
       expect(mockUseAnalyses.loadMoreAnalyses).not.toHaveBeenCalled();
     });
   });
@@ -326,19 +326,19 @@ describe('Analysis Page', () => {
       const mockCreateAnalysis = jest.fn((params) => {
         params?.onSuccess?.(mockAnalyses[0]);
       });
-      
+
       Object.assign(mockUseAnalyses, {
         createAnalysis: mockCreateAnalysis,
       });
       Object.assign(mockUseAnalysisEligibility, {
         isEligible: true,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       const createButton = screen.getByText('Create Analysis');
       fireEvent.click(createButton);
-      
+
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
           title: 'Analysis Complete',
@@ -352,16 +352,16 @@ describe('Analysis Page', () => {
       const mockCreateAnalysis = jest.fn((params) => {
         params?.onError?.(new Error('Insufficient drops'));
       });
-      
+
       Object.assign(mockUseAnalyses, {
         createAnalysis: mockCreateAnalysis,
       });
-      
+
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       const progressButton = screen.getByText('Mock Progress');
       fireEvent.click(progressButton);
-      
+
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
           title: 'Analysis Failed',
@@ -375,10 +375,10 @@ describe('Analysis Page', () => {
   describe('Analysis Progress Integration', () => {
     it('should refresh eligibility when analysis is completed', () => {
       render(<Analysis />, { wrapper: createWrapper() });
-      
+
       const progressButton = screen.getByText('Mock Progress');
       fireEvent.click(progressButton);
-      
+
       expect(mockUseAnalysisEligibility.refetch).toHaveBeenCalled();
     });
   });

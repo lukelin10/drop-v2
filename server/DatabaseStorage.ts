@@ -7,7 +7,7 @@
 
 import { db } from './db';
 import { eq, desc, sql, and } from 'drizzle-orm';
-import { 
+import {
   questionTable,
   drops,
   messages,
@@ -36,7 +36,7 @@ import { IStorage } from './storage';
  * This class uses Drizzle ORM to interact with the PostgreSQL database
  */
 export class DatabaseStorage implements IStorage {
-  
+
   /**
    * Constructor
    * Initializes the database storage
@@ -89,7 +89,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
-  
+
   /**
    * Retrieves all journal entries (drops) for a specific user
    * Includes the question text from the related question
@@ -114,18 +114,18 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
         .where(eq(drops.userId, userId))
         .orderBy(desc(drops.createdAt)); // Most recent first
-      
+
       return dropsWithQuestions as DropWithQuestion[];
     } catch (error) {
       console.error('Error fetching user drops:', error);
       return [];
     }
   }
-  
+
   /**
    * DROP/JOURNAL ENTRY METHODS
    */
-  
+
   /**
    * Retrieves all drops/journal entries in the system
    * Includes the question text from the related question
@@ -149,14 +149,14 @@ export class DatabaseStorage implements IStorage {
         .from(drops)
         .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
         .orderBy(desc(drops.createdAt)); // Most recent first
-      
+
       return dropsWithQuestions as DropWithQuestion[];
     } catch (error) {
       console.error('Error fetching drops:', error);
       return [];
     }
   }
-  
+
   /**
    * Retrieves a single drop/journal entry by ID
    * Includes the question text from the related question
@@ -180,29 +180,29 @@ export class DatabaseStorage implements IStorage {
         .from(drops)
         .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
         .where(eq(drops.id, id));
-      
+
       return dropWithQuestion as DropWithQuestion;
     } catch (error) {
       console.error(`Error fetching drop with id ${id}:`, error);
       return undefined;
     }
   }
-  
-    /**
-   * Creates a new drop/journal entry
-   * Also initializes the conversation with a personalized AI response
-   * @param insertDrop - The drop data to insert
-   * @returns The created drop object
-   * @throws Error if creation fails
-   */
+
+  /**
+ * Creates a new drop/journal entry
+ * Also initializes the conversation with a personalized AI response
+ * @param insertDrop - The drop data to insert
+ * @returns The created drop object
+ * @throws Error if creation fails
+ */
   async createDrop(insertDrop: InsertDrop): Promise<Drop> {
     try {
       // Insert the new drop
       const [drop] = await db.insert(drops).values(insertDrop).returning();
-      
+
       // Check if we're in a test environment
       const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID;
-      
+
       if (isTestEnv) {
         // For tests, create a synchronous message to maintain compatibility
         await this.createMessage({
@@ -230,22 +230,22 @@ export class DatabaseStorage implements IStorage {
               console.error('Could not import anthropic service:', importError);
               throw new Error('Anthropic service unavailable');
             }
-            
+
             // Get the question text for context
             const question = await db
               .select()
               .from(questionTable)
               .where(eq(questionTable.id, insertDrop.questionId))
               .limit(1);
-            
+
             const questionText = question[0]?.text || 'the question';
-            
+
             // Create a context-aware prompt that includes both the question and user's response
             const contextualPrompt = `The user was asked: "${questionText}" and they responded: "${insertDrop.text}"`;
-            
+
             // Generate a personalized AI response using the Anthropic service
             const personalizedResponse = await generateResponse(contextualPrompt, drop.id);
-            
+
             // Create the initial AI message with the personalized response
             await self.createMessage({
               dropId: drop.id,
@@ -271,7 +271,7 @@ export class DatabaseStorage implements IStorage {
           }
         }, 100); // Small delay to ensure drop is fully created
       }
-      
+
       // Return the updated drop with the correct message count
       const [updatedDrop] = await db.select().from(drops).where(eq(drops.id, drop.id));
       return updatedDrop;
@@ -280,7 +280,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Failed to create drop');
     }
   }
-  
+
   /**
    * Updates a drop/journal entry
    * @param id - The ID of the drop to update
@@ -294,18 +294,18 @@ export class DatabaseStorage implements IStorage {
         .set(updates)
         .where(eq(drops.id, id))
         .returning();
-      
+
       return updatedDrop;
     } catch (error) {
       console.error(`Error updating drop with id ${id}:`, error);
       return undefined;
     }
   }
-  
+
   /**
    * MESSAGE METHODS
    */
-  
+
   /**
    * Retrieves all messages for a specific drop/journal entry
    * @param dropId - The ID of the drop whose messages to retrieve
@@ -318,14 +318,14 @@ export class DatabaseStorage implements IStorage {
         .from(messages)
         .where(eq(messages.dropId, dropId))
         .orderBy(messages.createdAt); // Chronological order
-        
+
       return messageList;
     } catch (error) {
       console.error(`Error fetching messages for drop ${dropId}:`, error);
       return [];
     }
   }
-  
+
   /**
    * Creates a new message in a conversation
    * Also updates the message count on the parent drop
@@ -337,7 +337,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Insert the new message
       const [message] = await db.insert(messages).values(insertMessage).returning();
-      
+
       // Update the message count on the parent drop
       // This is an atomic operation using SQL to increment
       await db
@@ -346,18 +346,18 @@ export class DatabaseStorage implements IStorage {
           messageCount: sql`${drops.messageCount} + 1`
         })
         .where(eq(drops.id, insertMessage.dropId));
-      
+
       return message;
     } catch (error) {
       console.error('Error creating message:', error);
       throw new Error('Failed to create message');
     }
   }
-  
+
   /**
    * DAILY QUESTION METHODS
    */
-  
+
   /**
    * Gets a question for the daily journal prompt
    * Returns the same question for the entire day, advancing to the next question each day
@@ -369,7 +369,7 @@ export class DatabaseStorage implements IStorage {
       // Get today's date in UTC to ensure consistent behavior across timezones
       const today = new Date();
       const todayDateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-      
+
       // Check if we already have a question marked for today
       const todaysQuestion = await db
         .select()
@@ -431,11 +431,11 @@ export class DatabaseStorage implements IStorage {
       return 'What brought you joy today?';
     }
   }
-  
+
   /**
    * QUESTION MANAGEMENT METHODS
    */
-  
+
   /**
    * Retrieves all questions in the system
    * @returns Array of all questions
@@ -446,7 +446,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(questionTable)
         .orderBy(desc(questionTable.createdAt)); // Most recent first
-        
+
       return questions;
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -508,23 +508,23 @@ export class DatabaseStorage implements IStorage {
     try {
       // Insert the new analysis
       const [analysis] = await db.insert(analyses).values(insertAnalysis).returning();
-      
+
       // Create analysis-drop relationships for each included drop
       if (includedDropIds.length > 0) {
         const analysisDropData = includedDropIds.map(dropId => ({
           analysisId: analysis.id,
           dropId: dropId
         }));
-        
+
         await db.insert(analysisDrops).values(analysisDropData);
       }
-      
+
       // Update user's last analysis date
       await db
         .update(users)
         .set({ lastAnalysisDate: new Date() })
         .where(eq(users.id, insertAnalysis.userId));
-      
+
       return analysis;
     } catch (error) {
       console.error('Error creating analysis:', error);
@@ -548,7 +548,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(analyses.createdAt))
         .limit(limit)
         .offset(offset);
-      
+
       return userAnalyses;
     } catch (error) {
       console.error('Error fetching user analyses:', error);
@@ -567,7 +567,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(analyses)
         .where(eq(analyses.id, id));
-      
+
       return analysis;
     } catch (error) {
       console.error(`Error fetching analysis with id ${id}:`, error);
@@ -588,7 +588,7 @@ export class DatabaseStorage implements IStorage {
         .set({ isFavorited })
         .where(eq(analyses.id, id))
         .returning();
-      
+
       return analysis;
     } catch (error) {
       console.error(`Error updating analysis favorite status with id ${id}:`, error);
@@ -597,7 +597,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Checks if a user is eligible for analysis (has 7+ unanalyzed drops)
+   * Checks if a user is eligible for analysis (has 3+ unanalyzed drops)
    * @param userId - The ID of the user to check
    * @returns Object containing eligibility status and count information
    */
@@ -612,22 +612,22 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(users)
         .where(eq(users.id, userId));
-      
+
       if (!user) {
-        return { isEligible: false, unanalyzedCount: 0, requiredCount: 7 };
+        return { isEligible: false, unanalyzedCount: 0, requiredCount: 3 };
       }
-      
+
       // Count drops created since last analysis (or all drops if no previous analysis)
       const lastAnalysisDate = user.lastAnalysisDate || new Date(0); // Epoch if never analyzed
-      
+
       const [result] = await db
         .select({ count: sql<number>`count(*)` })
         .from(drops)
         .where(sql`${drops.userId} = ${userId} AND ${drops.createdAt} > ${lastAnalysisDate}`);
-      
+
       const unanalyzedCount = Number(result.count);
-      const requiredCount = 7;
-      
+      const requiredCount = 3;
+
       return {
         isEligible: unanalyzedCount >= requiredCount,
         unanalyzedCount,
@@ -635,7 +635,7 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error('Error checking analysis eligibility:', error);
-      return { isEligible: false, unanalyzedCount: 0, requiredCount: 7 };
+      return { isEligible: false, unanalyzedCount: 0, requiredCount: 3 };
     }
   }
 
@@ -651,14 +651,14 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(users)
         .where(eq(users.id, userId));
-      
+
       if (!user) {
         return [];
       }
-      
+
       // Get drops created since last analysis (or all drops if no previous analysis)
       const lastAnalysisDate = user.lastAnalysisDate || new Date(0); // Epoch if never analyzed
-      
+
       const unanalyzedDrops = await db
         .select({
           id: drops.id,
@@ -673,7 +673,7 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
         .where(sql`${drops.userId} = ${userId} AND ${drops.createdAt} > ${lastAnalysisDate}`)
         .orderBy(drops.createdAt); // Chronological order for analysis
-      
+
       return unanalyzedDrops as DropWithQuestion[];
     } catch (error) {
       console.error('Error fetching unanalyzed drops:', error);
@@ -703,7 +703,7 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(questionTable, eq(drops.questionId, questionTable.id))
         .where(eq(analysisDrops.analysisId, analysisId))
         .orderBy(drops.createdAt);
-      
+
       return analysisDropsList as DropWithQuestion[];
     } catch (error) {
       console.error(`Error fetching drops for analysis ${analysisId}:`, error);

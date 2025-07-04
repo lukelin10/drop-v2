@@ -72,8 +72,8 @@ const mockAnalyses = [
 
 const mockEligibilityResponse = {
   isEligible: true,
-  unanalyzedCount: 8,
-  requiredCount: 7
+  unanalyzedCount: 5,
+  requiredCount: 3
 };
 
 // Helper to render components with providers
@@ -114,18 +114,18 @@ describe('Analysis Frontend Integration Tests', () => {
       renderWithProviders(<AnalysisProgress />);
 
       await waitFor(() => {
-        expect(screen.getByText('8 of 7 entries ready')).toBeInTheDocument();
+        expect(screen.getByText('5 of 3 entries ready')).toBeInTheDocument();
       });
 
       expect(screen.getByText('Run Analysis')).toBeInTheDocument();
-      expect(screen.getByText('Drop deeper with an analysis after 7 entries')).toBeInTheDocument();
+      expect(screen.getByText('Drop deeper with an analysis after 3 entries')).toBeInTheDocument();
     });
 
     test('displays progress when user is not eligible', async () => {
       const ineligibleResponse = {
         isEligible: false,
-        unanalyzedCount: 4,
-        requiredCount: 7
+        unanalyzedCount: 2,
+        requiredCount: 3
       };
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -136,7 +136,7 @@ describe('Analysis Frontend Integration Tests', () => {
       renderWithProviders(<AnalysisProgress />);
 
       await waitFor(() => {
-        expect(screen.getByText('4 of 7 entries ready')).toBeInTheDocument();
+        expect(screen.getByText('2 of 3 entries ready')).toBeInTheDocument();
       });
 
       const runButton = screen.getByText('Run Analysis');
@@ -278,14 +278,14 @@ describe('Analysis Frontend Integration Tests', () => {
 
       await waitFor(() => {
         expect(screen.getByText('No analyses yet')).toBeInTheDocument();
-        expect(screen.getByText('Create your first analysis by journaling for 7 days')).toBeInTheDocument();
+        expect(screen.getByText('Create your first analysis by journaling for 3 days')).toBeInTheDocument();
       });
     });
 
     test('displays loading state initially', async () => {
       // Mock delayed response
-      (global.fetch as any).mockImplementationOnce(() => 
-        new Promise(resolve => 
+      (global.fetch as any).mockImplementationOnce(() =>
+        new Promise(resolve =>
           setTimeout(() => resolve({
             ok: true,
             json: async () => ({ analyses: mockAnalyses, hasMore: false })
@@ -490,8 +490,8 @@ describe('Analysis Frontend Integration Tests', () => {
 
     test('displays loading state initially', async () => {
       // Mock delayed response
-      (global.fetch as any).mockImplementationOnce(() => 
-        new Promise(resolve => 
+      (global.fetch as any).mockImplementationOnce(() =>
+        new Promise(resolve =>
           setTimeout(() => resolve({
             ok: true,
             json: async () => mockAnalysis
@@ -581,9 +581,9 @@ describe('Analysis Frontend Integration Tests', () => {
   describe('Analysis Loading Component', () => {
     test('displays loading messages and progress', async () => {
       renderWithProviders(
-        <AnalysisLoading 
-          isVisible={true} 
-          onCancel={() => {}} 
+        <AnalysisLoading
+          isVisible={true}
+          onCancel={() => { }}
           messages={['Analyzing entries...', 'Finding patterns...', 'Generating insights...']}
         />
       );
@@ -595,11 +595,11 @@ describe('Analysis Frontend Integration Tests', () => {
 
     test('cycles through messages during analysis', async () => {
       const messages = ['Message 1', 'Message 2', 'Message 3'];
-      
+
       renderWithProviders(
-        <AnalysisLoading 
-          isVisible={true} 
-          onCancel={() => {}} 
+        <AnalysisLoading
+          isVisible={true}
+          onCancel={() => { }}
           messages={messages}
         />
       );
@@ -617,9 +617,9 @@ describe('Analysis Frontend Integration Tests', () => {
       const mockCancel = vi.fn();
 
       renderWithProviders(
-        <AnalysisLoading 
-          isVisible={true} 
-          onCancel={mockCancel} 
+        <AnalysisLoading
+          isVisible={true}
+          onCancel={mockCancel}
           messages={['Analyzing...']}
         />
       );
@@ -632,9 +632,9 @@ describe('Analysis Frontend Integration Tests', () => {
 
     test('hides when not visible', () => {
       renderWithProviders(
-        <AnalysisLoading 
-          isVisible={false} 
-          onCancel={() => {}} 
+        <AnalysisLoading
+          isVisible={false}
+          onCancel={() => { }}
           messages={['Analyzing...']}
         />
       );
@@ -703,7 +703,7 @@ describe('Analysis Frontend Integration Tests', () => {
     test('handles offline state gracefully', async () => {
       // Mock network status
       const mockNetworkStatus = { isOnline: false, isSlowConnection: false };
-      
+
       vi.doMock('../../client/src/hooks/useNetworkStatus', () => ({
         useNetworkStatus: () => mockNetworkStatus,
       }));
@@ -718,7 +718,7 @@ describe('Analysis Frontend Integration Tests', () => {
 
     test('handles slow connection state', async () => {
       const mockNetworkStatus = { isOnline: true, isSlowConnection: true };
-      
+
       vi.doMock('../../client/src/hooks/useNetworkStatus', () => ({
         useNetworkStatus: () => mockNetworkStatus,
       }));
@@ -732,7 +732,7 @@ describe('Analysis Frontend Integration Tests', () => {
 
     test('retries requests when connection is restored', async () => {
       const mockNetworkStatus = { isOnline: true, isSlowConnection: false };
-      
+
       // Mock initial network failure
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 

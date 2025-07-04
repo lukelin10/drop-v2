@@ -61,7 +61,7 @@ Based on PRD: `prd-analysis-feature.md`
 
 - [ ] 2.0 Analysis Eligibility & Progress Tracking System
   - [x] 2.1 Implement logic to count unanalyzed drops since last analysis
-  - [x] 2.2 Create eligibility check service that returns current progress (e.g., 4 out of 7)
+  - [x] 2.2 Create eligibility check service that returns current progress (e.g., 2 out of 3)
   - [x] 2.3 Build AnalysisProgress component with visual progress bar and counter display, reusing existing progress bar components and color scheme from the app where possible
   - [x] 2.4 Implement "Run Analysis" button using existing Button component with consistent styling and primary color theme
   - [x] 2.5 Add subtitle text "Drop deeper with an analysis after 7 entries" using existing typography classes and muted text colors

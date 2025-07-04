@@ -10,21 +10,21 @@
  */
 
 // Database access automatically blocked by jest.setup.ts
-import { 
-  mockStorage, 
+import {
+  mockStorage,
   resetStorageMocks,
   setupEligibleUserMocks,
   setupIneligibleUserMocks,
-  setupEmptyUserMocks 
+  setupEmptyUserMocks
 } from '../mocks/mockStorage';
-import { 
-  createMockUser, 
-  createMockDropWithQuestion, 
+import {
+  createMockUser,
+  createMockDropWithQuestion,
   createMockAnalysis,
   createMockAnalysisResult,
   createMockAnalysisEligibility,
   createMockMessage,
-  TEST_USER_IDS 
+  TEST_USER_IDS
 } from '../factories/testData';
 
 // Mock the LLM service and storage dependencies
@@ -55,7 +55,7 @@ describe('Analysis Service Unit Tests', () => {
     // Reset all mocks
     resetStorageMocks();
     jest.clearAllMocks();
-    
+
     // Mock environment variable for health checks
     process.env.ANTHROPIC_API_KEY = 'test-api-key';
   });
@@ -65,12 +65,12 @@ describe('Analysis Service Unit Tests', () => {
       // Arrange
       setupEligibleUserMocks(testUserId);
 
-      const mockDrops = Array.from({ length: 8 }, (_, i) => 
-        createMockDropWithQuestion({ 
-          id: i + 1, 
-          userId: testUserId, 
+      const mockDrops = Array.from({ length: 5 }, (_, i) =>
+        createMockDropWithQuestion({
+          id: i + 1,
+          userId: testUserId,
           text: `This is a meaningful journal entry number ${i + 1} with enough content for analysis.`,
-          createdAt: new Date(Date.now() - i * 60 * 60 * 1000) // Spread over 8 hours (very recent)
+          createdAt: new Date(Date.now() - i * 60 * 60 * 1000) // Spread over 5 hours (very recent)
         })
       );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
@@ -96,7 +96,7 @@ describe('Analysis Service Unit Tests', () => {
       expect(result.success).toBe(true);
       expect(result.analysis).toEqual(mockStoredAnalysis);
       expect(result.metadata).toMatchObject({
-        dropCount: 8,
+        dropCount: 5,
         userId: testUserId,
         processingTime: expect.any(Number)
       });
@@ -109,16 +109,16 @@ describe('Analysis Service Unit Tests', () => {
 
     test('should fail when user is not eligible', async () => {
       // Arrange
-      setupIneligibleUserMocks(testUserId, 5);
+      setupIneligibleUserMocks(testUserId, 2);
 
       // Act
       const result = await createAnalysisForUser(testUserId);
 
       // Assert
       expect(result.success).toBe(false);
-      expect(result.error).toContain('You need at least 7 journal entries');
+      expect(result.error).toContain('You need at least 3 journal entries');
       expect(result.metadata).toMatchObject({
-        dropCount: 5,
+        dropCount: 2,
         userId: testUserId
       });
 
@@ -132,7 +132,7 @@ describe('Analysis Service Unit Tests', () => {
       setupEligibleUserMocks(testUserId);
 
       // Mock insufficient drops returned by LLM service
-      const mockDrops = Array.from({ length: 6 }, (_, i) => 
+      const mockDrops = Array.from({ length: 2 }, (_, i) =>
         createMockDropWithQuestion({ id: i + 1, userId: testUserId, text: `Drop ${i + 1}` })
       );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
@@ -142,9 +142,9 @@ describe('Analysis Service Unit Tests', () => {
 
       // Assert
       expect(result.success).toBe(false);
-      expect(result.error).toContain('You need at least 7 journal entries');
+      expect(result.error).toContain('You need at least 3 journal entries');
       expect(result.metadata).toMatchObject({
-        dropCount: 6,
+        dropCount: 2,
         userId: testUserId
       });
 
@@ -156,7 +156,7 @@ describe('Analysis Service Unit Tests', () => {
       // Arrange
       setupEligibleUserMocks(testUserId);
 
-      const mockDrops = Array.from({ length: 8 }, (_, i) => 
+      const mockDrops = Array.from({ length: 5 }, (_, i) =>
         createMockDropWithQuestion({ id: i + 1, userId: testUserId })
       );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
@@ -172,7 +172,7 @@ describe('Analysis Service Unit Tests', () => {
       expect(result.success).toBe(false);
       expect(result.error).toContain('Our analysis service is temporarily unavailable');
       expect(result.metadata).toMatchObject({
-        dropCount: 8,
+        dropCount: 5,
         userId: testUserId
       });
 
@@ -183,9 +183,9 @@ describe('Analysis Service Unit Tests', () => {
       // Arrange
       setupEligibleUserMocks(testUserId);
 
-      const mockDrops = Array.from({ length: 8 }, (_, i) => 
-        createMockDropWithQuestion({ 
-          id: i + 1, 
+      const mockDrops = Array.from({ length: 5 }, (_, i) =>
+        createMockDropWithQuestion({
+          id: i + 1,
           userId: testUserId,
           createdAt: new Date(Date.now() - i * 12 * 60 * 60 * 1000) // Recent drops
         })
@@ -210,7 +210,7 @@ describe('Analysis Service Unit Tests', () => {
       expect(result.success).toBe(false);
       expect(result.error).toContain('Unable to save your analysis');
       expect(result.metadata).toMatchObject({
-        dropCount: 8,
+        dropCount: 5,
         userId: testUserId
       });
     });
@@ -219,7 +219,7 @@ describe('Analysis Service Unit Tests', () => {
       // Arrange
       setupEligibleUserMocks(testUserId);
 
-      const mockDrops = Array.from({ length: 8 }, (_, i) => 
+      const mockDrops = Array.from({ length: 5 }, (_, i) =>
         createMockDropWithQuestion({ id: i + 1, userId: testUserId })
       );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
@@ -237,12 +237,12 @@ describe('Analysis Service Unit Tests', () => {
     });
 
     test('should validate minimum drop requirements at boundary', async () => {
-      // Arrange - User is eligible with exactly 7 drops
+      // Arrange - User is eligible with exactly 3 drops
       mockStorage.getAnalysisEligibility.mockResolvedValue(
-        createMockAnalysisEligibility({ isEligible: true, unanalyzedCount: 7 })
+        createMockAnalysisEligibility({ isEligible: true, unanalyzedCount: 3 })
       );
 
-      const mockDrops = Array.from({ length: 7 }, (_, i) => 
+      const mockDrops = Array.from({ length: 3 }, (_, i) =>
         createMockDropWithQuestion({ id: i + 1, userId: testUserId })
       );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
@@ -262,7 +262,7 @@ describe('Analysis Service Unit Tests', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.metadata?.dropCount).toBe(7);
+      expect(result.metadata?.dropCount).toBe(3);
     });
 
     test('should validate user ID format', async () => {
@@ -276,14 +276,14 @@ describe('Analysis Service Unit Tests', () => {
 
       // Assert
       expect(result.success).toBe(false);
-      expect(result.error).toContain('You need at least 7 journal entries');
+      expect(result.error).toContain('You need at least 3 journal entries');
     });
 
     test('should handle network errors', async () => {
       // Arrange
       setupEligibleUserMocks(testUserId);
 
-      const mockDrops = Array.from({ length: 8 }, (_, i) => 
+      const mockDrops = Array.from({ length: 5 }, (_, i) =>
         createMockDropWithQuestion({ id: i + 1, userId: testUserId })
       );
       mockGetUnanalyzedDropsWithConversations.mockResolvedValue(mockDrops);
@@ -311,9 +311,9 @@ describe('Analysis Service Unit Tests', () => {
       ];
       mockStorage.getUserAnalyses.mockResolvedValue(mockAnalyses);
 
-      const mockEligibility = createMockAnalysisEligibility({ 
-        isEligible: false, 
-        unanalyzedCount: 4 
+      const mockEligibility = createMockAnalysisEligibility({
+        isEligible: false,
+        unanalyzedCount: 4
       });
       mockStorage.getAnalysisEligibility.mockResolvedValue(mockEligibility);
 
@@ -372,11 +372,11 @@ describe('Analysis Service Unit Tests', () => {
       // Arrange
       setupEligibleUserMocks(testUserId);
 
-      const mockDrops = Array.from({ length: 8 }, (_, i) => ({
-        ...createMockDropWithQuestion({ 
-          id: i + 1, 
+      const mockDrops = Array.from({ length: 5 }, (_, i) => ({
+        ...createMockDropWithQuestion({
+          id: i + 1,
           userId: testUserId,
-          createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000) // Spread over 8 days
+          createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000) // Spread over 5 days
         }),
         conversation: [
           createMockMessage({ id: i * 4 + 1, dropId: i + 1, text: `Message ${i * 2 + 1}`, fromUser: true }),
@@ -392,7 +392,7 @@ describe('Analysis Service Unit Tests', () => {
 
       // Assert
       expect(preview.eligible).toBe(true);
-      expect(preview.dropCount).toBe(8);
+      expect(preview.dropCount).toBe(5);
       expect(preview.totalMessages).toBeGreaterThan(0);
       expect(preview.oldestDrop).toBeDefined();
       expect(preview.newestDrop).toBeDefined();
@@ -403,14 +403,14 @@ describe('Analysis Service Unit Tests', () => {
 
     test('should fail preview for ineligible user', async () => {
       // Arrange
-      setupIneligibleUserMocks(testUserId, 3);
+      setupIneligibleUserMocks(testUserId, 2);
 
       // Act
       const preview = await previewAnalysis(testUserId);
 
       // Assert
       expect(preview.eligible).toBe(false);
-      expect(preview.dropCount).toBe(3);
+      expect(preview.dropCount).toBe(2);
       expect(preview.error).toBeDefined();
       expect(mockGetUnanalyzedDropsWithConversations).not.toHaveBeenCalled();
     });
