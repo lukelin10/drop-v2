@@ -44,15 +44,15 @@ export function useDrops() {
       // First fetch all questions to find the matching question ID
       const questionsRes = await apiRequest("GET", "/api/questions");
       const questions = await questionsRes.json();
-      
+
       // Find the question ID that matches our daily question text
       const matchingQuestion = questions.find(
         (q: any) => q.text === dailyQuestionData?.question
       );
-      
+
       // Use the matching question ID or default to 1 if not found
       const questionId = matchingQuestion?.id || 1;
-      
+
       // Create the new drop with the user's answer
       const res = await apiRequest("POST", "/api/drops", {
         questionId: questionId,
@@ -84,13 +84,17 @@ export function useDrops() {
       return false;
     }
 
-    // Get today's date in YYYY-MM-DD format for comparison
-    const today = new Date().toISOString().split('T')[0];
-    
+    // Get today's date in UTC-7 timezone for comparison
+    const today = new Date();
+    const utcMinus7 = new Date(today.getTime() - (7 * 60 * 60 * 1000));
+    const todayDateString = utcMinus7.toISOString().split('T')[0];
+
     // Check if any drop was created today for the current daily question
     return drops.some(drop => {
-      const dropDate = new Date(drop.createdAt).toISOString().split('T')[0];
-      const isToday = dropDate === today;
+      const dropDate = new Date(drop.createdAt);
+      const dropUtcMinus7 = new Date(dropDate.getTime() - (7 * 60 * 60 * 1000));
+      const dropDateString = dropUtcMinus7.toISOString().split('T')[0];
+      const isToday = dropDateString === todayDateString;
       const isCurrentQuestion = drop.questionText === dailyQuestionData.question;
       return isToday && isCurrentQuestion;
     });
@@ -119,7 +123,7 @@ export function useDrops() {
   const getLatestDropId = (): number | undefined => {
     if (drops.length === 0) return undefined;
     // Sort by created date (descending) and get the first one
-    return [...drops].sort((a, b) => 
+    return [...drops].sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )[0].id;
   };
