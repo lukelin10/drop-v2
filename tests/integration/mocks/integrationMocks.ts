@@ -6,11 +6,11 @@
  */
 
 // Database access automatically blocked by jest.setup.ts
-import { 
-  mockStorage, 
-  resetStorageMocks, 
-  setupEligibleUserMocks, 
-  setupIneligibleUserMocks 
+import {
+  mockStorage,
+  resetStorageMocks,
+  setupEligibleUserMocks,
+  setupIneligibleUserMocks
 } from '../../mocks/mockStorage';
 import { createMockUser, createMockDropWithQuestion, createMockMessage, createMockAnalysis } from '../../factories/testData';
 
@@ -21,10 +21,10 @@ import { createMockUser, createMockDropWithQuestion, createMockMessage, createMo
 export const setupIntegrationMocks = () => {
   // Set up database and storage mocks (but allow analysis service)
   setupIntegrationDatabaseMocks();
-  
+
   // Add integration-specific external service mocks
   setupExternalServiceMocks();
-  
+
   // Set up rich workflow scenarios
   setupWorkflowMocks();
 };
@@ -78,7 +78,34 @@ export const setupExternalServiceMocks = () => {
       content: 'This comprehensive integration test analysis demonstrates the workflow from data collection through AI processing to final presentation. The analysis shows consistent patterns of engagement and thoughtful reflection.',
       bulletPoints: '• Integration workflow verified\n• Service boundaries tested\n• Data flow confirmed\n• Error handling validated\n• Contract compliance verified'
     }),
-    getUnanalyzedDropsWithConversations: jest.fn().mockResolvedValue([])
+    getUnanalyzedDropsWithConversations: jest.fn().mockImplementation(async (userId: string) => {
+      // Return realistic mock drops with conversations for integration tests
+      return Array.from({ length: 5 }, (_, i) => ({
+        id: i + 1,
+        userId,
+        questionId: 1,
+        text: `Integration test drop ${i + 1} with comprehensive content for meaningful analysis and workflow testing`,
+        questionText: 'Integration test question for workflow validation',
+        createdAt: new Date(Date.now() - (4 - i) * 24 * 60 * 60 * 1000), // Spread over 5 days
+        messageCount: 2,
+        conversation: [
+          {
+            id: (i + 1) * 2 - 1,
+            dropId: i + 1,
+            text: `User reflection for drop ${i + 1}: This represents my thoughts and experiences.`,
+            fromUser: true,
+            createdAt: new Date()
+          },
+          {
+            id: (i + 1) * 2,
+            dropId: i + 1,
+            text: `AI response for drop ${i + 1}: That's a thoughtful reflection. What patterns do you notice?`,
+            fromUser: false,
+            createdAt: new Date()
+          }
+        ]
+      }));
+    })
   }));
 };
 
@@ -94,13 +121,13 @@ export const setupWorkflowMocks = () => {
  * Complete analysis workflow mock setup
  */
 export const setupAnalysisWorkflowMocks = (userId: string = 'test-user-integration') => {
-  const mockUser = createMockUser({ 
+  const mockUser = createMockUser({
     id: userId,
     username: 'integrationuser',
     email: 'integration@test.com'
   });
 
-  const mockDrops = Array.from({ length: 8 }, (_, i) => 
+  const mockDrops = Array.from({ length: 5 }, (_, i) =>
     createMockDropWithQuestion({
       id: i + 1,
       userId,
@@ -127,10 +154,17 @@ export const setupAnalysisWorkflowMocks = (userId: string = 'test-user-integrati
 
   // Set up storage mocks for complete workflow
   mockStorage.getUser.mockResolvedValue(mockUser);
+  // Ensure the user is returned consistently with the test's expected userId
+  mockStorage.getUser.mockImplementation(async (id) => {
+    if (id === userId) {
+      return mockUser;
+    }
+    return createMockUser({ id });
+  });
   mockStorage.getAnalysisEligibility.mockResolvedValue({
     isEligible: true,
-    unanalyzedCount: 8,
-    requiredCount: 7
+    unanalyzedCount: 5,
+    requiredCount: 3
   });
   mockStorage.getUnanalyzedDrops.mockResolvedValue(mockDrops);
   mockStorage.getUserDrops.mockResolvedValue(mockDrops);
@@ -143,13 +177,13 @@ export const setupAnalysisWorkflowMocks = (userId: string = 'test-user-integrati
     const analysis = createMockAnalysis({
       ...analysisData,
       id: 1,
-      userId,
+      userId: analysisData.userId || userId, // Use the analysisData userId if provided
       isFavorited: false
     });
-    
+
     // Update user's last analysis date
     mockUser.lastAnalysisDate = new Date();
-    
+
     return analysis;
   });
 
@@ -201,7 +235,7 @@ export const setupConversationFlowMocks = (userId: string = 'test-user-integrati
       id: messageId++
     });
     messages.push(newMessage);
-    
+
     // If user message, trigger AI response
     if (messageData.fromUser) {
       setTimeout(() => {
@@ -214,7 +248,7 @@ export const setupConversationFlowMocks = (userId: string = 'test-user-integrati
         messages.push(aiResponse);
       }, 100);
     }
-    
+
     return newMessage;
   });
 };
@@ -224,10 +258,10 @@ export const setupConversationFlowMocks = (userId: string = 'test-user-integrati
  */
 export const setupAPIContractMocks = (userId: string = 'test-user-integration') => {
   setupAnalysisWorkflowMocks(userId);
-  
+
   // Add specific API response mocks
   mockStorage.getDailyQuestion.mockResolvedValue('What are your goals for today?');
-  
+
   // Mock question management
   mockStorage.createQuestion.mockImplementation(async (questionData) => ({
     id: 1,
@@ -245,25 +279,25 @@ export const setupAPIContractMocks = (userId: string = 'test-user-integration') 
  */
 export const setupErrorScenarioMocks = () => {
   // Mock various error scenarios for integration testing
-  
+
   // Database error scenarios
   const setupDatabaseErrorMocks = () => {
     mockStorage.createAnalysis.mockRejectedValue(new Error('Database connection failed'));
     mockStorage.getUser.mockRejectedValue(new Error('User not found'));
   };
-  
+
   // LLM service error scenarios
   const setupLLMErrorMocks = () => {
     const mockGenerateAnalysis = require('../../../server/services/analysisLLM').generateAnalysis;
     mockGenerateAnalysis.mockRejectedValue(new Error('LLM service unavailable'));
   };
-  
+
   // Network error scenarios
   const setupNetworkErrorMocks = () => {
     const mockGenerateResponse = require('../../../server/services/anthropic').generateResponse;
     mockGenerateResponse.mockRejectedValue(new Error('Network timeout'));
   };
-  
+
   return {
     setupDatabaseErrorMocks,
     setupLLMErrorMocks,
@@ -276,9 +310,53 @@ export const setupErrorScenarioMocks = () => {
  */
 export const resetIntegrationMocks = () => {
   jest.clearAllMocks();
-  
+
   // Reset to default workflow setup
   setupWorkflowMocks();
+
+  // Ensure LLM service mocks are reset to their default behavior
+  const mockGenerateAnalysis = require('../../../server/services/analysisLLM').generateAnalysis;
+  const mockGetUnanalyzedDropsWithConversations = require('../../../server/services/analysisLLM').getUnanalyzedDropsWithConversations;
+
+  // Clear any previous mock implementations
+  mockGenerateAnalysis.mockClear();
+  mockGetUnanalyzedDropsWithConversations.mockClear();
+
+  // Restore default implementations
+  mockGenerateAnalysis.mockResolvedValue({
+    summary: 'Integration test analysis summary showing deep insights',
+    content: 'This comprehensive integration test analysis demonstrates the workflow from data collection through AI processing to final presentation. The analysis shows consistent patterns of engagement and thoughtful reflection.',
+    bulletPoints: '• Integration workflow verified\n• Service boundaries tested\n• Data flow confirmed\n• Error handling validated\n• Contract compliance verified'
+  });
+
+  mockGetUnanalyzedDropsWithConversations.mockImplementation(async (userId: string) => {
+    // Return realistic mock drops with conversations for integration tests
+    return Array.from({ length: 5 }, (_, i) => ({
+      id: i + 1,
+      userId,
+      questionId: 1,
+      text: `Integration test drop ${i + 1} with comprehensive content for meaningful analysis and workflow testing`,
+      questionText: 'Integration test question for workflow validation',
+      createdAt: new Date(Date.now() - (4 - i) * 24 * 60 * 60 * 1000), // Spread over 5 days
+      messageCount: 2,
+      conversation: [
+        {
+          id: (i + 1) * 2 - 1,
+          dropId: i + 1,
+          text: `User reflection for drop ${i + 1}: This represents my thoughts and experiences.`,
+          fromUser: true,
+          createdAt: new Date()
+        },
+        {
+          id: (i + 1) * 2,
+          dropId: i + 1,
+          text: `AI response for drop ${i + 1}: That's a thoughtful reflection. What patterns do you notice?`,
+          fromUser: false,
+          createdAt: new Date()
+        }
+      ]
+    }));
+  });
 };
 
 /**
@@ -289,22 +367,22 @@ export const createTestScenario = (scenarioName: string, userId: string = 'test-
     case 'eligible-user':
       setupAnalysisWorkflowMocks(userId);
       break;
-      
+
     case 'ineligible-user':
       setupIneligibleUserMocks(userId, 5);
       break;
-      
+
     case 'conversation-flow':
       setupConversationFlowMocks(userId);
       break;
-      
+
     case 'api-contracts':
       setupAPIContractMocks(userId);
       break;
-      
+
     case 'error-scenarios':
       return setupErrorScenarioMocks();
-      
+
     default:
       setupWorkflowMocks();
   }

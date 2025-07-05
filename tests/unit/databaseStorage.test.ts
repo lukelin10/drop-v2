@@ -9,21 +9,21 @@
  */
 
 // Database access automatically blocked by jest.setup.ts
-import { 
-  mockStorage, 
+import {
+  mockStorage,
   resetStorageMocks,
   setupEligibleUserMocks,
   setupIneligibleUserMocks,
-  setupEmptyUserMocks 
+  setupEmptyUserMocks
 } from '../mocks/mockStorage';
-import { 
-  createMockUser, 
-  createMockDrop, 
+import {
+  createMockUser,
+  createMockDrop,
   createMockDropWithQuestion,
   createMockMessage,
   createMockQuestion,
   createMockAnalysis,
-  TEST_USER_IDS 
+  TEST_USER_IDS
 } from '../factories/testData';
 
 // Setup mocks to prevent database access
@@ -112,10 +112,10 @@ describe('Storage Service Unit Tests', () => {
         text: 'Test drop content'
       };
       const expectedDrop = createMockDrop({ ...dropData, id: 42 });
-      const expectedDropWithQuestion = createMockDropWithQuestion({ 
-        ...dropData, 
+      const expectedDropWithQuestion = createMockDropWithQuestion({
+        ...dropData,
         id: 42,
-        questionText: 'Test question' 
+        questionText: 'Test question'
       });
 
       mockStorage.createDrop.mockResolvedValue(expectedDrop);
@@ -137,7 +137,7 @@ describe('Storage Service Unit Tests', () => {
       // Arrange
       const originalDrop = createMockDrop({ id: 1, text: 'Original text' });
       const updatedDrop = createMockDrop({ id: 1, text: 'Updated text' });
-      
+
       mockStorage.updateDrop.mockResolvedValue(updatedDrop);
       mockStorage.getDrop.mockResolvedValue(createMockDropWithQuestion({ id: 1, text: 'Updated text' }));
 
@@ -271,8 +271,8 @@ describe('Storage Service Unit Tests', () => {
 
       // Assert
       expect(eligibility.isEligible).toBe(true);
-      expect(eligibility.unanalyzedCount).toBe(8);
-      expect(eligibility.requiredCount).toBe(7);
+      expect(eligibility.unanalyzedCount).toBe(5);
+      expect(eligibility.requiredCount).toBe(3);
     });
 
     test('should check analysis eligibility for ineligible user', async () => {
@@ -285,7 +285,7 @@ describe('Storage Service Unit Tests', () => {
       // Assert
       expect(eligibility.isEligible).toBe(false);
       expect(eligibility.unanalyzedCount).toBe(5);
-      expect(eligibility.requiredCount).toBe(7);
+      expect(eligibility.requiredCount).toBe(3);
     });
 
     test('should create analysis with included drops', async () => {
@@ -429,7 +429,7 @@ describe('Storage Service Unit Tests', () => {
 
       // Assert
       expect(eligibility.isEligible).toBe(true);
-      expect(unanalyzedDrops).toHaveLength(8);
+      expect(unanalyzedDrops).toHaveLength(5);
       expect(unanalyzedDrops.every(drop => drop.userId === testUserId)).toBe(true);
     });
   });

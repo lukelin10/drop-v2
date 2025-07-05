@@ -145,8 +145,8 @@ describe('Analysis API Endpoint Tests', () => {
       // Assert
       expect(response.body).toEqual({
         isEligible: true,
-        unanalyzedCount: 8,
-        requiredCount: 7
+        unanalyzedCount: 5,
+        requiredCount: 3
       });
 
       expect(mockStorage.getAnalysisEligibility).toHaveBeenCalledWith(testUserId);

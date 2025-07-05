@@ -16,9 +16,9 @@ export const verifyAnalysisAPIContract = (response: any) => {
     content: expect.any(String),
     bulletPoints: expect.any(String),
     isFavorited: expect.any(Boolean),
-    createdAt: expect.any(String)
+    createdAt: expect.any(Date)
   });
-  
+
   // Additional validation
   expect(response.id).toBeGreaterThan(0);
   expect(response.summary.length).toBeGreaterThan(0);
@@ -39,7 +39,7 @@ export const verifyDropAPIContract = (response: any) => {
     createdAt: expect.any(String),
     messageCount: expect.any(Number)
   });
-  
+
   expect(response.id).toBeGreaterThan(0);
   expect(response.questionId).toBeGreaterThan(0);
   expect(response.text.length).toBeGreaterThan(0);
@@ -68,7 +68,7 @@ export const verifyMessageAPIContract = (response: any) => {
     fromUser: expect.any(Boolean),
     createdAt: expect.any(String)
   });
-  
+
   expect(response.id).toBeGreaterThan(0);
   expect(response.dropId).toBeGreaterThan(0);
   expect(response.text.length).toBeGreaterThan(0);
@@ -86,7 +86,7 @@ export const verifyUserAPIContract = (response: any) => {
     createdAt: expect.any(String),
     updatedAt: expect.any(String)
   });
-  
+
   expect(response.id.length).toBeGreaterThan(0);
   expect(response.username.length).toBeGreaterThan(0);
   expect(response.email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
@@ -101,10 +101,10 @@ export const verifyAnalysisEligibilityAPIContract = (response: any) => {
     unanalyzedCount: expect.any(Number),
     requiredCount: expect.any(Number)
   });
-  
+
   expect(response.unanalyzedCount).toBeGreaterThanOrEqual(0);
   expect(response.requiredCount).toBeGreaterThan(0);
-  
+
   if (response.isEligible) {
     expect(response.unanalyzedCount).toBeGreaterThanOrEqual(response.requiredCount);
   }
@@ -121,7 +121,7 @@ export const verifyQuestionAPIContract = (response: any) => {
     category: expect.any(String),
     createdAt: expect.any(String)
   });
-  
+
   expect(response.id).toBeGreaterThan(0);
   expect(response.text.length).toBeGreaterThan(0);
   expect(['general', 'daily', 'reflection', 'goal']).toContain(response.category);
@@ -135,7 +135,7 @@ export const verifyErrorAPIContract = (response: any, expectedStatus: number) =>
     message: expect.any(String),
     error: expect.any(String)
   });
-  
+
   expect(response.message.length).toBeGreaterThan(0);
   expect([400, 401, 403, 404, 500]).toContain(expectedStatus);
 };
@@ -153,12 +153,12 @@ export const verifyPaginatedAPIContract = (response: any, itemValidator: (item: 
       totalPages: expect.any(Number)
     })
   });
-  
+
   expect(response.pagination.page).toBeGreaterThan(0);
   expect(response.pagination.limit).toBeGreaterThan(0);
   expect(response.pagination.total).toBeGreaterThanOrEqual(0);
   expect(response.pagination.totalPages).toBeGreaterThanOrEqual(0);
-  
+
   // Validate each item in the data array
   response.data.forEach(itemValidator);
 };
@@ -172,9 +172,9 @@ export const verifyHealthCheckAPIContract = (response: any) => {
     timestamp: expect.any(String),
     services: expect.any(Object)
   });
-  
+
   expect(new Date(response.timestamp)).toBeInstanceOf(Date);
-  
+
   // Validate service status structure
   Object.keys(response.services).forEach(serviceName => {
     expect(response.services[serviceName]).toMatchObject({
@@ -192,7 +192,7 @@ export const verifyDailyQuestionAPIContract = (response: any) => {
   expect(response).toMatchObject({
     question: expect.any(String)
   });
-  
+
   expect(response.question.length).toBeGreaterThan(0);
   expect(response.question).toMatch(/\?$/); // Should end with question mark
 };
@@ -211,7 +211,7 @@ export const verifyArrayResponse = (response: any[], itemValidator: (item: any) 
 export const verifySuccessResponse = (httpResponse: any, dataValidator?: (data: any) => void) => {
   expect(httpResponse.status).toBeGreaterThanOrEqual(200);
   expect(httpResponse.status).toBeLessThan(300);
-  
+
   if (dataValidator && httpResponse.body) {
     dataValidator(httpResponse.body);
   }

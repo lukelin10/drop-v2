@@ -5,11 +5,11 @@
  */
 
 // Database access automatically blocked by jest.setup.ts
-import { 
-  mockStorage, 
-  resetStorageMocks, 
-  setupEligibleUserMocks, 
-  setupIneligibleUserMocks 
+import {
+  mockStorage,
+  resetStorageMocks,
+  setupEligibleUserMocks,
+  setupIneligibleUserMocks
 } from '../mocks/mockStorage';
 
 // Mock external dependencies
@@ -28,11 +28,11 @@ describe('Error Handling Tests', () => {
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Get mocked functions after mocks are set up
     mockGenerateAnalysis = require('../../server/services/analysisLLM').generateAnalysis;
     mockCreateAnalysisForUser = require('../../server/services/analysisService').createAnalysisForUser;
-    
+
     // Set up test data
     testUserId = 'test-user-error-handling';
   });
@@ -154,14 +154,14 @@ describe('Error Handling Tests', () => {
       mockCreateAnalysisForUser.mockResolvedValue({
         success: false,
         errorType: 'validation',
-        error: 'You need at least 7 journal entries'
+        error: 'You need at least 3 journal entries'
       });
 
       const result = await mockCreateAnalysisForUser(testUserId);
 
       expect(result.success).toBe(false);
       expect(result.errorType).toBe('validation');
-      expect(result.error).toContain('need at least 7');
+      expect(result.error).toContain('need at least 3');
     });
   });
 }); 

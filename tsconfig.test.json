@@ -1,12 +1,28 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["tests/**/*", "shared/**/*", "server/**/*", "client/src/**/*"],
-  "exclude": ["node_modules", "build", "dist"],
+  "include": [
+    "tests/**/*",
+    "shared/**/*",
+    "server/**/*",
+    "client/src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist"
+  ],
   "compilerOptions": {
-    "types": ["node", "jest", "jsdom"],
+    "types": [
+      "node",
+      "jest",
+      "jsdom"
+    ],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "target": "esnext"
   }
-} 
+}
