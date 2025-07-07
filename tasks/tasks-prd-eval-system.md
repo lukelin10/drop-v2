@@ -1,0 +1,155 @@
+# Task List: Synthetic Conversation Evaluation System
+
+## Relevant Files
+
+- `backend/main.py` - FastAPI application entry point and configuration
+- `backend/main.test.py` - Unit tests for main application setup
+- `backend/models/database.py` - Database models and schema definitions
+- `backend/models/database.test.py` - Unit tests for database models
+- `backend/services/conversation_generator.py` - Core conversation generation logic with persona management
+- `backend/services/conversation_generator.test.py` - Unit tests for conversation generation
+- `backend/services/persona_manager.py` - Persona definitions and behavior management
+- `backend/services/persona_manager.test.py` - Unit tests for persona management
+- `backend/api/evaluation_routes.py` - API endpoints for evaluation operations
+- `backend/api/evaluation_routes.test.py` - Unit tests for evaluation API endpoints
+- `backend/api/batch_routes.py` - API endpoints for batch management
+- `backend/api/batch_routes.test.py` - Unit tests for batch management
+- `backend/api/prompt_routes.py` - API endpoints for prompt version management
+- `backend/api/prompt_routes.test.py` - Unit tests for prompt management
+- `backend/services/llm_client.py` - Anthropic Claude API integration
+- `backend/services/llm_client.test.py` - Unit tests for LLM client
+- `backend/services/cost_tracker.py` - API usage and cost tracking
+- `backend/services/cost_tracker.test.py` - Unit tests for cost tracking
+- `frontend/src/App.jsx` - Main React application component
+- `frontend/src/App.test.jsx` - Unit tests for main App component
+- `frontend/src/components/EvaluationInterface.jsx` - Main evaluation interface component
+- `frontend/src/components/EvaluationInterface.test.jsx` - Unit tests for evaluation interface
+- `frontend/src/components/ConversationDisplay.jsx` - Component for displaying conversations
+- `frontend/src/components/ConversationDisplay.test.jsx` - Unit tests for conversation display
+- `frontend/src/components/ScoringPanel.jsx` - Component for scoring conversations
+- `frontend/src/components/ScoringPanel.test.jsx` - Unit tests for scoring panel
+- `frontend/src/components/BatchManagement.jsx` - Component for managing evaluation batches
+- `frontend/src/components/BatchManagement.test.jsx` - Unit tests for batch management
+- `frontend/src/components/ReportingDashboard.jsx` - Component for viewing analytics and reports
+- `frontend/src/components/ReportingDashboard.test.jsx` - Unit tests for reporting dashboard
+- `frontend/src/services/apiClient.js` - API client for backend communication
+- `frontend/src/services/apiClient.test.js` - Unit tests for API client
+- `database/migrations/001_create_evaluation_tables.sql` - Database schema migration
+- `database/seed_data/personas.sql` - Initial persona data
+- `database/seed_data/prompt_versions.sql` - Initial prompt version data
+- `docker-compose.yml` - Docker configuration for local development
+- `backend/requirements.txt` - Python dependencies
+- `frontend/package.json` - Frontend dependencies
+- `README.md` - Setup and usage instructions
+
+### Testing Notes
+
+- Unit tests should typically be placed alongside the code files they are testing (e.g., `MyComponent.jsx` and `MyComponent.test.jsx` in the same directory).
+- Use `npx jest [optional/path/to/test/file]` to run tests. Running without a path executes all tests found by the Jest configuration.
+- Use [testing-rules.mdc](mdc:.cursor/rules/testing-rules.mdc) tests are built to ensure consistency across the application
+
+## Tasks
+
+- [ ] 1.0 Database Setup & Schema Implementation
+  - [ ] 1.1 Create database migration file with evaluation_batches, evaluation_conversations, evaluation_scores, and prompt_versions tables
+  - [ ] 1.2 Set up PostgreSQL database connection and configuration
+  - [ ] 1.3 Create SQLAlchemy/Pydantic models for all database tables
+  - [ ] 1.4 Implement database connection pooling and error handling
+  - [ ] 1.5 Create seed data for initial personas and prompt versions
+  - [ ] 1.6 Set up database migration system and initial migration
+  - [ ] 1.7 Add database indexes for performance optimization
+  - [ ] 1.8 Create database backup and restore procedures for local development
+  - [ ] 1.9 Write unit tests for all database models including validation and constraints
+  - [ ] 1.10 Create tests for database migration scripts and rollback procedures
+  - [ ] 1.11 Write integration tests for database connection and query operations
+  - [ ] 1.12 Test seed data insertion and verify data integrity
+
+- [ ] 2.0 Backend API Development & Core Services
+  - [ ] 2.1 Set up FastAPI application structure with proper project organization
+  - [ ] 2.2 Implement batch management endpoints (POST /batches, GET /batches, GET /batches/:id)
+  - [ ] 2.3 Create conversation generation endpoint (POST /conversations/generate)
+  - [ ] 2.4 Implement conversation retrieval endpoint (GET /conversations/:id)
+  - [ ] 2.5 Create evaluation scoring endpoints (POST /scores, GET /scores/summary/:batchId)
+  - [ ] 2.6 Implement prompt version management endpoints (GET /prompts, POST /prompts)
+  - [ ] 2.7 Set up Anthropic Claude API client with proper error handling and rate limiting
+  - [ ] 2.8 Implement cost tracking service to monitor API usage and estimated costs
+  - [ ] 2.9 Add request/response validation using Pydantic models
+  - [ ] 2.10 Implement CORS configuration for frontend communication
+  - [ ] 2.11 Set up logging and error handling middleware
+  - [ ] 2.12 Create health check endpoint for system monitoring
+  - [ ] 2.13 Write unit tests for all API endpoints with success and error scenarios
+  - [ ] 2.14 Create tests for Anthropic Claude API client including rate limiting and error handling
+  - [ ] 2.15 Write unit tests for cost tracking service with mock API calls
+  - [ ] 2.16 Test request/response validation with invalid data scenarios
+  - [ ] 2.17 Create integration tests for complete API workflows (batch creation to evaluation)
+  - [ ] 2.18 Write tests for logging and error handling middleware
+  - [ ] 2.19 Test CORS configuration with different origins
+  - [ ] 2.20 Create performance tests for API endpoints under load
+
+- [ ] 3.0 Frontend Evaluation Interface
+  - [ ] 3.1 Set up React application with proper project structure and routing
+  - [ ] 3.2 Create main App component with navigation between different sections
+  - [ ] 3.3 Implement BatchManagement component for creating and viewing batches
+  - [ ] 3.4 Create ConversationDisplay component with clear user/AI message distinction
+  - [ ] 3.5 Build ScoringPanel component with 5-point scales for all metrics
+  - [ ] 3.6 Add formulaic pattern checkboxes (mirror_probe, generic_validation, etc.)
+  - [ ] 3.7 Implement EvaluationInterface component combining conversation display and scoring
+  - [ ] 3.8 Create navigation system between conversations in a batch
+  - [ ] 3.9 Add progress indicators showing batch completion status
+  - [ ] 3.10 Implement API client service for all backend communication
+  - [ ] 3.11 Add form validation and error handling for user inputs
+  - [ ] 3.12 Create responsive design that works well on desktop browsers
+  - [ ] 3.13 Add keyboard shortcuts for common scoring actions
+  - [ ] 3.14 Implement local state management for unsaved evaluation progress
+  - [ ] 3.15 Write unit tests for all React components using Jest and React Testing Library
+  - [ ] 3.16 Test user interactions like scoring, navigation, and form submissions
+  - [ ] 3.17 Create tests for API client service with mocked backend responses
+  - [ ] 3.18 Write tests for keyboard shortcuts and accessibility features
+  - [ ] 3.19 Test form validation with various input scenarios
+  - [ ] 3.20 Create integration tests for complete evaluation workflow
+  - [ ] 3.21 Test local state management and unsaved progress handling
+  - [ ] 3.22 Write tests for responsive design across different screen sizes
+
+- [ ] 4.0 Persona & Conversation Generation System
+  - [ ] 4.1 Define the 5 personas with detailed characteristics and response patterns
+  - [ ] 4.2 Create persona-specific initial response generators for common questions
+  - [ ] 4.3 Implement conversation flow logic for 7-exchange conversations
+  - [ ] 4.4 Build persona behavior variation across initial/middle/final conversation stages
+  - [ ] 4.5 Create response bank with pre-written realistic responses for each persona
+  - [ ] 4.6 Implement persona-appropriate follow-up response generation
+  - [ ] 4.7 Add conversation caching system to minimize API costs
+  - [ ] 4.8 Create conversation validation to ensure realistic and authentic exchanges
+  - [ ] 4.9 Implement question selection logic from existing application database
+  - [ ] 4.10 Add conversation metadata tracking (persona type, prompt version, generation time)
+  - [ ] 4.11 Create batch conversation generation with configurable quantity (5-10 conversations)
+  - [ ] 4.12 Implement prompt version support for A/B testing different approaches
+  - [ ] 4.13 Write unit tests for each persona's response generation logic
+  - [ ] 4.14 Test conversation flow logic with different persona types
+  - [ ] 4.15 Create tests for conversation validation rules and authenticity checks
+  - [ ] 4.16 Write tests for conversation caching system and cache invalidation
+  - [ ] 4.17 Test batch conversation generation with various configurations
+  - [ ] 4.18 Create integration tests for complete conversation generation pipeline
+  - [ ] 4.19 Test prompt version support and A/B testing functionality
+  - [ ] 4.20 Write tests for metadata tracking and conversation storage
+
+- [ ] 5.0 Reporting & Analytics Features
+  - [ ] 5.1 Create ReportingDashboard component for viewing evaluation analytics
+  - [ ] 5.2 Implement average score calculation across all evaluation metrics
+  - [ ] 5.3 Add most common formulaic patterns identification and display
+  - [ ] 5.4 Create worst-performing conversations highlighting system
+  - [ ] 5.5 Implement score trend analysis across different prompt versions
+  - [ ] 5.6 Add side-by-side comparison tool for different prompt versions
+  - [ ] 5.7 Create CSV export functionality for evaluation results
+  - [ ] 5.8 Implement JSON export functionality for detailed analysis
+  - [ ] 5.9 Add batch-level analytics with completion rates and average scores
+  - [ ] 5.10 Create cost analysis dashboard showing API usage and estimated costs
+  - [ ] 5.11 Implement filtering and sorting options for conversations and batches
+  - [ ] 5.12 Add data visualization charts for key metrics and trends
+  - [ ] 5.13 Write unit tests for all analytics calculation functions
+  - [ ] 5.14 Test CSV and JSON export functionality with various data sets
+  - [ ] 5.15 Create tests for data visualization components and chart rendering
+  - [ ] 5.16 Test filtering and sorting logic with different criteria
+  - [ ] 5.17 Write tests for score trend analysis and comparison algorithms
+  - [ ] 5.18 Test cost analysis calculations and dashboard accuracy
+  - [ ] 5.19 Create integration tests for complete reporting workflow
+  - [ ] 5.20 Write end-to-end tests for the entire evaluation and reporting process 
